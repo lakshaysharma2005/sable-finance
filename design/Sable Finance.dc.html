@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#0D0D0F">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="30" fill="none" stroke="#7FE08A" stroke-width="8"></circle>
+    <path d="M50 50 L50 24 A26 26 0 0 1 72 62 Z" fill="#C49A6B"></path>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes donutIn{from{opacity:0;transform:scale(.9) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+*{box-sizing:border-box}
+*::-webkit-scrollbar{width:0;height:0;display:none}
+input::placeholder{color:rgba(244,243,239,0.3)}
+[data-rows] > :first-child{border-top:none !important}
+</style>
+</helmet>
+
+<div style="position:absolute;left:80px;top:36px;width:1000px">
+  <div style="font:500 12px 'JetBrains Mono';letter-spacing:3px;text-transform:uppercase;color:#8a8a8e">Personal finance · concept · dark mode</div>
+  <div style="font:400 30px 'Spectral';color:#1b1b1d;margin-top:8px">Sable — minimal money tracking</div>
+</div>
+
+<!-- ============ FRAME 01 · DASHBOARD ============ -->
+<div data-screen-label="Dashboard" style="position:absolute;left:80px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">01 · Dashboard</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="{{ homeMidStyle }}">
+
+        <sc-if value="{{ isHomeDefault }}" hint-placeholder-val="{{ true }}">
+        <!-- header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+          <div>
+            <div style="font:11px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:rgba(244,243,239,0.32)">Sunday, June 29</div>
+            <div style="font:400 22px 'Spectral';color:#F4F3EF;margin-top:5px">Good evening, {{ name }}</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+            </div>
+            <div style="width:40px;height:40px;border-radius:14px;background:#262229;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';color:#C49A6B">L</div>
+          </div>
+        </div>
+
+        <!-- hero card -->
+        <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:22px">
+          <div style="font:11px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:rgba(244,243,239,0.5)">Spent this month</div>
+          <div style="display:flex;align-items:baseline;gap:1px;margin-top:12px">
+            <span style="font:500 46px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">$3,248</span>
+            <span style="font:500 22px 'JetBrains Mono';color:rgba(244,243,239,0.32)">.50</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;margin-top:14px">
+            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(127,224,138,0.14);color:#7FE08A;font:600 11px 'JetBrains Mono';padding:5px 9px;border-radius:8px">
+              <svg width="9" height="9" viewBox="0 0 12 12"><path d="M6 10L1 3h10z" fill="#7FE08A"></path></svg>8.2%
+            </span>
+            <span style="font:12px 'JetBrains Mono';color:rgba(244,243,239,0.5)">less than May</span>
+          </div>
+        </div>
+
+        <!-- donut card -->
+        <div style="margin-top:16px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:22px 22px 12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font:400 18px 'Spectral';color:#F4F3EF">By category</div>
+            <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32)">June</div>
+          </div>
+          <div style="display:flex;justify-content:center;padding:10px 0 16px">
+            <div style="position:relative;width:220px;height:220px">
+              <svg width="220" height="220" viewBox="0 0 220 220">
+                <g transform="rotate(-90 110 110)">
+                  <circle cx="110" cy="110" r="80" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="26"></circle>
+                  <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="5">
+                    <circle cx="110" cy="110" r="80" fill="none" stroke="{{ seg.color }}" stroke-width="26" stroke-linecap="butt" stroke-dasharray="{{ seg.dash }}" stroke-dashoffset="{{ seg.offset }}"></circle>
+                  </sc-for>
+                </g>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <div style="font:500 32px 'JetBrains Mono';color:#7FE08A;letter-spacing:-1px">32%</div>
+                <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.5);margin-top:3px">Food &amp; Drink</div>
+              </div>
+            </div>
+          </div>
+          <div data-rows="1">
+            <sc-for list="{{ legend }}" as="c" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,0.06)">
+                <span style="width:9px;height:9px;border-radius:3px;flex:none;background:{{ c.color }}"></span>
+                <span style="flex:1;font:400 15px 'Spectral';color:#F4F3EF">{{ c.name }}</span>
+                <span style="font:11px 'JetBrains Mono';color:rgba(244,243,239,0.32);margin-right:12px">{{ c.pct }}%</span>
+                <span style="font:500 14px 'JetBrains Mono';color:#F4F3EF">{{ c.amt }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- to review — stacked cards -->
+        <div style="margin-top:16px;padding-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px">
+            <div style="font:400 18px 'Spectral';color:#F4F3EF">To Review</div>
+            <span style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32)">{{ pendingDays }} pending</span>
+          </div>
+
+          <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ true }}">
+            <div style="position:relative;padding-bottom:22px">
+              <!-- shadow card 2 (furthest back) -->
+              <sc-if value="{{ showStack2 }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;bottom:0;left:10px;right:10px;height:52px;border-radius:16px;background:#202022;z-index:1"></div>
+              </sc-if>
+              <!-- shadow card 1 -->
+              <sc-if value="{{ showStack1 }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute;bottom:10px;left:5px;right:5px;height:52px;border-radius:16px;background:#1c1c1f;border:1px solid rgba(255,255,255,0.05);z-index:2;overflow:hidden">
+                  <div style="padding:16px 14px;font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.2)">{{ stack1Label }}</div>
+                </div>
+              </sc-if>
+              <!-- front card -->
+              <div style="position:relative;z-index:3;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;overflow:hidden">
+                <div style="padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">
+                  <span style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32)">{{ frontDate }}</span>
+                </div>
+                <sc-for list="{{ frontItems }}" as="it" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid rgba(255,255,255,0.06)">
+                    <span style="width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';background:{{ it.tint }};color:{{ it.color }}">{{ it.initial }}</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font:400 15px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</div>
+                      <div style="font:10px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;color:rgba(244,243,239,0.5);margin-top:2px">{{ it.cat }}</div>
+                    </div>
+                    <div style="font:500 15px 'JetBrains Mono';color:#F4F3EF;flex:none">{{ it.amt }}</div>
+                  </div>
+                </sc-for>
+                <div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center">
+                  <button onClick="{{ onReviewAll }}" style="{{ reviewAllBtnStyle }}">{{ reviewAllLabel }}</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ allReviewedDone }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:22px;text-align:center">
+              <div style="font:600 12px 'JetBrains Mono';letter-spacing:1px;color:#7FE08A;margin-bottom:6px">✓ All caught up</div>
+              <div style="font:400 14px 'Spectral';color:rgba(244,243,239,0.4)">No transactions to review</div>
+            </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <!-- add expense (composer) -->
+        <sc-if value="{{ isAddExpenseMode }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div>
+              <div style="font:400 22px 'Spectral';color:#F4F3EF">New expense</div>
+            </div>
+            <div onClick="{{ closeHomeMode }}" style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;cursor:pointer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </div>
+          </div>
+
+          <div style="text-align:center;padding:18px 0 14px">
+            <div style="display:flex;align-items:baseline;justify-content:center;gap:3px">
+              <span style="font:500 24px 'JetBrains Mono';color:rgba(244,243,239,0.4)">−$</span>
+              <span style="font:500 54px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ addAmtDisplay }}</span>
+            </div>
+          </div>
+
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:9px">Category</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+            <sc-for list="{{ addCatChips }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.onClick }}" style="{{ c.style }}"><span style="width:8px;height:8px;border-radius:3px;flex:none;background:{{ c.color }}"></span>{{ c.name }}</button>
+            </sc-for>
+          </div>
+
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:9px">Pay from</div>
+          <div style="display:flex;gap:8px;overflow-x:auto">
+            <sc-for list="{{ addAcctChips }}" as="c" hint-placeholder-count="3">
+              <button onClick="{{ c.onClick }}" style="{{ c.style }}"><span style="width:8px;height:8px;border-radius:3px;flex:none;background:{{ c.dot }}"></span>{{ c.label }}</button>
+            </sc-for>
+          </div>
+
+          <div style="flex:1"></div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+            <sc-for list="{{ addKeys }}" as="k" hint-placeholder-count="12">
+              <button onClick="{{ k.onClick }}" style="height:58px;border-radius:16px;border:none;background:transparent;color:#F4F3EF;font:500 22px 'JetBrains Mono';cursor:pointer;transition:background .15s" style-hover="background:#161618" style-active="background:#202022">{{ k.label }}</button>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ onAddSave }}" style="{{ addBtnStyle }}">Add expense</button>
+
+          <sc-if value="{{ addSaved }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:110px;background:#7FE08A;color:#0D0D0F;font:600 12px 'JetBrains Mono';letter-spacing:.5px;padding:11px 18px;border-radius:12px;box-shadow:0 10px 26px rgba(127,224,138,0.3);z-index:30;white-space:nowrap;animation:fadeUp .25s ease both">✓ {{ addToastLabel }}</div>
+          </sc-if>
+        </sc-if>
+
+        <!-- request money (composer) -->
+        <sc-if value="{{ isRequestMoneyMode }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div>
+              <div style="font:400 22px 'Spectral';color:#F4F3EF">Request money</div>
+            </div>
+            <div onClick="{{ closeHomeMode }}" style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;cursor:pointer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </div>
+          </div>
+
+          <div style="text-align:center;padding:18px 0 14px">
+            <div style="display:flex;align-items:baseline;justify-content:center;gap:3px">
+              <span style="font:500 24px 'JetBrains Mono';color:rgba(244,243,239,0.4)">+$</span>
+              <span style="font:500 54px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ reqAmtDisplay }}</span>
+            </div>
+          </div>
+
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:9px">Request from</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ reqContactChips }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.onClick }}" style="{{ c.style }}">
+                <span style="width:20px;height:20px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font:600 10px 'JetBrains Mono';background:{{ c.color }};color:#0D0D0F">{{ c.initial }}</span>
+                {{ c.name }}
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="flex:1"></div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+            <sc-for list="{{ reqKeys }}" as="k" hint-placeholder-count="12">
+              <button onClick="{{ k.onClick }}" style="height:58px;border-radius:16px;border:none;background:transparent;color:#F4F3EF;font:500 22px 'JetBrains Mono';cursor:pointer;transition:background .15s" style-hover="background:#161618" style-active="background:#202022">{{ k.label }}</button>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ onReqSend }}" style="{{ reqBtnStyle }}">Send request</button>
+
+          <sc-if value="{{ reqSaved }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:110px;background:#7FE08A;color:#0D0D0F;font:600 12px 'JetBrains Mono';letter-spacing:.5px;padding:11px 18px;border-radius:12px;box-shadow:0 10px 26px rgba(127,224,138,0.3);z-index:30;white-space:nowrap;animation:fadeUp .25s ease both">✓ {{ reqToastLabel }}</div>
+          </sc-if>
+        </sc-if>
+
+      </div>
+
+      <!-- bottom nav C · icon dock (Home active) -->
+      <sc-if value="{{ isHomeDefault }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#0D0D0F;padding:0 0 8px">
+        <div style="margin:0 14px 0;padding:8px 12px;border-radius:26px;background:rgba(22,22,24,0.96);border:1px solid rgba(255,255,255,0.07);box-shadow:0 12px 30px rgba(0,0,0,0.45);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between">
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#7FE08A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20V14"></path></svg></span>
+          <span onClick="{{ onFabClick }}" style="width:46px;height:46px;border-radius:15px;background:#7FE08A;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(127,224,138,0.3);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"></rect><path d="M3 10.5h18"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.5 20c0-4 3.4-6 7.5-6s7.5 2 7.5 6"></path></svg></span>
+        </div>
+        <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ isComposing }}" hint-placeholder-val="{{ false }}">
+        <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+      </sc-if>
+
+      <!-- FAB action sheet -->
+      <sc-if value="{{ fabSheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeFabSheet }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:40;animation:fadeUp .2s ease both"></div>
+        <div style="position:absolute;left:14px;right:14px;bottom:34px;z-index:41;background:#161618;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:8px;box-shadow:0 20px 50px rgba(0,0,0,0.5);animation:fadeUp .25s ease both">
+          <div style="text-align:center;padding:12px 0 10px">
+            <div style="width:36px;height:4px;border-radius:100px;background:rgba(255,255,255,0.15);margin:0 auto 14px"></div>
+            <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32)">Add to Sable</div>
+          </div>
+          <button onClick="{{ openAddExpense }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;border:none;background:transparent;cursor:pointer;text-align:left" style-hover="background:#1c1c1f">
+            <span style="width:44px;height:44px;border-radius:14px;flex:none;background:rgba(217,138,127,0.14);display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#D98A7F" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg></span>
+            <span style="flex:1">
+              <div style="font:400 16px 'Spectral';color:#F4F3EF">Add an expense</div>
+              <div style="font:11px 'JetBrains Mono';color:rgba(244,243,239,0.4);margin-top:2px">Log something you spent</div>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+          </button>
+          <button onClick="{{ openRequestMoney }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;border:none;background:transparent;cursor:pointer;text-align:left" style-hover="background:#1c1c1f">
+            <span style="width:44px;height:44px;border-radius:14px;flex:none;background:rgba(127,224,138,0.14);display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#7FE08A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></span>
+            <span style="flex:1">
+              <div style="font:400 16px 'Spectral';color:#F4F3EF">Request money</div>
+              <div style="font:11px 'JetBrains Mono';color:rgba(244,243,239,0.4);margin-top:2px">Get paid back by someone</div>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+          </button>
+        </div>
+      </sc-if>
+    </div>
+  </x-import>
+</div>
+
+<!-- ============ FRAME 02 · STATS ============ -->
+<div data-screen-label="Stats" style="position:absolute;left:572px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">02 · Statistics</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="flex:1;overflow:auto;padding:58px 18px 16px">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div>
+            <div style="font:400 22px 'Spectral';color:#F4F3EF">Statistics</div>
+          </div>
+          <div style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"></rect><path d="M4 9.5h16M8 3v4M16 3v4"></path></svg>
+          </div>
+        </div>
+
+        <!-- range toggle -->
+        <div style="display:flex;gap:5px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:999px;padding:4px">
+          <sc-for list="{{ rangeData }}" as="r" hint-placeholder-count="3">
+            <button onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.name }}</button>
+          </sc-for>
+        </div>
+
+        <!-- bar chart card -->
+        <div style="margin-top:16px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:22px 18px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font:11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.5)">{{ rangeLabel }}</div>
+              <div style="font:500 30px 'JetBrains Mono';color:#F4F3EF;margin-top:8px;letter-spacing:-1px">{{ rangeTotal }}</div>
+            </div>
+            <span style="background:rgba(127,224,138,0.12);color:#7FE08A;font:600 11px 'JetBrains Mono';padding:6px 10px;border-radius:8px;margin-top:4px">{{ rangeDelta }}</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:9px;height:178px;padding-top:34px;margin-top:8px">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="6">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end;position:relative">
+                <sc-if value="{{ b.current }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;background:#7FE08A;color:#0D0D0F;font:600 10px 'JetBrains Mono';padding:5px 9px;border-radius:8px;box-shadow:0 4px 12px rgba(127,224,138,0.25)">{{ calloutText }}</div>
+                </sc-if>
+                <div style="width:100%;max-width:30px;border-radius:7px;height:{{ b.h }}px;background:{{ b.color }}"></div>
+                <span style="font:10px 'JetBrains Mono';color:{{ b.labelColor }}">{{ b.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- top spending / excluded tabs -->
+        <div style="margin-top:22px">
+          <div style="display:flex;gap:0;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:4px;margin-bottom:16px">
+            <button onClick="{{ setStatsTop }}" style="{{ statsTopStyle }}">Top spending</button>
+            <button onClick="{{ setStatsExcl }}" style="{{ statsExclStyle }}">Excluded</button>
+          </div>
+          <sc-if value="{{ isStatsTop }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <sc-for list="{{ top }}" as="t" hint-placeholder-count="5">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+                    <span style="font:400 15px 'Spectral';color:#F4F3EF">{{ t.name }}</span>
+                    <span style="font:500 14px 'JetBrains Mono';color:#F4F3EF">{{ t.amt }}</span>
+                  </div>
+                  <div style="height:6px;border-radius:6px;background:rgba(255,255,255,0.06);overflow:hidden">
+                    <div style="height:100%;border-radius:6px;width:{{ t.barW }};background:{{ t.color }}"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isStatsExcl }}" hint-placeholder-val="{{ false }}">
+            <div data-rows="1" style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;overflow:hidden">
+              <sc-for list="{{ excluded }}" as="e" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid rgba(255,255,255,0.06)">
+                  <span style="width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';background:{{ e.tint }};color:{{ e.color }}">{{ e.initial }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:400 15px 'Spectral';color:rgba(244,243,239,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.name }}</div>
+                    <div style="font:10px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;color:rgba(244,243,239,0.3);margin-top:2px">{{ e.reason }}</div>
+                  </div>
+                  <div style="font:500 14px 'JetBrains Mono';color:rgba(244,243,239,0.4);flex:none">{{ e.amt }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- bottom nav C · icon dock (Stats active) -->
+      <div style="background:#0D0D0F;padding:0 0 8px">
+        <div style="margin:0 14px 0;padding:8px 12px;border-radius:26px;background:rgba(22,22,24,0.96);border:1px solid rgba(255,255,255,0.07);box-shadow:0 12px 30px rgba(0,0,0,0.45);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between">
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#7FE08A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20V14"></path></svg></span>
+          <span style="width:46px;height:46px;border-radius:15px;background:#7FE08A;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(127,224,138,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"></rect><path d="M3 10.5h18"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.5 20c0-4 3.4-6 7.5-6s7.5 2 7.5 6"></path></svg></span>
+        </div>
+        <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+      </div>
+    </div>
+  </x-import>
+</div>
+
+<!-- ============ FRAME 03 · TRANSACTIONS ============ -->
+<div data-screen-label="Transactions" style="position:absolute;left:1064px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">03 · Transactions</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="flex:1;overflow:auto;padding:58px 18px 16px">
+
+        <!-- header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div>
+            <div style="font:400 22px 'Spectral';color:#F4F3EF">Transactions</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
+            </div>
+            <div onClick="{{ openFilter }}" style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;cursor:pointer">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><circle cx="9" cy="6" r="2.5"></circle><line x1="4" y1="12" x2="20" y2="12"></line><circle cx="15" cy="12" r="2.5"></circle><line x1="4" y1="18" x2="20" y2="18"></line><circle cx="11" cy="18" r="2.5"></circle></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- account selector -->
+        <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:9px">Showing accounts</div>
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px">
+          <sc-for list="{{ acctChips }}" as="c" hint-placeholder-count="4">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">
+              <sc-if value="{{ c.dot }}" hint-placeholder-val="{{ true }}"><span style="width:8px;height:8px;border-radius:3px;flex:none;background:{{ c.dot }}"></span></sc-if>
+              {{ c.label }}
+            </button>
+          </sc-for>
+        </div>
+
+        <!-- summary -->
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:18px;padding:0 2px">
+          <span style="font:11px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;color:rgba(244,243,239,0.5)">{{ txCount }} transactions</span>
+          <span style="font:500 13px 'JetBrains Mono';color:#F4F3EF">{{ txSpent }} spent</span>
+        </div>
+
+        <!-- list -->
+        <sc-for list="{{ txGroups2 }}" as="g" hint-placeholder-count="5">
+          <div style="margin-top:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:0 2px">
+              <span style="font:10px 'JetBrains Mono';letter-spacing:1.5px;color:rgba(244,243,239,0.32)">{{ g.date }}</span>
+              <span style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.32)">{{ g.total }}</span>
+            </div>
+            <div data-rows="1" style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;overflow:hidden">
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+                <div onClick="{{ it.onClick }}" style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid rgba(255,255,255,0.06);cursor:pointer">
+                  <span style="width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';background:{{ it.tint }};color:{{ it.color }}">{{ it.initial }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:400 15px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</div>
+                    <div style="font:10px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;color:rgba(244,243,239,0.5);margin-top:2px">{{ it.sub }}</div>
+                  </div>
+                  <div style="text-align:right;flex:none">
+                    <div style="font:500 15px 'JetBrains Mono';color:{{ it.amtColor }}">{{ it.amt }}</div>
+                    <sc-if value="{{ it.note }}" hint-placeholder-val="{{ true }}"><div style="font:9px 'JetBrains Mono';color:rgba(244,243,239,0.32);margin-top:2px">{{ it.note }}</div></sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- transaction detail sheet -->
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:20">
+          <div onClick="{{ closeDetail }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.6)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#0D0D0F;border-radius:24px 24px 0 0;border-top:1px solid rgba(255,255,255,0.09)">
+            <div style="display:flex;justify-content:center;padding:12px 0">
+              <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0 20px 12px">
+              <div>
+                <div style="font:600 10px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:#7FE08A">Transaction</div>
+                <div style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.38);margin-top:3px">{{ detailDay }}</div>
+              </div>
+              <div onClick="{{ closeDetail }}" style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(244,243,239,0.5)"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+              </div>
+            </div>
+            <div style="text-align:center;padding:10px 20px 6px">
+              <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:16px">
+                <span style="font:400 32px 'Spectral';color:#F4F3EF">{{ detailName }}</span>
+                <span style="width:19px;height:19px;border-radius:50%;border:1.5px solid rgba(244,243,239,0.3);display:inline-flex;align-items:center;justify-content:center;font:11px 'JetBrains Mono';color:rgba(244,243,239,0.4);flex:none">i</span>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:2px;margin-bottom:16px">
+                <span style="font:500 22px 'JetBrains Mono';color:rgba(244,243,239,0.4)">{{ detailAmtSign }}$</span>
+                <span style="font:500 46px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ detailAmtNum }}</span>
+              </div>
+              <div style="font:400 15px 'Spectral';color:rgba(244,243,239,0.25)">Add a note</div>
+            </div>
+            <div style="padding:22px 20px 16px">
+              <div style="font:600 10px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:rgba(244,243,239,0.32);text-align:center;margin-bottom:12px">Category</div>
+              <div style="display:flex;justify-content:center">
+                <button onClick="{{ openCatPicker }}" style="display:inline-flex;align-items:center;gap:9px;background:{{ detailCatBg }};border-radius:999px;padding:11px 22px;border:none;cursor:pointer">
+                  <span style="width:9px;height:9px;border-radius:50%;background:{{ detailColor }};flex:none"></span>
+                  <span style="font:700 12px 'JetBrains Mono';letter-spacing:1px;color:{{ detailColor }}">{{ detailCat }}</span>
+                </button>
+              </div>
+            </div>
+            <div style="padding:0 20px 20px;display:flex;justify-content:center">
+              <div style="border-radius: 14px; padding: 12px 14px; background: {{ detailAcctBg }}; display: flex; flex-direction: column; gap: 12px; width: 110px; z-index: 0">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font:700 9px 'JetBrains Mono';color:{{ detailAcctColor }};letter-spacing:1px">{{ detailAcctLabel }}</span>
+                  <span style="width:15px;height:15px;border-radius:50%;background:{{ detailAcctColor }};opacity:0.85;flex:none"></span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:flex-end">
+                  <span style="font:500 13px 'JetBrains Mono';color:rgba(244,243,239,0.65)">••{{ detailAcctMask }}</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:0 20px 28px">
+              <div style="display:flex;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:999px;padding:4px;width:320px;margin:0 auto">
+                <div style="flex:1;text-align:center;padding:13px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;color:rgba(244,243,239,0.6);cursor:pointer">Split</div>
+                <div onClick="{{ onRecurringSegmentClick }}" style="{{ recurSegStyle }}">{{ recurSegLabel }}</div>
+                <div style="flex:1;text-align:center;padding:13px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;color:rgba(244,243,239,0.6);cursor:pointer;border-left:1px solid rgba(255,255,255,0.08)">Tag</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- category picker sheet -->
+      <sc-if value="{{ showCatPicker }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:25">
+          <div onClick="{{ closeCatPicker }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.6)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#161618;border-radius:24px 24px 0 0;border-top:1px solid rgba(255,255,255,0.09)">
+            <div style="display:flex;justify-content:center;padding:12px 0">
+              <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2)"></div>
+            </div>
+            <div style="text-align:center;font:600 11px 'JetBrains Mono';letter-spacing:2.5px;text-transform:uppercase;color:#7FE08A;padding:6px 0 10px">Change category</div>
+            <sc-for list="{{ catPickerRows }}" as="c" hint-placeholder-count="6">
+              <div onClick="{{ c.onClick }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;align-items:center;gap:10px;cursor:pointer">
+                <span style="width:9px;height:9px;border-radius:50%;background:{{ c.color }};flex:none"></span>
+                <span style="font:400 16px 'Spectral';color:{{ c.textColor }}">{{ c.name }}</span>
+                <sc-if value="{{ c.active }}" hint-placeholder-val="{{ false }}"><span style="color:#7FE08A;font:600 13px 'JetBrains Mono'">✓</span></sc-if>
+              </div>
+            </sc-for>
+            <div style="padding-bottom:18px"></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- category changed confirmation sheet -->
+      <sc-if value="{{ showCatChanged }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:30">
+          <div onClick="{{ onNoThanks }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.65)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#0D0D0F;border-radius:28px 28px 0 0;border-top:1px solid rgba(255,255,255,0.08);padding:0 24px 34px">
+            <div style="display:flex;justify-content:center;padding:14px 0 18px">
+              <div style="width:44px;height:4px;border-radius:2px;background:#6B8AB0"></div>
+            </div>
+            <div style="text-align:center;font:700 15px 'JetBrains Mono';letter-spacing:1.5px;color:#6B8AB0">CATEGORY CHANGED</div>
+            <div style="text-align:center;font:400 18px 'Spectral';color:rgba(140,163,196,0.75);line-height:1.4;margin-top:16px">Do you want to apply the same change to similar transactions?</div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin-top:36px">
+              <button onClick="{{ onCreateRule }}" style="background:none;border:none;padding:14px 0;font:400 18px 'Spectral';color:#F4F3EF;cursor:pointer">Create a rule based on the name</button>
+              <button onClick="{{ onApplyAll }}" style="background:none;border:none;padding:14px 0;font:400 18px 'Spectral';color:#F4F3EF;cursor:pointer">Apply to all "{{ catChangedCatName }}" transactions</button>
+              <button onClick="{{ onNoThanks }}" style="background:none;border:none;padding:14px 0 4px;font:400 18px 'Spectral';color:rgba(244,243,239,0.45);cursor:pointer">No thanks</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- mark as recurring confirmation sheet -->
+      <sc-if value="{{ recurConfirmOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:30">
+          <div onClick="{{ closeRecurConfirm }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.65)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#0D0D0F;border-radius:28px 28px 0 0;border-top:1px solid rgba(255,255,255,0.08);padding:0 24px 34px">
+            <div style="display:flex;justify-content:center;padding:14px 0 18px">
+              <div style="width:44px;height:4px;border-radius:2px;background:#7FE08A"></div>
+            </div>
+            <div style="text-align:center;font:700 15px 'JetBrains Mono';letter-spacing:1.5px;color:#7FE08A">MARK AS RECURRING</div>
+            <div style="text-align:center;font:400 18px 'Spectral';color:rgba(244,243,239,0.7);line-height:1.4;margin-top:16px">Track <span style="color:#F4F3EF">{{ detailName }}</span> as a recurring charge and show it in your Recurring tab?</div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin-top:36px">
+              <button onClick="{{ confirmMarkRecurring }}" style="width:100%;background:#7FE08A;border:none;border-radius:16px;padding:16px 0;font:600 13px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;color:#0D0D0F;cursor:pointer">Mark as recurring</button>
+              <button onClick="{{ closeRecurConfirm }}" style="background:none;border:none;padding:16px 0 4px;font:400 18px 'Spectral';color:rgba(244,243,239,0.45);cursor:pointer">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- filter & sort sheet -->
+      <sc-if value="{{ showFilterSheet }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:20">
+          <div onClick="{{ closeFilter }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.55)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#161618;border-radius:24px 24px 0 0;border-top:1px solid rgba(255,255,255,0.09)">
+            <div style="display:flex;justify-content:center;padding:12px 0">
+              <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2)"></div>
+            </div>
+            <div style="text-align:center;font:600 11px 'JetBrains Mono';letter-spacing:2.5px;text-transform:uppercase;color:#7FE08A;padding:6px 0 10px">Filters</div>
+            <div onClick="{{ closeFilter }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);font:400 16px 'Spectral';color:#F4F3EF;text-align:center;cursor:pointer">Filter by account</div>
+            <div onClick="{{ closeFilter }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);font:400 16px 'Spectral';color:#F4F3EF;text-align:center;cursor:pointer">Filter by category</div>
+            <div onClick="{{ closeFilter }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);font:400 16px 'Spectral';color:#F4F3EF;text-align:center;cursor:pointer">Filter by month</div>
+            <div onClick="{{ closeFilter }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);font:400 16px 'Spectral';color:#F4F3EF;text-align:center;cursor:pointer">Filter by recurring</div>
+            <div onClick="{{ closeFilter }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);font:400 16px 'Spectral';color:#F4F3EF;text-align:center;cursor:pointer">Filter by review status</div>
+            <div onClick="{{ closeFilter }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);font:400 16px 'Spectral';color:#F4F3EF;text-align:center;cursor:pointer">Filter by type</div>
+            <div style="text-align:center;font:600 11px 'JetBrains Mono';letter-spacing:2.5px;text-transform:uppercase;color:#7FE08A;padding:18px 0 10px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px">Sorting</div>
+            <div onClick="{{ setSortDate }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;align-items:center;gap:10px;cursor:pointer">
+              <span style="{{ sortDateStyle }}">Sort by date</span>
+              <sc-if value="{{ isSortDate }}" hint-placeholder-val="{{ false }}"><span style="color:#7FE08A;font:600 13px 'JetBrains Mono'">✓</span></sc-if>
+            </div>
+            <div onClick="{{ setSortHL }}" style="padding:15px 24px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;align-items:center;gap:10px;cursor:pointer">
+              <span style="{{ sortHLStyle }}">Sort by amount (high to low)</span>
+              <sc-if value="{{ isSortHL }}" hint-placeholder-val="{{ false }}"><span style="color:#7FE08A;font:600 13px 'JetBrains Mono'">✓</span></sc-if>
+            </div>
+            <div onClick="{{ setSortLH }}" style="padding:15px 24px 32px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;align-items:center;gap:10px;cursor:pointer">
+              <span style="{{ sortLHStyle }}">Sort by amount (low to high)</span>
+              <sc-if value="{{ isSortLH }}" hint-placeholder-val="{{ false }}"><span style="color:#7FE08A;font:600 13px 'JetBrains Mono'">✓</span></sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- bottom nav C · icon dock (Activity active) -->
+      <div style="background:#0D0D0F;padding:0 0 8px">
+        <div style="margin:0 14px 0;padding:8px 12px;border-radius:26px;background:rgba(22,22,24,0.96);border:1px solid rgba(255,255,255,0.07);box-shadow:0 12px 30px rgba(0,0,0,0.45);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between">
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20V14"></path></svg></span>
+          <span style="width:46px;height:46px;border-radius:15px;background:#7FE08A;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(127,224,138,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#7FE08A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"></rect><path d="M3 10.5h18"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.5 20c0-4 3.4-6 7.5-6s7.5 2 7.5 6"></path></svg></span>
+        </div>
+        <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+      </div>
+    </div>
+  </x-import>
+</div>
+
+<!-- ============ FRAME 04 · ACCOUNTS ============ -->
+<div data-screen-label="Accounts" style="position:absolute;left:1556px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">04 · Accounts</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="flex:1;overflow:auto;padding:58px 18px 16px">
+
+        <!-- header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div>
+            <div style="font:400 22px 'Spectral';color:#F4F3EF">Accounts</div>
+          </div>
+          <div style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="14" y2="18"></line></svg>
+          </div>
+        </div>
+
+        <!-- filter pills -->
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px">
+          <sc-for list="{{ assetChips }}" as="c" hint-placeholder-count="7">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+
+        <!-- selected balance + composition bar -->
+        <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:20px 20px 18px;margin-bottom:20px" data-comment-anchor="ab428348d2-div">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between">
+            <div>
+              <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.45)">Selected balance</div>
+              <div style="font:500 34px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-1px;margin-top:8px">{{ nwTotal }}</div>
+              <div style="font:10px 'JetBrains Mono';color:{{ nwSelectedColor }};margin-top:8px">{{ nwSelectedLabel }}</div>
+            </div>
+            <div style="display:flex;gap:2px;background:rgba(255,255,255,0.05);border-radius:10px;padding:2px;flex:none;margin-top:2px">
+              <button onClick="{{ setViewBar }}" style="{{ barBtnStyle }}" aria-label="Composition view">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ barIconColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="4" height="10" rx="1"></rect><rect x="10" y="5" width="4" height="15" rx="1"></rect><rect x="17" y="13" width="4" height="7" rx="1"></rect></svg>
+              </button>
+              <button onClick="{{ setViewTrend }}" style="{{ trendBtnStyle }}" aria-label="Trend view">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ trendIconColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-7 4 4 8-9"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <sc-if value="{{ isViewBar }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:20px">
+              <svg viewBox="{{ barViewBox }}" style="display:block;width:100%;height:auto;overflow:visible">
+                <sc-if value="{{ hasBarSegs }}" hint-placeholder-val="{{ true }}">
+                  <polygon points="{{ leftCapPoints }}" fill="{{ leftCapColor }}" stroke="#161618" stroke-width="2"></polygon>
+                </sc-if>
+                <sc-for list="{{ segPolys }}" as="sp" hint-placeholder-count="2">
+                  <polygon points="{{ sp.topPoints }}" fill="{{ sp.color }}" stroke="#161618" stroke-width="2"></polygon>
+                  <polygon points="{{ sp.frontPoints }}" fill="{{ sp.color }}" stroke="#161618" stroke-width="2"></polygon>
+                </sc-for>
+              </svg>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:13px">
+              <sc-for list="{{ assetBarSeg }}" as="s" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:7px;height:7px;border-radius:2px;flex:none;background:{{ s.color }}"></span>
+                  <span style="flex:1;font:400 13px 'Spectral';color:rgba(244,243,239,0.7)">{{ s.name }}</span>
+                  <span style="font:12px 'JetBrains Mono';color:#F4F3EF">{{ s.amt }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isViewTrend }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:16px">
+              <svg width="100%" viewBox="0 0 320 90" preserveAspectRatio="none" style="display:block;height:82px">
+                <defs><linearGradient id="acctTrendG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FE08A" stop-opacity=".22"></stop><stop offset="100%" stop-color="#7FE08A" stop-opacity="0"></stop></linearGradient></defs>
+                <path d="{{ trendAreaPath }}" fill="url(#acctTrendG)"></path>
+                <path d="{{ trendLinePath }}" fill="none" stroke="#7FE08A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <circle cx="{{ trendLastX }}" cy="{{ trendLastY }}" r="7" fill="#7FE08A" opacity="0.22"></circle>
+                <circle cx="{{ trendLastX }}" cy="{{ trendLastY }}" r="3.5" fill="#7FE08A"></circle>
+              </svg>
+              <div style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.32);margin-top:2px">{{ trendCaption }}</div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- Recurring quick link -->
+        <a href="#recurring" style="display:flex;align-items:center;gap:12px;text-decoration:none;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+          <span style="width:38px;height:38px;border-radius:12px;flex:none;background:rgba(196,154,107,0.14);display:flex;align-items:center;justify-content:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C49A6B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 8.5a5.5 5.5 0 1 0-11 0"></path><path d="M4.5 8.5c0 6-2 8-2 8h17s-2-2-2-8"></path></svg>
+          </span>
+          <div style="flex:1;min-width:0">
+            <div style="font:400 15px 'Spectral';color:#F4F3EF">Recurring &amp; subscriptions</div>
+            <div style="font:10px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;color:rgba(244,243,239,0.4);margin-top:2px">{{ recurActiveCount }} active</div>
+          </div>
+          <div style="font:500 14px 'JetBrains Mono';color:#F4F3EF;flex:none;white-space:nowrap">{{ recurTotalWhole }}<span style="color:rgba(244,243,239,0.32)">/mo</span></div>
+          <span style="color:rgba(244,243,239,0.3);font:14px 'JetBrains Mono';flex:none">›</span>
+        </a>
+
+        <!-- Credit cards -->
+        <div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <button onClick="{{ toggleCc }}" style="display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0">
+              <span style="font:9px 'JetBrains Mono';color:rgba(244,243,239,0.4)">{{ ccChevron }}</span>
+              <span style="font:400 16px 'Spectral';color:#F4F3EF">Credit cards</span>
+              <span style="font:500 12px 'JetBrains Mono';color:#D98A7F;margin-left:2px">$1,068.40</span>
+            </button>
+            <span style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.28)">Add ›</span>
+          </div>
+          <sc-if value="{{ acctOpenCc }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div onClick="{{ openDetailsCrd }}" style="display:flex;align-items:center;gap:12px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:13px;cursor:pointer">
+                <div style="width:82px;height:54px;border-radius:10px;background:linear-gradient(135deg,#2a1a14,#3d200f);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none">
+                  <span style="font:700 9px 'JetBrains Mono';color:#D98A7F;letter-spacing:.5px">CREDIT</span>
+                  <span style="font:10px 'JetBrains Mono';color:rgba(217,138,127,0.7)">••9012</span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:400 14px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px">{{ crdName }}</div>
+                  <div style="display:flex;justify-content:space-around">
+                    <div><div style="font:8px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.38)">Balance</div><div style="font:500 13px 'JetBrains Mono';color:#F4F3EF;margin-top:5px">$1,068.40</div></div>
+                    <div><div style="font:8px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.38)">Utilized</div><div style="display:flex;align-items:center;gap:5px;margin-top:5px"><span style="font:500 13px 'JetBrains Mono';color:#C49A6B">82%</span><span style="width:7px;height:7px;border-radius:50%;background:#C49A6B;flex:none"></span></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- Banking -->
+        <div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <button onClick="{{ toggleDepo }}" style="display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0">
+              <span style="font:9px 'JetBrains Mono';color:rgba(244,243,239,0.4)">{{ depoChevron }}</span>
+              <span style="font:400 16px 'Spectral';color:#F4F3EF">Banking</span>
+              <span style="font:500 12px 'JetBrains Mono';color:#7FE08A;margin-left:2px">$4,110.59</span>
+            </button>
+            <span style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.28)">Add ›</span>
+          </div>
+          <sc-if value="{{ acctOpenDepo }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div onClick="{{ openDetailsChk }}" style="display:flex;align-items:center;gap:12px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:13px;cursor:pointer">
+                <div style="width:82px;height:54px;border-radius:10px;background:linear-gradient(135deg,#0f2a1e,#1a3d2a);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none">
+                  <span style="font:700 9px 'JetBrains Mono';color:#7FE08A;letter-spacing:.5px">CHECKING</span>
+                  <span style="font:10px 'JetBrains Mono';color:rgba(127,224,138,0.6)">••1234</span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:400 14px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px">{{ chkName }}</div>
+                  <div style="display:flex;justify-content:space-around">
+                    <div><div style="font:8px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.38)">Available</div><div style="font:500 13px 'JetBrains Mono';color:#F4F3EF;margin-top:5px">$3,450.00</div></div>
+                    <div><div style="font:8px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.38)">Change</div><div style="font:500 13px 'JetBrains Mono';color:#7FE08A;margin-top:5px">+2.1% ▲</div></div>
+                  </div>
+                </div>
+              </div>
+              <div onClick="{{ openDetailsSav }}" style="display:flex;align-items:center;gap:12px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:13px;cursor:pointer">
+                <div style="width:82px;height:54px;border-radius:10px;background:linear-gradient(135deg,#0f1f2e,#1a2e42);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none">
+                  <span style="font:700 9px 'JetBrains Mono';color:#6B8AB0;letter-spacing:.5px">SAVINGS</span>
+                  <span style="font:10px 'JetBrains Mono';color:rgba(107,138,176,0.7)">••5678</span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:400 14px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px">{{ savName }}</div>
+                  <div style="display:flex;justify-content:space-around">
+                    <div><div style="font:8px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.38)">Available</div><div style="font:500 13px 'JetBrains Mono';color:#F4F3EF;margin-top:5px">$660.59</div></div>
+                    <div><div style="font:8px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.38)">Change</div><div style="font:500 13px 'JetBrains Mono';color:#7FE08A;margin-top:5px">+8.4% ▲</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- merged empty-state list -->
+        <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:4px 4px">
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;color:rgba(244,243,239,0.35);padding:10px 12px 4px">Not connected yet</div>
+          <sc-for list="{{ notConnected }}" as="n" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px">
+              <span style="font:13px 'Spectral';color:rgba(244,243,239,0.55)">{{ n.label }}</span>
+              <span style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.32)">Connect ›</span>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+
+<!-- account details sheet -->
+      <sc-if value="{{ showAcctDetails }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:35">
+          <div onClick="{{ closeAcctDetails }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.6)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:#161618;border-radius:24px 24px 0 0;border-top:1px solid rgba(255,255,255,0.09);padding:0 20px 28px">
+            <div style="display:flex;justify-content:center;padding:12px 0">
+              <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2)"></div>
+            </div>
+
+            <sc-if value="{{ showRenameMode }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;font:600 11px 'JetBrains Mono';letter-spacing:2.5px;text-transform:uppercase;color:#7FE08A;padding:6px 0 18px">Rename account</div>
+              <input value="{{ renameDraft }}" onChange="{{ onRenameInput }}" placeholder="Account name" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;color:#F4F3EF;font:400 16px 'Spectral';outline:none;margin-bottom:16px;box-sizing:border-box">
+              <button onClick="{{ saveRename }}" style="width:100%;padding:15px;border-radius:14px;border:none;background:#7FE08A;color:#0D0D0F;font:600 12px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;cursor:pointer">Save</button>
+              <button onClick="{{ cancelRename }}" style="width:100%;background:none;border:none;padding:14px 0 0;font:400 15px 'Spectral';color:rgba(244,243,239,0.45);cursor:pointer">Cancel</button>
+            </sc-if>
+
+            <sc-if value="{{ showDetailsView }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:0 0 18px">
+                <div>
+                  <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:{{ acctAccent }}">{{ acctType }}</div>
+                  <div style="font:400 22px 'Spectral';color:#F4F3EF;margin-top:5px">{{ acctDetailName }}</div>
+                </div>
+                <div style="position:relative;flex:none">
+                  <button onClick="{{ toggleAcctMenu }}" style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,0.06);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="rgba(244,243,239,0.6)"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+                  </button>
+                  <sc-if value="{{ showAcctMenu }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;top:42px;right:0;background:#202022;border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:6px;min-width:170px;box-shadow:0 12px 28px rgba(0,0,0,0.5);z-index:5">
+                      <button onClick="{{ openRenameFromMenu }}" style="width:100%;text-align:left;background:none;border:none;padding:11px 12px;border-radius:9px;font:400 14px 'Spectral';color:#F4F3EF;cursor:pointer">Rename account</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+
+              <div style="width:100px;height:64px;border-radius:12px;background:{{ acctGrad }};padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;margin-bottom:20px">
+                <span style="font:700 10px 'JetBrains Mono';color:{{ acctAccent }};letter-spacing:.5px">{{ acctType }}</span>
+                <span style="font:11px 'JetBrains Mono';color:{{ acctAccent }};opacity:0.75">••{{ acctMask }}</span>
+              </div>
+
+              <div style="display:flex;justify-content:space-around;background:rgba(255,255,255,0.04);border-radius:16px;padding:18px 12px">
+                <div style="text-align:center"><div style="font:9px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.4)">{{ acctStat1Label }}</div><div style="font:500 17px 'JetBrains Mono';color:#F4F3EF;margin-top:6px">{{ acctStat1Val }}</div></div>
+                <div style="text-align:center"><div style="font:9px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.4)">{{ acctStat2Label }}</div><div style="font:500 17px 'JetBrains Mono';color:{{ acctStat2Color }};margin-top:6px">{{ acctStat2Val }}</div></div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- bottom nav C · icon dock (Profile active) -->
+      <div style="background:#0D0D0F;padding:0 0 8px">
+        <div style="margin:0 14px 0;padding:8px 12px;border-radius:26px;background:rgba(22,22,24,0.96);border:1px solid rgba(255,255,255,0.07);box-shadow:0 12px 30px rgba(0,0,0,0.45);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between">
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20V14"></path></svg></span>
+          <span style="width:46px;height:46px;border-radius:15px;background:#7FE08A;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(127,224,138,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.45)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"></rect><path d="M3 10.5h18"></path></svg></span>
+          <span style="width:54px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#7FE08A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D0D0F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.5 20c0-4 3.4-6 7.5-6s7.5 2 7.5 6"></path></svg></span>
+        </div>
+        <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+      </div>
+    </div>
+  </x-import>
+</div>
+
+<!-- ============ FRAME 05 · ADD EXPENSE ============ -->
+<div data-screen-label="Add Expense" style="position:absolute;left:2048px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">05 · Add expense</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="flex:1;display:flex;flex-direction:column;padding:58px 18px 14px;overflow:hidden">
+
+        <!-- header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div>
+            <div style="font:400 22px 'Spectral';color:#F4F3EF">New expense</div>
+          </div>
+          <div style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </div>
+        </div>
+
+        <!-- amount -->
+        <div style="text-align:center;padding:18px 0 14px">
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:3px">
+            <span style="font:500 24px 'JetBrains Mono';color:rgba(244,243,239,0.4)">−$</span>
+            <span style="font:500 54px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ addAmtDisplay }}</span>
+          </div>
+        </div>
+
+        <!-- category -->
+        <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:9px">Category</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <sc-for list="{{ addCatChips }}" as="c" hint-placeholder-count="6">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}"><span style="width:8px;height:8px;border-radius:3px;flex:none;background:{{ c.color }}"></span>{{ c.name }}</button>
+          </sc-for>
+        </div>
+
+        <!-- account -->
+        <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:9px">Pay from</div>
+        <div style="display:flex;gap:8px;overflow-x:auto">
+          <sc-for list="{{ addAcctChips }}" as="c" hint-placeholder-count="3">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}"><span style="width:8px;height:8px;border-radius:3px;flex:none;background:{{ c.dot }}"></span>{{ c.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <!-- keypad -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+          <sc-for list="{{ addKeys }}" as="k" hint-placeholder-count="12">
+            <button onClick="{{ k.onClick }}" style="height:58px;border-radius:16px;border:none;background:transparent;color:#F4F3EF;font:500 22px 'JetBrains Mono';cursor:pointer;transition:background .15s" style-hover="background:#161618" style-active="background:#202022">{{ k.label }}</button>
+          </sc-for>
+        </div>
+
+        <button onClick="{{ onAddSave }}" style="{{ addBtnStyle }}">Add expense</button>
+      </div>
+
+      <!-- saved toast -->
+      <sc-if value="{{ addSaved }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:150px;background:#7FE08A;color:#0D0D0F;font:600 12px 'JetBrains Mono';letter-spacing:.5px;padding:11px 18px;border-radius:12px;box-shadow:0 10px 26px rgba(127,224,138,0.3);z-index:30;white-space:nowrap;animation:fadeUp .25s ease both">✓ {{ addToastLabel }}</div>
+      </sc-if>
+
+      <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+    </div>
+  </x-import>
+</div>
+
+<!-- ============ FRAME 06 · SEARCH ============ -->
+<div data-screen-label="Search" style="position:absolute;left:2540px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">06 · Search</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="flex:1;overflow:auto;padding:58px 18px 16px">
+
+        <!-- search bar -->
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+          <div style="width:44px;height:44px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;gap:10px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:0 14px;height:44px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.4)" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
+            <input value="{{ searchQ }}" onChange="{{ onSearchInput }}" placeholder="Search transactions" style="flex:1;min-width:0;background:none;border:none;outline:none;color:#F4F3EF;font:400 15px 'Spectral'">
+            <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ clearSearch }}" style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font:600 11px 'JetBrains Mono';color:rgba(244,243,239,0.6);cursor:pointer;flex:none">✕</span>
+            </sc-if>
+          </div>
+        </div>
+
+        <!-- empty state -->
+        <sc-if value="{{ noQuery }}" hint-placeholder-val="{{ true }}">
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:10px">Recent</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">
+            <sc-for list="{{ recentChips }}" as="r" hint-placeholder-count="4">
+              <button onClick="{{ r.onClick }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;font:11px 'JetBrains Mono';letter-spacing:.5px;background:transparent;color:rgba(244,243,239,0.6);border:1px solid rgba(255,255,255,0.08);cursor:pointer;white-space:nowrap">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.35)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+                {{ r.label }}
+              </button>
+            </sc-for>
+          </div>
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-bottom:10px">Browse categories</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ searchCatChips }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.onClick }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;font:11px 'JetBrains Mono';letter-spacing:.5px;background:transparent;color:rgba(244,243,239,0.6);border:1px solid rgba(255,255,255,0.08);cursor:pointer;white-space:nowrap"><span style="width:8px;height:8px;border-radius:3px;flex:none;background:{{ c.color }}"></span>{{ c.name }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- results -->
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+            <span style="font:11px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;color:rgba(244,243,239,0.5)">{{ searchCountLabel }}</span>
+            <span style="font:500 13px 'JetBrains Mono';color:#F4F3EF">{{ searchSum }}</span>
+          </div>
+          <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+            <div data-rows="1" style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;overflow:hidden">
+              <sc-for list="{{ searchResults }}" as="it" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid rgba(255,255,255,0.06)">
+                  <span style="width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';background:{{ it.tint }};color:{{ it.color }}">{{ it.initial }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:400 15px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</div>
+                    <div style="font:10px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;color:rgba(244,243,239,0.5);margin-top:2px">{{ it.sub }}</div>
+                  </div>
+                  <div style="font:500 15px 'JetBrains Mono';color:{{ it.amtColor }};flex:none">{{ it.amt }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:28px 22px;text-align:center;margin-top:6px">
+              <div style="font:400 16px 'Spectral';color:rgba(244,243,239,0.6)">Nothing found</div>
+              <div style="font:11px 'JetBrains Mono';color:rgba(244,243,239,0.32);margin-top:6px">Try a merchant, category, or note</div>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+
+      <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+    </div>
+  </x-import>
+</div>
+
+<!-- ============ FRAME 07 · RECURRING ============ -->
+<div id="recurring" data-screen-label="Recurring" style="position:absolute;left:3032px;top:128px;width:402px">
+  <div data-drags-parent="1" style="position:absolute;top:-28px;font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#3a3a3e">07 · Recurring</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ T }}" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;background:#0D0D0F;color:#F4F3EF;font-family:'Spectral',serif;position:relative">
+      <div style="flex:1;overflow:auto;padding:58px 18px 16px">
+
+        <!-- header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div>
+            <div style="font:400 22px 'Spectral';color:#F4F3EF">Recurring</div>
+          </div>
+          <div style="width:40px;height:40px;border-radius:14px;background:#161618;border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(244,243,239,0.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 8.5a5.5 5.5 0 1 0-11 0"></path><path d="M4.5 8.5c0 6-2 8-2 8h17s-2-2-2-8"></path><circle cx="19" cy="6" r="3" fill="#0D0D0F" stroke="#7FE08A"></circle></svg>
+          </div>
+        </div>
+
+        <!-- hero total -->
+        <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:24px;padding:22px">
+          <div style="font:11px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:rgba(244,243,239,0.5)">Monthly recurring</div>
+          <div style="display:flex;align-items:baseline;gap:1px;margin-top:12px">
+            <span style="font:500 46px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ recurTotalWhole }}</span>
+            <span style="font:500 22px 'JetBrains Mono';color:rgba(244,243,239,0.32)">.{{ recurTotalCents }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;margin-top:14px">
+            <span style="font:12px 'JetBrains Mono';color:rgba(244,243,239,0.5)">{{ recurActiveCount }} active · {{ recurPausedCount }} paused</span>
+          </div>
+        </div>
+
+        <!-- detected banner -->
+        <sc-if value="{{ showDetectedBanner }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;background:rgba(196,154,107,0.1);border:1px solid rgba(196,154,107,0.35);border-radius:20px;padding:16px">
+            <div style="font:600 10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:#C49A6B;margin-bottom:10px">New recurring charge detected</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';background:{{ detectedTint }};color:{{ detectedColor }}">{{ detectedInitial }}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font:400 16px 'Spectral';color:#F4F3EF">{{ detectedName }}</div>
+                <div style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.4);margin-top:2px">{{ detectedPattern }}</div>
+              </div>
+              <div style="font:500 15px 'JetBrains Mono';color:#F4F3EF;flex:none">{{ detectedAmt }}</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button onClick="{{ dismissDetected }}" style="flex:1;padding:11px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(244,243,239,0.6);font:600 11px 'JetBrains Mono';letter-spacing:.5px;cursor:pointer">Not recurring</button>
+              <button onClick="{{ confirmDetected }}" style="flex:1;padding:11px;border-radius:12px;border:none;background:#7FE08A;color:#0D0D0F;font:600 11px 'JetBrains Mono';letter-spacing:.5px;cursor:pointer">Track it</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- upcoming this week -->
+        <sc-if value="{{ hasUpcoming }}" hint-placeholder-val="{{ true }}">
+          <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin:20px 0 10px">Upcoming this week</div>
+          <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:2px">
+            <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="3">
+              <div style="flex:none;width:112px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px">
+                <span style="width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:600 12px 'JetBrains Mono';background:{{ u.tint }};color:{{ u.color }}">{{ u.initial }}</span>
+                <div style="font:400 13px 'Spectral';color:#F4F3EF;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</div>
+                <div style="font:500 13px 'JetBrains Mono';color:#F4F3EF;margin-top:4px">{{ u.amt }}</div>
+                <div style="font:9px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin-top:3px">{{ u.nextDateLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="font:10px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,243,239,0.32);margin:20px 0 10px">All recurring</div>
+
+        <!-- list -->
+        <sc-if value="{{ hasRecurList }}" hint-placeholder-val="{{ true }}">
+          <div data-rows="1" style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;overflow:hidden">
+            <sc-for list="{{ recurList }}" as="it" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid rgba(255,255,255,0.06)">
+                <span style="width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:600 14px 'JetBrains Mono';background:{{ it.tint }};color:{{ it.color }};opacity:{{ it.opacity }}">{{ it.initial }}</span>
+                <div style="flex:1;min-width:0;opacity:{{ it.opacity }}">
+                  <div style="font:400 15px 'Spectral';color:#F4F3EF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</div>
+                  <div style="font:10px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;color:rgba(244,243,239,0.5);margin-top:2px">{{ it.cadence }} · {{ it.nextDateLabel }}</div>
+                </div>
+                <div style="text-align:right;flex:none;opacity:{{ it.opacity }};margin-right:10px">
+                  <div style="font:500 15px 'JetBrains Mono';color:#F4F3EF">{{ it.amt }}</div>
+                </div>
+                <button onClick="{{ it.onToggle }}" style="{{ it.pauseBtnStyle }}">{{ it.pauseBtnLabel }}</button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noRecurList }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:28px 22px;text-align:center">
+            <div style="font:400 16px 'Spectral';color:rgba(244,243,239,0.6)">Nothing here</div>
+            <div style="font:11px 'JetBrains Mono';color:rgba(244,243,239,0.32);margin-top:6px">No recurring subscriptions yet</div>
+          </div>
+        </sc-if>
+
+      </div>
+      <div style="height:26px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px"><div style="width:120px;height:5px;border-radius:100px;background:rgba(255,255,255,0.2)"></div></div>
+    </div>
+  </x-import>
+</div>
+
+<!-- post-it -->
+<div style="position:absolute;left:80px;top:1044px;width:300px;background:#fef4a8;padding:14px 16px;font:12px/1.5 'JetBrains Mono';color:#4a4a2e;box-shadow:0 2px 8px rgba(0,0,0,0.12);transform:rotate(-1deg)">
+  Accent (#7FE08A) used sparingly: largest pie slice, active tab, primary CTA, positive deltas. Everything else stays muted on near-black. Tap the pills and chart toggle — they're live.
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;name&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Lakshay&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { activePill: 'All', range: 'Month', reviewedDays: [], statsTab: 'top', acctOpen: { cc: true, depo: true }, selCats: ['cc', 'depo', 'crypto', 'invest', 'betting', 'others'], filterSheet: false, activeSort: 'date', selectedTx: null, addAmt: '', addCat: 'Food & Drink', addAcct: 'chk', addSaved: false, searchQ: '', catPicker: false, catChanged: null, homeMode: 'home', fabSheetOpen: false, reqAmt: '', reqPerson: null, reqSaved: false, recurConfirmSheet: false, manualRecurringTx: [] };
+
+  money(n, d) {
+    return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  renderVals() {
+    const A = '#7FE08A', P = '#F4F3EF', red = '#D98A7F';
+    const Ter = 'rgba(244,243,239,0.32)';
+
+    const cats = [
+      { name: 'Food & Drink', amount: 1042.30, pct: 32, color: '#7FE08A' },
+      { name: 'Shopping', amount: 684.00, pct: 21, color: '#C49A6B' },
+      { name: 'Bills', amount: 612.00, pct: 19, color: '#8A8594' },
+      { name: 'Transport', amount: 521.20, pct: 16, color: '#6B8AB0' },
+      { name: 'Entertainment', amount: 389.00, pct: 12, color: '#B07E8A' },
+    ];
+    const catChoices = cats.map(c => ({ name: c.name, color: c.color })).concat([{ name: 'Health', color: '#B07E8A' }]);
+
+    // donut segments
+    const r = 80, C = 2 * Math.PI * r, gap = 6;
+    let acc = 0;
+    const segments = cats.map(c => {
+      const len = C * c.pct / 100;
+      const vis = Math.max(len - gap, 0.001);
+      const s = { dash: vis.toFixed(2) + ' ' + (C - vis).toFixed(2), offset: (-acc).toFixed(2), color: c.color };
+      acc += len;
+      return s;
+    });
+    const legend = cats.map(c => ({ name: c.name, color: c.color, pct: c.pct, amt: this.money(c.amount, 2) }));
+
+    // filter pills
+    const ap = this.state.activePill;
+    const pillBase = "flex:none;padding:9px 15px;border-radius:999px;font:11px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .2s;";
+    const pills = ['All', 'Food & Drink', 'Shopping', 'Transport', 'Bills', 'Entertainment', 'Health'];
+    const pillData = pills.map(p => ({
+      name: p,
+      onClick: () => this.setState({ activePill: p }),
+      style: pillBase + (p === ap
+        ? 'background:#7FE08A;color:#0D0D0F;border:1px solid #7FE08A;'
+        : 'background:transparent;color:rgba(244,243,239,0.5);border:1px solid rgba(255,255,255,0.08);'),
+    }));
+
+    const tint = c => c + '22';
+    const rawTx = [
+      { date: 'TODAY \u00B7 JUN 29', total: '\u2212$109.10', items: [
+        { name: 'Whole Foods Market', cat: 'Food & Drink', amt: '\u2212$84.20', note: 'incl. tax $6.10', color: '#7FE08A', initial: 'W' },
+        { name: 'Uber', cat: 'Transport', amt: '\u2212$18.40', color: '#6B8AB0', initial: 'U' },
+        { name: 'Blue Bottle Coffee', cat: 'Food & Drink', amt: '\u2212$6.50', color: '#7FE08A', initial: 'B' },
+      ] },
+      { date: 'YESTERDAY \u00B7 JUN 28', total: '\u2212$192.99', items: [
+        { name: 'Zara', cat: 'Shopping', amt: '\u2212$129.00', color: '#C49A6B', initial: 'Z' },
+        { name: 'Shell', cat: 'Transport', amt: '\u2212$52.00', color: '#6B8AB0', initial: 'S' },
+        { name: 'Spotify', cat: 'Entertainment', amt: '\u2212$11.99', note: 'Subscription', color: '#B07E8A', initial: 'S' },
+      ] },
+      { date: 'SAT \u00B7 JUN 27', total: '+$4,087.60', items: [
+        { name: 'Acme Payroll', cat: 'Income', amt: '+$4,200.00', positive: true, color: '#7FE08A', initial: 'A' },
+        { name: 'Con Edison', cat: 'Bills', amt: '\u2212$112.40', note: 'Autopay', color: '#8A8594', initial: 'C' },
+      ] },
+    ];
+    const decorate = g => ({ ...g, items: g.items.map(it => ({ ...it, tint: tint(it.color), amtColor: it.positive ? A : P })) });
+    const txGroups = (ap === 'All'
+      ? rawTx
+      : rawTx.map(g => ({ ...g, items: g.items.filter(i => i.cat === ap) })).filter(g => g.items.length)
+    ).map(decorate);
+
+    // stats
+    const ranges = ['Week', 'Month', 'Year'];
+    const rg = this.state.range;
+    const datasets = {
+      Week:  { labels: ['M','T','W','T','F','S','S'], vals: [42,118,76,54,132,210,88], cur: 5, callout: 'Sat \u00B7 $210', total: '$720.00', label: 'This week', delta: '\u25B2 12% vs last wk' },
+      Month: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], vals: [2980,3120,2760,3410,3540,3248], cur: 5, callout: 'Jun \u00B7 $3,248', total: '$3,248.50', label: 'This month', delta: '\u25BC 8% vs May' },
+      Year:  { labels: ["'21","'22","'23","'24","'25","'26"], vals: [28400,31200,29800,34100,38200,21500], cur: 5, callout: '2026 \u00B7 $21.5k', total: '$21,500', label: 'Year to date', delta: 'On track' },
+    };
+    const ds = datasets[rg];
+    const maxv = Math.max(...ds.vals);
+    const bars = ds.vals.map((v, i) => ({
+      h: Math.round(v / maxv * 150) + 6,
+      label: ds.labels[i],
+      current: i === ds.cur,
+      color: i === ds.cur ? A : 'rgba(244,243,239,0.13)',
+      labelColor: i === ds.cur ? A : Ter,
+    }));
+    const rangeBase = "flex:1;padding:9px;border-radius:999px;font:11px 'JetBrains Mono';letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;transition:all .2s;";
+    const rangeData = ranges.map(x => ({
+      name: x,
+      onClick: () => this.setState({ range: x }),
+      style: rangeBase + (x === rg ? 'background:#7FE08A;color:#0D0D0F;' : 'background:transparent;color:rgba(244,243,239,0.5);'),
+    }));
+
+    const maxPct = cats[0].pct;
+    const top = cats.slice().sort((a, b) => b.amount - a.amount).map(c => ({
+      name: c.name, amt: this.money(Math.round(c.amount), 0), color: c.color, barW: Math.round(c.pct / maxPct * 100) + '%',
+    }));
+
+    const st = this.state.statsTab;
+    const tabBtn = active => "flex:1;padding:8px;border-radius:10px;font:600 11px 'JetBrains Mono';letter-spacing:.5px;border:none;cursor:pointer;transition:all .2s;" +
+      (active ? "background:#F4F3EF;color:#0D0D0F;" : "background:transparent;color:rgba(244,243,239,0.4);");
+    const statsTopStyle = tabBtn(st === 'top');
+    const statsExclStyle = tabBtn(st === 'excl');
+    const setStatsTop = () => this.setState({ statsTab: 'top' });
+    const setStatsExcl = () => this.setState({ statsTab: 'excl' });
+    const isStatsTop = st === 'top';
+    const isStatsExcl = st === 'excl';
+    const excluded = [
+      { name: 'Acme Payroll', reason: 'Income', amt: '+$4,200.00', color: '#7FE08A', initial: 'A', tint: tint('#7FE08A') },
+      { name: 'Transfer to Savings', reason: 'Transfer', amt: '−$200.00', color: '#8A8594', initial: 'T', tint: tint('#8A8594') },
+      { name: 'Savings interest', reason: 'Income', amt: '+$18.20', color: '#6B8AB0', initial: 'I', tint: tint('#6B8AB0') },
+    ];
+
+    // ── Transactions page ──
+    const defaultAcctNames = { chk: 'Checking', sav: 'Savings', crd: 'Credit Card' };
+    const acctNames = { ...defaultAcctNames, ...(this.state.acctNames || {}) };
+    const accounts = [
+      { id: 'chk', name: acctNames.chk, mask: '1234', color: '#7FE08A' },
+      { id: 'sav', name: acctNames.sav, mask: '5678', color: '#6B8AB0' },
+      { id: 'crd', name: acctNames.crd, mask: '9012', color: '#B07E8A' },
+    ];
+
+    // account details sheet + rename via ⋯ menu
+    const acctDetailData = {
+      crd: { type: 'CREDIT', mask: '9012', grad: 'linear-gradient(135deg,#2a1a14,#3d200f)', accent: '#D98A7F', stat1Label: 'Balance', stat1Val: '$1,068.40', stat2Label: 'Utilized', stat2Val: '82%', stat2Color: '#C49A6B' },
+      chk: { type: 'CHECKING', mask: '1234', grad: 'linear-gradient(135deg,#0f2a1e,#1a3d2a)', accent: '#7FE08A', stat1Label: 'Available', stat1Val: '$3,450.00', stat2Label: 'Change', stat2Val: '+2.1% \u25B2', stat2Color: '#7FE08A' },
+      sav: { type: 'SAVINGS', mask: '5678', grad: 'linear-gradient(135deg,#0f1f2e,#1a2e42)', accent: '#6B8AB0', stat1Label: 'Available', stat1Val: '$660.59', stat2Label: 'Change', stat2Val: '+8.4% \u25B2', stat2Color: '#7FE08A' },
+    };
+    const acctDetailsTarget = this.state.acctDetailsTarget;
+    const showAcctDetails = !!acctDetailsTarget;
+    const openDetails = id => () => this.setState({ acctDetailsTarget: id, acctMenuOpen: false, renameMode: false });
+    const closeAcctDetails = () => this.setState({ acctDetailsTarget: null, acctMenuOpen: false, renameMode: false });
+    const toggleAcctMenu = () => this.setState(s => ({ acctMenuOpen: !s.acctMenuOpen }));
+    const showAcctMenu = !!this.state.acctMenuOpen;
+    const renameMode = !!this.state.renameMode;
+    const showRenameMode = showAcctDetails && renameMode;
+    const showDetailsView = showAcctDetails && !renameMode;
+    const openRenameFromMenu = () => this.setState({ renameMode: true, acctMenuOpen: false, renameDraft: acctDetailsTarget ? acctNames[acctDetailsTarget] : '' });
+    const cancelRename = () => this.setState({ renameMode: false });
+    const onRenameInput = e => this.setState({ renameDraft: e.target.value });
+    const saveRename = () => {
+      const id = this.state.acctDetailsTarget;
+      if (!id) return;
+      const val = (this.state.renameDraft || '').trim();
+      this.setState(s => ({
+        acctNames: val ? { ...defaultAcctNames, ...(s.acctNames || {}), [id]: val } : s.acctNames,
+        renameMode: false,
+      }));
+    };
+    const renameDraft = this.state.renameDraft || '';
+    const detailInfo = acctDetailsTarget ? acctDetailData[acctDetailsTarget] : null;
+    const acctDetailName = acctDetailsTarget ? acctNames[acctDetailsTarget] : '';
+    const acctType = detailInfo ? detailInfo.type : '';
+    const acctMask = detailInfo ? detailInfo.mask : '';
+    const acctGrad = detailInfo ? detailInfo.grad : '';
+    const acctAccent = detailInfo ? detailInfo.accent : '#7FE08A';
+    const acctStat1Label = detailInfo ? detailInfo.stat1Label : '';
+    const acctStat1Val = detailInfo ? detailInfo.stat1Val : '';
+    const acctStat2Label = detailInfo ? detailInfo.stat2Label : '';
+    const acctStat2Val = detailInfo ? detailInfo.stat2Val : '';
+    const acctStat2Color = detailInfo ? detailInfo.stat2Color : '#7FE08A';
+    const crdName = acctNames.crd, chkName = acctNames.chk, savName = acctNames.sav;
+    const openDetailsCrd = openDetails('crd'), openDetailsChk = openDetails('chk'), openDetailsSav = openDetails('sav');
+    const allIds = accounts.map(a => a.id);
+    const sel = this.state.selAccts || allIds;
+    const allActive = sel.length === accounts.length;
+    const byId = id => accounts.find(a => a.id === id);
+
+    const TX = [
+      { day: 'Today · Jun 29', name: 'Whole Foods Market', cat: 'Food & Drink', amt: -84.20, acct: 'chk', note: 'incl. tax $6.10', initial: 'W', color: '#7FE08A' },
+      { day: 'Today · Jun 29', name: 'Uber', cat: 'Transport', amt: -18.40, acct: 'crd', initial: 'U', color: '#6B8AB0' },
+      { day: 'Today · Jun 29', name: 'Blue Bottle Coffee', cat: 'Food & Drink', amt: -6.50, acct: 'chk', initial: 'B', color: '#7FE08A' },
+      { day: 'Yesterday · Jun 28', name: 'Zara', cat: 'Shopping', amt: -129.00, acct: 'crd', initial: 'Z', color: '#C49A6B' },
+      { day: 'Yesterday · Jun 28', name: 'Shell', cat: 'Transport', amt: -52.00, acct: 'crd', initial: 'S', color: '#6B8AB0' },
+      { day: 'Yesterday · Jun 28', name: 'Spotify', cat: 'Entertainment', amt: -11.99, acct: 'chk', note: 'Subscription', initial: 'S', color: '#B07E8A' },
+      { day: 'Yesterday · Jun 28', name: 'Transfer to Savings', cat: 'Transfer', amt: -200.00, acct: 'chk', initial: 'T', color: '#8A8594' },
+      { day: 'Sat · Jun 27', name: 'Acme Payroll', cat: 'Income', amt: 4200.00, acct: 'chk', initial: 'A', color: '#7FE08A' },
+      { day: 'Sat · Jun 27', name: 'Con Edison', cat: 'Bills', amt: -112.40, acct: 'chk', note: 'Autopay', initial: 'C', color: '#8A8594' },
+      { day: 'Fri · Jun 26', name: 'Amazon', cat: 'Shopping', amt: -64.30, acct: 'crd', initial: 'A', color: '#C49A6B' },
+      { day: 'Fri · Jun 26', name: 'Chipotle', cat: 'Food & Drink', amt: -14.80, acct: 'crd', initial: 'C', color: '#7FE08A' },
+      { day: 'Fri · Jun 26', name: 'Equinox', cat: 'Health', amt: -185.00, acct: 'chk', note: 'Membership', initial: 'E', color: '#B07E8A' },
+      { day: 'Thu · Jun 25', name: "Trader Joe's", cat: 'Food & Drink', amt: -52.10, acct: 'chk', initial: 'T', color: '#7FE08A' },
+      { day: 'Thu · Jun 25', name: 'Lyft', cat: 'Transport', amt: -22.60, acct: 'crd', initial: 'L', color: '#6B8AB0' },
+      { day: 'Thu · Jun 25', name: 'Netflix', cat: 'Entertainment', amt: -15.49, acct: 'chk', note: 'Subscription', initial: 'N', color: '#B07E8A' },
+      { day: 'Wed · Jun 24', name: 'Savings interest', cat: 'Income', amt: 18.20, acct: 'sav', initial: 'I', color: '#6B8AB0' },
+      { day: 'Wed · Jun 24', name: 'CVS Pharmacy', cat: 'Health', amt: -31.40, acct: 'crd', initial: 'C', color: '#B07E8A' },
+    ];
+    const fmt = n => (n < 0 ? '\u2212$' : '+$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const filtered = TX.filter(t => sel.includes(t.acct));
+    const order = [], gmap = {};
+    filtered.forEach(t => { if (!gmap[t.day]) { gmap[t.day] = []; order.push(t.day); } gmap[t.day].push(t); });
+    const txGroups2 = order.map(day => {
+      const items = gmap[day];
+      const sum = items.reduce((s, t) => s + t.amt, 0);
+      return {
+        date: day.toUpperCase(),
+        total: fmt(sum),
+        items: items.map(t => ({
+          name: t.name, sub: t.cat + ' \u00B7 \u2022\u2022' + byId(t.acct).mask,
+          amt: fmt(t.amt), amtColor: t.amt > 0 ? A : P,
+          tint: tint(t.color), color: t.color, initial: t.initial, note: t.note,
+          onClick: () => this.setState({ selectedTx: { name: t.name, day: t.day, amt: fmt(t.amt), cat: t.cat, color: t.color, acct: t.acct } }),
+        })),
+      };
+    });
+    const txCount = filtered.length;
+    const spent = filtered.filter(t => t.amt < 0).reduce((s, t) => s + t.amt, 0);
+    const txSpent = '\u2212$' + Math.abs(spent).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    const chipBase = "display:inline-flex;align-items:center;gap:7px;flex:none;padding:9px 14px;border-radius:999px;font:11px 'JetBrains Mono';letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .2s;";
+    const chipOn = 'background:rgba(127,224,138,0.14);color:#7FE08A;border:1px solid rgba(127,224,138,0.4);';
+    const chipOff = 'background:transparent;color:rgba(244,243,239,0.5);border:1px solid rgba(255,255,255,0.08);';
+    const acctChips = [{
+      label: 'All accounts', dot: null, active: allActive,
+      onClick: () => this.setState({ selAccts: allIds.slice() }),
+      style: chipBase + (allActive ? chipOn : chipOff),
+    }];
+    accounts.forEach(a => {
+      const active = !allActive && sel.includes(a.id);
+      acctChips.push({
+        label: a.name + ' \u2022\u2022' + a.mask, dot: a.color, active,
+        onClick: () => {
+          let cur;
+          if (allActive) cur = [a.id];
+          else if (sel.includes(a.id)) cur = sel.filter(x => x !== a.id);
+          else cur = sel.concat(a.id);
+          if (cur.length === 0) cur = allIds.slice();
+          this.setState({ selAccts: cur });
+        },
+        style: chipBase + (active ? chipOn : chipOff),
+      });
+    });
+
+    // to review — stacked day cards
+    const reviewDayData = [
+      { id: 'jun29', date: 'TODAY · JUN 29', items: [
+        { name: 'Whole Foods Market', cat: 'Food & Drink', amt: '−$84.20', color: '#7FE08A', initial: 'W' },
+        { name: 'Uber', cat: 'Transport', amt: '−$18.40', color: '#6B8AB0', initial: 'U' },
+        { name: 'Blue Bottle Coffee', cat: 'Food & Drink', amt: '−$6.50', color: '#7FE08A', initial: 'B' },
+      ]},
+      { id: 'jun28', date: 'YESTERDAY · JUN 28', items: [
+        { name: 'Zara', cat: 'Shopping', amt: '−$129.00', color: '#C49A6B', initial: 'Z' },
+        { name: 'Shell', cat: 'Transport', amt: '−$52.00', color: '#6B8AB0', initial: 'S' },
+        { name: 'Spotify', cat: 'Entertainment', amt: '−$11.99', color: '#B07E8A', initial: 'S' },
+      ]},
+    ];
+    const reviewedDays = this.state.reviewedDays;
+    const unreviewed = reviewDayData.filter(d => !reviewedDays.includes(d.id));
+    const front = unreviewed[0];
+    const pendingDays = unreviewed.length;
+    const hasPending = pendingDays > 0;
+    const allReviewedDone = !hasPending;
+    const showStack1 = pendingDays >= 2;
+    const showStack2 = pendingDays >= 3;
+    const frontDate = front ? front.date : '';
+    const frontItems = front ? front.items.map(t => ({ ...t, tint: tint(t.color) })) : [];
+    const stack1Label = unreviewed[1] ? unreviewed[1].date : '';
+    const onReviewAll = front ? () => this.setState({ reviewedDays: [...reviewedDays, front.id] }) : () => {};
+    const reviewAllBtnStyle = "border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(244,243,239,0.5);font:600 10px 'JetBrains Mono';letter-spacing:1px;padding:7px 13px;border-radius:9px;cursor:pointer;transition:all .2s;";
+    const reviewAllLabel = 'MARK AS REVIEWED';
+
+    // accounts — filter pills + honest composition bar (direction 1a)
+    const acctOpen = this.state.acctOpen;
+    const toggleAcct = key => () => this.setState({ acctOpen: { ...acctOpen, [key]: !acctOpen[key] } });
+    const chev = open => open ? '▼' : '▶';
+
+    const assetCats = [
+      { key: 'cc', label: 'Credit cards', amt: -1068.40, color: '#D98A7F' },
+      { key: 'depo', label: 'Banking', amt: 4110.59, color: '#7FE08A' },
+      { key: 'crypto', label: 'Crypto', amt: 0, color: '#C49A6B' },
+      { key: 'invest', label: 'Stocks', amt: 0, color: '#6B8AB0' },
+      { key: 'betting', label: 'Betting', amt: 0, color: '#B07E8A' },
+      { key: 'others', label: 'Others', amt: 0, color: '#8A8594' },
+    ];
+    const notConnected = assetCats.filter(c => c.amt === 0).map(c => ({ label: c.label }));
+    const selCats = this.state.selCats;
+    const allCatsActive = selCats.length === assetCats.length;
+    const assetChipBase = "flex:none;padding:9px 14px;border-radius:999px;font:11px 'JetBrains Mono';letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .2s;";
+    const assetChipOn = 'background:rgba(127,224,138,0.14);color:#7FE08A;border:1px solid rgba(127,224,138,0.4);';
+    const assetChipOff = 'background:transparent;color:rgba(244,243,239,0.5);border:1px solid rgba(255,255,255,0.08);';
+    const assetChips = [{
+      label: 'All', onClick: () => this.setState({ selCats: allCatsActive ? [] : assetCats.map(c => c.key) }),
+      style: assetChipBase + (allCatsActive ? assetChipOn : assetChipOff),
+    }].concat(assetCats.map(c => ({
+      label: c.label,
+      onClick: () => this.setState(s => {
+        const has = s.selCats.includes(c.key);
+        return { selCats: has ? s.selCats.filter(k => k !== c.key) : [...s.selCats, c.key] };
+      }),
+      style: assetChipBase + (selCats.includes(c.key) ? assetChipOn : assetChipOff),
+    })));
+    const selectedAssetCats = assetCats.filter(c => selCats.includes(c.key));
+    const selectedTotal = selectedAssetCats.reduce((s, c) => s + c.amt, 0);
+    const nonzeroSelected = selectedAssetCats.filter(c => c.amt !== 0).sort((x, y) => Math.abs(y.amt) - Math.abs(x.amt));
+    const sumAbsSelected = nonzeroSelected.reduce((s, c) => s + Math.abs(c.amt), 0) || 1;
+    const fmtSigned = n => (n < 0 ? '\u2212' : '') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const assetBarSeg = nonzeroSelected.map(c => ({ name: c.label, color: c.color, amt: fmtSigned(c.amt), pct: (Math.abs(c.amt) / sumAbsSelected * 100).toFixed(1) + '%' }));
+
+    // 3D isometric composition bar (extruded prism: front face + receding top strip + left start-cap)
+    const barW = 300, bDx = 18, bDy = 18, bFrontH = 50;
+    let bCum = 0;
+    const segPolys = nonzeroSelected.map(c => {
+      const w = (Math.abs(c.amt) / sumAbsSelected) * barW;
+      const x0 = bDx + bCum, x1 = bDx + bCum + w;
+      bCum += w;
+      const front = x0.toFixed(1) + ',' + bDy + ' ' + x1.toFixed(1) + ',' + bDy + ' ' + x1.toFixed(1) + ',' + (bDy + bFrontH) + ' ' + x0.toFixed(1) + ',' + (bDy + bFrontH);
+      const top = x0.toFixed(1) + ',' + bDy + ' ' + x1.toFixed(1) + ',' + bDy + ' ' + (x1 - bDx).toFixed(1) + ',0 ' + (x0 - bDx).toFixed(1) + ',0';
+      return { color: c.color, front: front, top: top };
+    }).map(sp => ({ color: sp.color, frontPoints: sp.front, topPoints: sp.top }));
+    const hasBarSegs = segPolys.length > 0;
+    const leftCapPoints = hasBarSegs ? (bDx + ',' + bDy + ' ' + bDx + ',' + (bDy + bFrontH) + ' 0,' + bFrontH + ' 0,0') : '';
+    const leftCapColor = hasBarSegs ? nonzeroSelected[0].color : '#7FE08A';
+    const barViewBox = '0 0 ' + (bDx + barW) + ' ' + (bDy + bFrontH);
+    const dominantColor = nonzeroSelected.length ? nonzeroSelected[0].color : '#7FE08A';
+    const nwTotal = (selectedTotal < 0 ? '\u2212' : '') + '$' + Math.abs(selectedTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const nwSelectedLabel = allCatsActive ? '+$142.30 (4.9%) vs last month' : (selCats.length + ' of ' + assetCats.length + ' selected');
+    const nwSelectedColor = allCatsActive ? '#7FE08A' : 'rgba(244,243,239,0.45)';
+
+    // balance view toggle: composition bar vs. trend line
+    const balanceView = this.state.balanceView || 'bar';
+    const isViewBar = balanceView === 'bar', isViewTrend = balanceView === 'trend';
+    const setView = v => () => this.setState({ balanceView: v });
+    const viewBtnStyle = active => 'width:30px;height:26px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;background:' +
+      (active ? '#7FE08A' : 'transparent') + ';';
+    const viewIconColor = active => active ? '#0D0D0F' : 'rgba(244,243,239,0.45)';
+    const barBtnStyle = viewBtnStyle(isViewBar), trendBtnStyle = viewBtnStyle(isViewTrend);
+    const barIconColor = viewIconColor(isViewBar), trendIconColor = viewIconColor(isViewTrend);
+
+    const fullTotalForTrend = assetCats.reduce((s, c) => s + c.amt, 0);
+    const trendRatio = fullTotalForTrend !== 0 ? (selectedTotal / fullTotalForTrend) : 0;
+    const trendVals = [2650, 2720, 2800, 2880, 2950, 3000, 3042.19].map(v => v * trendRatio);
+    const tCw = 286, tCh = 90, tPadY = 8;
+    const tMin = Math.min(...trendVals), tMax = Math.max(...trendVals);
+    const tRange = (tMax - tMin) || 1;
+    const tStepX = tCw / (trendVals.length - 1);
+    const tPts = trendVals.map((v, i) => ({ x: i * tStepX, y: tPadY + (tCh - 2 * tPadY) * (1 - (v - tMin) / tRange) }));
+    const trendLinePath = 'M' + tPts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
+    const trendAreaPath = trendLinePath + ' L' + tPts[tPts.length - 1].x.toFixed(1) + ',' + tCh + ' L0,' + tCh + ' Z';
+    const trendLastX = tPts[tPts.length - 1].x.toFixed(1), trendLastY = tPts[tPts.length - 1].y.toFixed(1);
+    const trendCaption = allCatsActive ? 'Full portfolio \u00B7 last 6 months' : 'Approximate trend for selected accounts';
+
+    // ── Add expense (05) ──
+    const addAmt = this.state.addAmt;
+    const addParts = addAmt.split('.');
+    const addAmtDisplay = (addParts[0] ? Number(addParts[0]).toLocaleString('en-US') : '0') + (addAmt.indexOf('.') >= 0 ? '.' + (addParts[1] || '') : '');
+    const onKey = k => () => this.setState(s => {
+      let v = s.addAmt;
+      if (k === 'back') v = v.slice(0, -1);
+      else if (k === '.') { if (v.indexOf('.') === -1) v = (v || '0') + '.'; }
+      else {
+        if (v.indexOf('.') >= 0 && v.split('.')[1].length >= 2) return {};
+        if (v.replace('.', '').length >= 7) return {};
+        v = v === '0' ? k : v + k;
+      }
+      return { addAmt: v };
+    });
+    const addKeys = ['1','2','3','4','5','6','7','8','9','.','0','\u232B'].map(k => ({ label: k, onClick: onKey(k === '\u232B' ? 'back' : k) }));
+    const addCatChips = catChoices.map(c => ({
+      name: c.name, color: c.color,
+      onClick: () => this.setState({ addCat: c.name }),
+      style: chipBase + (this.state.addCat === c.name
+        ? 'background:' + tint(c.color) + ';color:' + c.color + ';border:1px solid ' + c.color + '66;'
+        : chipOff),
+    }));
+    const addAcctChips = accounts.map(a => ({
+      label: a.name + ' \u2022\u2022' + a.mask, dot: a.color,
+      onClick: () => this.setState({ addAcct: a.id }),
+      style: chipBase + (this.state.addAcct === a.id ? chipOn : chipOff),
+    }));
+    const canAdd = parseFloat(addAmt) > 0;
+    const addBtnStyle = "width:100%;padding:17px;border-radius:16px;border:none;font:600 13px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;" +
+      (canAdd ? 'background:#7FE08A;color:#0D0D0F;cursor:pointer;' : 'background:rgba(255,255,255,0.06);color:rgba(244,243,239,0.3);cursor:default;');
+    const onAddSave = () => {
+      if (!canAdd) return;
+      clearTimeout(this._toastT);
+      this.setState({ addSaved: true });
+      this._toastT = setTimeout(() => this.setState({ addSaved: false, addAmt: '' }), 1600);
+    };
+    const addToastLabel = 'Added to ' + (byId(this.state.addAcct) || accounts[0]).name;
+    const addSaved = this.state.addSaved;
+
+    // ── Home FAB / composer switcher ──
+    const homeMode = this.state.homeMode;
+    const isHomeDefault = homeMode === 'home';
+    const isAddExpenseMode = homeMode === 'addExpense';
+    const isRequestMoneyMode = homeMode === 'requestMoney';
+    const isComposing = !isHomeDefault;
+    const homeMidStyle = isHomeDefault
+      ? "flex:1;overflow:auto;padding:58px 18px 16px"
+      : "flex:1;display:flex;flex-direction:column;padding:58px 18px 14px;overflow:hidden";
+    const fabSheetOpen = this.state.fabSheetOpen;
+    const onFabClick = () => this.setState({ fabSheetOpen: true });
+    const closeFabSheet = () => this.setState({ fabSheetOpen: false });
+    const openAddExpense = () => this.setState({ homeMode: 'addExpense', fabSheetOpen: false });
+    const openRequestMoney = () => this.setState({ homeMode: 'requestMoney', fabSheetOpen: false });
+    const closeHomeMode = () => this.setState({ homeMode: 'home' });
+
+    // ── Request money ──
+    const contacts = [
+      { id: 'maya', name: 'Maya Chen', initial: 'M', color: '#7FE08A' },
+      { id: 'jordan', name: 'Jordan Lee', initial: 'J', color: '#6B8AB0' },
+      { id: 'priya', name: 'Priya Shah', initial: 'P', color: '#C49A6B' },
+      { id: 'sam', name: 'Sam Ortiz', initial: 'S', color: '#B07E8A' },
+    ];
+    const reqAmt = this.state.reqAmt;
+    const reqParts = reqAmt.split('.');
+    const reqAmtDisplay = (reqParts[0] ? Number(reqParts[0]).toLocaleString('en-US') : '0') + (reqAmt.indexOf('.') >= 0 ? '.' + (reqParts[1] || '') : '');
+    const onReqKey = k => () => this.setState(s => {
+      let v = s.reqAmt;
+      if (k === 'back') v = v.slice(0, -1);
+      else if (k === '.') { if (v.indexOf('.') === -1) v = (v || '0') + '.'; }
+      else {
+        if (v.indexOf('.') >= 0 && v.split('.')[1].length >= 2) return {};
+        if (v.replace('.', '').length >= 7) return {};
+        v = v === '0' ? k : v + k;
+      }
+      return { reqAmt: v };
+    });
+    const reqKeys = ['1','2','3','4','5','6','7','8','9','.','0','\u232B'].map(k => ({ label: k, onClick: onReqKey(k === '\u232B' ? 'back' : k) }));
+    const reqPersonId = this.state.reqPerson;
+    const reqContactChips = contacts.map(p => ({
+      name: p.name, initial: p.initial, color: p.color,
+      onClick: () => this.setState({ reqPerson: p.id }),
+      style: chipBase + (reqPersonId === p.id
+        ? 'background:' + tint(p.color) + ';color:' + p.color + ';border:1px solid ' + p.color + '66;'
+        : chipOff),
+    }));
+    const reqPersonObj = contacts.find(p => p.id === reqPersonId) || null;
+    const canReq = parseFloat(reqAmt) > 0 && !!reqPersonObj;
+    const reqBtnStyle = "width:100%;padding:17px;border-radius:16px;border:none;font:600 13px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;" +
+      (canReq ? 'background:#7FE08A;color:#0D0D0F;cursor:pointer;' : 'background:rgba(255,255,255,0.06);color:rgba(244,243,239,0.3);cursor:default;');
+    const onReqSend = () => {
+      if (!canReq) return;
+      clearTimeout(this._reqToastT);
+      this.setState({ reqSaved: true });
+      this._reqToastT = setTimeout(() => this.setState({ reqSaved: false, reqAmt: '', reqPerson: null }), 1600);
+    };
+    const reqToastLabel = 'Request sent to ' + (reqPersonObj ? reqPersonObj.name.split(' ')[0] : '');
+    const reqSaved = this.state.reqSaved;
+
+    // ── Search (06) ──
+    const searchQ = this.state.searchQ;
+    const onSearchInput = e => this.setState({ searchQ: e.target.value });
+    const clearSearch = () => this.setState({ searchQ: '' });
+    const sq = searchQ.trim().toLowerCase();
+    const hasQuery = sq.length > 0;
+    const noQuery = !hasQuery;
+    const sMatches = hasQuery ? TX.filter(t => t.name.toLowerCase().indexOf(sq) >= 0 || t.cat.toLowerCase().indexOf(sq) >= 0 || (t.note || '').toLowerCase().indexOf(sq) >= 0) : [];
+    const searchResults = sMatches.map(t => ({
+      name: t.name, sub: t.day.toUpperCase() + ' \u00B7 ' + t.cat,
+      amt: fmt(t.amt), amtColor: t.amt > 0 ? A : P,
+      tint: tint(t.color), color: t.color, initial: t.initial,
+    }));
+    const searchCount = sMatches.length;
+    const hasResults = searchCount > 0;
+    const noResults = hasQuery && !hasResults;
+    const searchCountLabel = searchCount + (searchCount === 1 ? ' result' : ' results');
+    const sNet = sMatches.reduce((s, t) => s + t.amt, 0);
+    const searchSum = hasResults ? fmt(sNet) + ' net' : '';
+    const recentChips = ['Coffee', 'Uber', 'Netflix', 'Autopay'].map(w => ({ label: w, onClick: () => this.setState({ searchQ: w }) }));
+    const searchCatChips = catChoices.map(c => ({ name: c.name, color: c.color, onClick: () => this.setState({ searchQ: c.name }) }));
+
+    // ── Recurring (07) ──
+    const recurringData = [
+      { id: 'icloud', name: 'iCloud+', cat: 'Bills', amt: 2.99, cadence: 'Monthly', nextDateLabel: 'Jul 5', daysAway: 2, acct: 'crd', color: '#8A8594', initial: 'I' },
+      { id: 'adobe', name: 'Adobe Creative Cloud', cat: 'Bills', amt: 54.99, cadence: 'Monthly', nextDateLabel: 'Jul 12', daysAway: 9, acct: 'crd', color: '#8A8594', initial: 'A' },
+      { id: 'nyt', name: 'The New York Times', cat: 'Entertainment', amt: 17.00, cadence: 'Monthly', nextDateLabel: 'Jul 20', daysAway: 17, acct: 'chk', color: '#B07E8A', initial: 'N', defaultPaused: true },
+      { id: 'nflx', name: 'Netflix', cat: 'Entertainment', amt: 15.49, cadence: 'Monthly', nextDateLabel: 'Jul 25', daysAway: 22, acct: 'chk', color: '#B07E8A', initial: 'N' },
+      { id: 'equinox', name: 'Equinox', cat: 'Health', amt: 185.00, cadence: 'Monthly', nextDateLabel: 'Jul 26', daysAway: 23, acct: 'chk', color: '#B07E8A', initial: 'E' },
+      { id: 'conEd', name: 'Con Edison', cat: 'Bills', amt: 112.40, cadence: 'Monthly \u00B7 variable', nextDateLabel: 'Jul 27', daysAway: 24, acct: 'chk', color: '#8A8594', initial: 'C' },
+      { id: 'spotify', name: 'Spotify', cat: 'Entertainment', amt: 11.99, cadence: 'Monthly', nextDateLabel: 'Jul 28', daysAway: 25, acct: 'crd', color: '#B07E8A', initial: 'S' },
+      { id: 'prime', name: 'Amazon Prime', cat: 'Shopping', amt: 139.00, cadence: 'Yearly', nextDateLabel: 'Nov 14', daysAway: 138, acct: 'crd', color: '#C49A6B', initial: 'A' },
+    ];
+    const detectedItem = { id: 'peloton', name: 'Peloton App', cat: 'Health', amt: 12.99, cadence: 'Monthly', nextDateLabel: 'Jul 30', daysAway: 27, acct: 'crd', color: '#B07E8A', initial: 'P', pattern: '3 charges of $12.99, ~28 days apart' };
+    const recurDetectedConfirmed = this.state.recurDetectedConfirmed;
+    const recurDetectedDismissed = this.state.recurDetectedDismissed;
+    const showDetectedBanner = !recurDetectedConfirmed && !recurDetectedDismissed;
+    const confirmDetected = () => this.setState({ recurDetectedConfirmed: true });
+    const dismissDetected = () => this.setState({ recurDetectedDismissed: true });
+    const detectedTint = tint(detectedItem.color), detectedColor = detectedItem.color, detectedInitial = detectedItem.initial;
+    const detectedName = detectedItem.name, detectedPattern = detectedItem.pattern, detectedAmt = this.money(detectedItem.amt, 2) + '/mo';
+
+    const manualRecurringRaw = this.state.manualRecurringTx || [];
+    const manualRecurringItems = manualRecurringRaw.map(t => ({
+      id: t.id, name: t.name, cat: t.cat, amt: t.amt, cadence: 'Monthly', nextDateLabel: 'Next month', daysAway: 30, acct: t.acct, color: t.color, initial: t.name.charAt(0).toUpperCase(),
+    }));
+    const recurFull = (recurDetectedConfirmed ? recurringData.concat([detectedItem]) : recurringData.slice()).concat(manualRecurringItems);
+    const pausedOverrides = this.state.recurPausedOverrides || {};
+    const isRecurPaused = it => pausedOverrides[it.id] !== undefined ? pausedOverrides[it.id] : !!it.defaultPaused;
+    const togglePause = id => () => this.setState(s => {
+      const cur = s.recurPausedOverrides || {};
+      const base = recurFull.find(x => x.id === id) || detectedItem;
+      const currentlyPaused = cur[id] !== undefined ? cur[id] : !!base.defaultPaused;
+      return { recurPausedOverrides: { ...cur, [id]: !currentlyPaused } };
+    });
+
+    const monthlyEquiv = it => it.cadence.indexOf('Yearly') >= 0 ? it.amt / 12 : it.amt;
+    const activeItems = recurFull.filter(it => !isRecurPaused(it));
+    const pausedItems = recurFull.filter(it => isRecurPaused(it));
+    const recurTotal = activeItems.reduce((s, it) => s + monthlyEquiv(it), 0);
+    const recurTotalParts = recurTotal.toFixed(2).split('.');
+    const recurTotalWhole = '$' + Number(recurTotalParts[0]).toLocaleString('en-US');
+    const recurTotalCents = recurTotalParts[1];
+    const recurActiveCount = activeItems.length;
+    const recurPausedCount = pausedItems.length;
+
+    const upcoming = activeItems.filter(it => it.daysAway <= 7).sort((a, b) => a.daysAway - b.daysAway).map(it => ({
+      name: it.name, initial: it.initial, color: it.color, tint: tint(it.color),
+      amt: this.money(it.amt, 2), nextDateLabel: it.nextDateLabel,
+    }));
+    const hasUpcoming = upcoming.length > 0;
+
+    const recurListSource = recurFull.slice().sort((a, b) => a.daysAway - b.daysAway);
+    const recurList = recurListSource.map(it => {
+      const paused = isRecurPaused(it);
+      return {
+        name: it.name, initial: it.initial, color: it.color, tint: tint(it.color),
+        cadence: it.cadence, nextDateLabel: it.nextDateLabel,
+        amt: this.money(it.amt, 2), opacity: paused ? 0.5 : 1,
+        onToggle: togglePause(it.id),
+        pauseBtnLabel: paused ? 'Paused' : 'Active',
+        pauseBtnStyle: "flex:none;padding:7px 11px;border-radius:9px;font:600 9px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;" +
+          (paused ? 'background:transparent;color:rgba(244,243,239,0.4);border:1px solid rgba(255,255,255,0.08);' : 'background:rgba(127,224,138,0.14);color:#7FE08A;border:1px solid rgba(127,224,138,0.4);'),
+      };
+    });
+    const hasRecurList = recurList.length > 0;
+    const noRecurList = !hasRecurList;
+
+    // transaction detail sheet
+    const selTx = this.state.selectedTx;
+    const showDetail = !!selTx;
+    const closeDetail = () => this.setState({ selectedTx: null });
+    const acctBgMap = { chk: 'linear-gradient(135deg,#0f2a1e,#1a3d2a)', sav: 'linear-gradient(135deg,#0f1f2e,#1a2e42)', crd: 'linear-gradient(135deg,#2a1a14,#3d200f)' };
+    const acctLabelMap = { chk: 'CHECKING', sav: 'SAVINGS', crd: 'CREDIT CARD' };
+    const selAcctObj = selTx ? byId(selTx.acct) : null;
+    const detailName = selTx ? selTx.name : '';
+    const detailDay = selTx ? selTx.day.toUpperCase() : '';
+    const detailAmt = selTx ? selTx.amt : '';
+    const detailAmtSign = selTx ? (selTx.amt.indexOf('\u2212') === 0 ? '\u2212' : '+') : '';
+    const detailAmtNum = selTx ? selTx.amt.replace(/^[\u2212+]?\$/, '') : '';
+    const detailCat = selTx ? selTx.cat.toUpperCase() : '';
+    const detailColor = selTx ? selTx.color : '#7FE08A';
+    const detailCatBg = selTx ? tint(selTx.color) : tint('#7FE08A');
+    const detailAcctBg = selTx ? (acctBgMap[selTx.acct] || acctBgMap.chk) : '';
+    const detailAcctColor = selAcctObj ? selAcctObj.color : '#7FE08A';
+    const detailAcctLabel = selTx ? (acctLabelMap[selTx.acct] || 'ACCOUNT') : '';
+    const detailAcctName = selAcctObj ? selAcctObj.name : '';
+    const detailAcctMask = selAcctObj ? selAcctObj.mask : '';
+
+    // mark transaction as recurring
+    const manualRecurringTx = this.state.manualRecurringTx || [];
+    const isTxRecurring = selTx ? manualRecurringTx.some(t => t.name === selTx.name) : false;
+    const recurConfirmOpen = !!(this.state.recurConfirmSheet && selTx);
+    const closeRecurConfirm = () => this.setState({ recurConfirmSheet: false });
+    const onRecurringSegmentClick = () => {
+      if (!selTx) return;
+      if (isTxRecurring) {
+        this.setState({ manualRecurringTx: manualRecurringTx.filter(t => t.name !== selTx.name) });
+      } else {
+        this.setState({ recurConfirmSheet: true });
+      }
+    };
+    const confirmMarkRecurring = () => {
+      if (!selTx) return;
+      const amtNum = parseFloat(selTx.amt.replace(/[^0-9.]/g, '')) || 0;
+      const entry = { id: 'manual-' + selTx.name.toLowerCase().replace(/\s+/g, '-'), name: selTx.name, cat: selTx.cat, amt: amtNum, color: selTx.color, acct: selTx.acct };
+      this.setState(s => ({
+        manualRecurringTx: [...(s.manualRecurringTx || []).filter(t => t.name !== entry.name), entry],
+        recurConfirmSheet: false,
+      }));
+    };
+    const recurSegStyle = "flex:1;text-align:center;padding:13px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;cursor:pointer;border-left:1px solid rgba(255,255,255,0.08);" +
+      (isTxRecurring ? 'color:#7FE08A;' : 'color:rgba(244,243,239,0.6);');
+    const recurSegLabel = isTxRecurring ? 'Recurring \u2713' : 'Recurring';
+
+    // category picker + "category changed" confirmation
+    const openCatPicker = () => this.setState({ catPicker: true });
+    const closeCatPicker = () => this.setState({ catPicker: false });
+    const selectNewCategory = c => () => {
+      const cur = this.state.selectedTx;
+      if (!cur) return;
+      if (c.name === cur.cat) { this.setState({ catPicker: false }); return; }
+      this.setState({
+        selectedTx: { ...cur, cat: c.name, color: c.color },
+        catPicker: false,
+        catChanged: { newCat: c.name },
+      });
+    };
+    const catPickerRows = catChoices.map(c => ({
+      name: c.name, color: c.color,
+      active: !!(selTx && selTx.cat === c.name),
+      textColor: (selTx && selTx.cat === c.name) ? '#7FE08A' : '#F4F3EF',
+      onClick: selectNewCategory(c),
+    }));
+    const showCatPicker = this.state.catPicker;
+    const catChangedInfo = this.state.catChanged;
+    const showCatChanged = !!catChangedInfo;
+    const catChangedCatName = catChangedInfo ? catChangedInfo.newCat : '';
+    const closeCatChanged = () => this.setState({ catChanged: null });
+    const onCreateRule = closeCatChanged;
+    const onApplyAll = closeCatChanged;
+    const onNoThanks = closeCatChanged;
+
+    // filter & sort sheet
+    const activeSort = this.state.activeSort;
+    const openFilter = () => this.setState({ filterSheet: true });
+    const closeFilter = () => this.setState({ filterSheet: false });
+    const sortStyle = active => "font:400 16px 'Spectral';color:" + (active ? '#7FE08A' : '#F4F3EF') + ';';
+    const setSortDate = () => this.setState({ activeSort: 'date', filterSheet: false });
+    const setSortHL   = () => this.setState({ activeSort: 'hl',   filterSheet: false });
+    const setSortLH   = () => this.setState({ activeSort: 'lh',   filterSheet: false });
+
+    return {
+      T: true,
+      name: this.props.name || 'Lakshay',
+      segments, legend, pillData, txGroups,
+      bars, rangeData, calloutText: ds.callout, rangeTotal: ds.total, rangeLabel: ds.label, rangeDelta: ds.delta,
+      top,
+      txGroups2, acctChips, txCount, txSpent,
+      frontItems, pendingDays, hasPending, allReviewedDone, frontDate, stack1Label, showStack1, showStack2, onReviewAll, reviewAllBtnStyle, reviewAllLabel,
+      statsTopStyle, statsExclStyle, setStatsTop, setStatsExcl, isStatsTop, isStatsExcl, excluded,
+      showDetail, closeDetail, detailName, detailDay, detailAmt, detailAmtSign, detailAmtNum, detailCat, detailColor, detailCatBg,
+      detailAcctBg, detailAcctColor, detailAcctLabel, detailAcctName, detailAcctMask,
+      recurConfirmOpen, closeRecurConfirm, onRecurringSegmentClick, confirmMarkRecurring, recurSegStyle, recurSegLabel,
+      openCatPicker, closeCatPicker, catPickerRows, showCatPicker,
+      showCatChanged, catChangedCatName, onCreateRule, onApplyAll, onNoThanks,
+      showFilterSheet: this.state.filterSheet, openFilter, closeFilter,
+      setSortDate, setSortHL, setSortLH,
+      isSortDate: activeSort === 'date', isSortHL: activeSort === 'hl', isSortLH: activeSort === 'lh',
+      sortDateStyle: sortStyle(activeSort === 'date'),
+      sortHLStyle:   sortStyle(activeSort === 'hl'),
+      sortLHStyle:   sortStyle(activeSort === 'lh'),
+      assetChips, notConnected, assetBarSeg, dominantColor,
+      segPolys, hasBarSegs, leftCapPoints, leftCapColor, barViewBox,
+      nwTotal, nwSelectedLabel, nwSelectedColor,
+      isViewBar, isViewTrend, barBtnStyle, trendBtnStyle, barIconColor, trendIconColor,
+      setViewBar: setView('bar'), setViewTrend: setView('trend'),
+      trendLinePath, trendAreaPath, trendLastX, trendLastY, trendCaption,
+      addKeys, addAmtDisplay, addCatChips, addAcctChips, onAddSave, addBtnStyle, addSaved, addToastLabel,
+      isHomeDefault, isAddExpenseMode, isRequestMoneyMode, isComposing, homeMidStyle,
+      fabSheetOpen, onFabClick, closeFabSheet, openAddExpense, openRequestMoney, closeHomeMode,
+      reqKeys, reqAmtDisplay, reqContactChips, onReqSend, reqBtnStyle, reqSaved, reqToastLabel,
+      searchQ, onSearchInput, clearSearch, hasQuery, noQuery, searchResults, searchCountLabel, searchSum, hasResults, noResults, recentChips, searchCatChips,
+      toggleCc: toggleAcct('cc'), acctOpenCc: acctOpen.cc, ccChevron: chev(acctOpen.cc),
+      toggleDepo: toggleAcct('depo'), acctOpenDepo: acctOpen.depo, depoChevron: chev(acctOpen.depo),
+      crdName, chkName, savName, openDetailsCrd, openDetailsChk, openDetailsSav,
+      showAcctDetails, closeAcctDetails, toggleAcctMenu, showAcctMenu, showRenameMode, showDetailsView,
+      openRenameFromMenu, cancelRename, onRenameInput, saveRename, renameDraft,
+      acctDetailName, acctType, acctMask, acctGrad, acctAccent, acctStat1Label, acctStat1Val, acctStat2Label, acctStat2Val, acctStat2Color,
+      recurTotalWhole, recurTotalCents, recurActiveCount, recurPausedCount,
+      showDetectedBanner, detectedTint, detectedColor, detectedInitial, detectedName, detectedPattern, detectedAmt, confirmDetected, dismissDetected,
+      hasUpcoming, upcoming,
+      hasRecurList, recurList, noRecurList,
+    };
+  }
+}
+</script>
+</body>
+</html>
