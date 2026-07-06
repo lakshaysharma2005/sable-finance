@@ -1,0 +1,12 @@
+---
+description: Instructions for using the Plaid API and documentation
+alwaysApply: true
+---
+
+# Instructions on using the Plaid API
+
+For instructions on how to use the Plaid API, please go to
+https://plaid.com/docs/llms.txt. There you can find a list of other
+documentation pages that you can retrieve to obtain the necessary
+information. If you need to search for additional documentation, you
+should first try to use a link that is listed in the llms.txt file.
