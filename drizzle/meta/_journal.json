@@ -8,6 +8,13 @@
       "when": 1783367550635,
       "tag": "0000_far_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783792259711,
+      "tag": "0001_cultured_black_widow",
+      "breakpoints": true
     }
   ]
 }

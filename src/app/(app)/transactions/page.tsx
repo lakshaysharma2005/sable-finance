@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AddCategorySheet } from "@/components/AddCategorySheet";
 import { FilterIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
 import { TxAvatar } from "@/components/TxAvatar";
-import { CATEGORY_COLORS, SPEND_CATEGORIES } from "@/lib/categories";
+import type { CategoriesListData } from "@/lib/category-queries";
+import { CATEGORY_COLORS } from "@/lib/categories";
 import { MINUS, money } from "@/lib/format";
 import type { TransactionsData, TxItem } from "@/lib/queries";
 import { ACCENT, card, chipBase, chipOff, chipOn, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
@@ -18,10 +20,12 @@ export default function TransactionsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
   const [catPickerOpen, setCatPickerOpen] = useState(false);
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
 
   const query = selAccts.length > 0 ? `?accounts=${selAccts.join(",")}` : "";
   const { data, reload } = useData<TransactionsData>(`/api/transactions${query}`);
+  const { data: categoriesData, reload: reloadCategories } = useData<CategoriesListData>("/api/categories");
 
   const allActive = selAccts.length === 0;
 
@@ -44,6 +48,7 @@ export default function TransactionsPage() {
 
   async function changeCategory(category: string) {
     if (!selectedTx) return;
+    const catMeta = categoriesData?.categories.find((c) => c.name === category);
     await fetch(`/api/transactions/${selectedTx.id}/category`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -51,7 +56,11 @@ export default function TransactionsPage() {
     });
     setCatPickerOpen(false);
     setCatChanged({ tx: selectedTx, category });
-    setSelectedTx({ ...selectedTx, category, color: CATEGORY_COLORS[category] ?? selectedTx.color });
+    setSelectedTx({
+      ...selectedTx,
+      category,
+      color: catMeta?.color ?? CATEGORY_COLORS[category] ?? selectedTx.color,
+    });
     reload();
   }
 
@@ -282,10 +291,10 @@ export default function TransactionsPage() {
           >
             Change category
           </div>
-          {SPEND_CATEGORIES.map((c) => (
+          {categoriesData?.categories.map((c) => (
             <div
-              key={c}
-              onClick={() => changeCategory(c)}
+              key={c.name}
+              onClick={() => changeCategory(c.name)}
               style={{
                 padding: "15px 24px",
                 borderTop: "1px solid rgba(255,255,255,0.06)",
@@ -296,13 +305,43 @@ export default function TransactionsPage() {
                 cursor: "pointer",
               }}
             >
-              <span style={{ width: 9, height: 9, borderRadius: "50%", background: CATEGORY_COLORS[c], flex: "none" }} />
-              <span style={serif(16, 400, { color: c === selectedTx.category ? ACCENT : TEXT })}>{c}</span>
-              {c === selectedTx.category && <span style={mono(13, 600, { color: ACCENT })}>✓</span>}
+              {c.emoji ? (
+                <span style={{ fontSize: 16, lineHeight: 1, flex: "none" }}>{c.emoji}</span>
+              ) : (
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: c.color, flex: "none" }} />
+              )}
+              <span style={serif(16, 400, { color: c.name === selectedTx.category ? ACCENT : TEXT })}>{c.name}</span>
+              {c.name === selectedTx.category && <span style={mono(13, 600, { color: ACCENT })}>✓</span>}
             </div>
           ))}
+          <div
+            onClick={() => {
+              setCatPickerOpen(false);
+              setAddCategoryOpen(true);
+            }}
+            style={{
+              padding: "15px 24px",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <span style={serif(16, 400, { color: "#6B8AB0" })}>Add a category</span>
+          </div>
           <div style={{ paddingBottom: 18 }} />
         </Sheet>
+      )}
+
+      {addCategoryOpen && (
+        <AddCategorySheet
+          onClose={() => setAddCategoryOpen(false)}
+          onCreated={() => {
+            reloadCategories();
+            reload();
+          }}
+        />
       )}
 
       {/* category changed confirmation */}

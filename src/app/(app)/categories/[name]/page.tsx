@@ -1,11 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { ChevronRightIcon } from "@/components/Icons";
+import { Sheet } from "@/components/Sheet";
 import { MINUS, money } from "@/lib/format";
 import type { CategoryData } from "@/lib/queries";
-import { card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
+import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 export default function CategoryPage() {
@@ -14,6 +16,10 @@ export default function CategoryPage() {
   const rawName = params.name;
   const name = decodeURIComponent(Array.isArray(rawName) ? rawName[0] : (rawName ?? ""));
   const { data, loading, error } = useData<CategoryData>(`/api/categories/${encodeURIComponent(name)}`);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const [saving, setSaving] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   if (loading && !data) {
     return (
@@ -49,6 +55,38 @@ export default function CategoryPage() {
 
   const groups = data.groups ?? [];
   const monthSpent = data.monthSpent ?? 0;
+  const displayName = data.name ?? name;
+
+  function openRename() {
+    setDraft(displayName);
+    setRenameError(null);
+    setRenameOpen(true);
+  }
+
+  async function saveRename() {
+    const next = draft.trim();
+    if (!next || next === displayName) {
+      setRenameOpen(false);
+      return;
+    }
+    setSaving(true);
+    setRenameError(null);
+    try {
+      const res = await fetch(`/api/categories/${encodeURIComponent(displayName)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: next }),
+      });
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(body.error ?? "Failed to rename category");
+      setRenameOpen(false);
+      router.replace(`/categories/${encodeURIComponent(next)}`);
+    } catch (e) {
+      setRenameError(e instanceof Error ? e.message : "Failed to rename category");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div style={{ animation: "fadeUp .3s ease both", paddingBottom: 24 }}>
@@ -92,9 +130,24 @@ export default function CategoryPage() {
             margin: "0 auto 14px",
           }}
         >
-          <span style={{ width: 16, height: 16, borderRadius: 5, background: data.color ?? "#8A8594" }} />
+          {data.emoji ? (
+            <span style={{ fontSize: 24, lineHeight: 1 }}>{data.emoji}</span>
+          ) : (
+            <span style={{ width: 16, height: 16, borderRadius: 5, background: data.color ?? "#8A8594" }} />
+          )}
         </div>
-        <div style={serif(28, 400, { color: data.color ?? TEXT })}>{name}</div>
+        <button
+          onClick={openRename}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            ...serif(28, 400, { color: data.color ?? TEXT }),
+          }}
+        >
+          {displayName}
+        </button>
       </div>
 
       {/* spent */}
@@ -184,6 +237,72 @@ export default function CategoryPage() {
           </div>
         ))}
       </div>
+
+      {renameOpen && (
+        <Sheet onClose={() => setRenameOpen(false)} background="#161618" zIndex={35} style={{ padding: "0 24px 28px" }}>
+          <div
+            style={{
+              textAlign: "center",
+              ...mono(11, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: data.color ?? ACCENT }),
+              padding: "6px 0 18px",
+            }}
+          >
+            Rename category
+          </div>
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Category name"
+            autoFocus
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 14,
+              padding: "14px 16px",
+              color: TEXT,
+              ...serif(16),
+              outline: "none",
+              marginBottom: renameError ? 10 : 16,
+            }}
+          />
+          {renameError && (
+            <div style={{ ...mono(12, 400, { color: "#D98A7F", marginBottom: 16, textAlign: "center" }) }}>
+              {renameError}
+            </div>
+          )}
+          <button
+            onClick={saveRename}
+            disabled={saving || !draft.trim()}
+            style={{
+              width: "100%",
+              padding: 15,
+              borderRadius: 14,
+              border: "none",
+              background: ACCENT,
+              color: "#0D0D0F",
+              opacity: saving || !draft.trim() ? 0.5 : 1,
+              ...mono(12, 600, { letterSpacing: 1, textTransform: "uppercase" }),
+              cursor: saving || !draft.trim() ? "default" : "pointer",
+            }}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+          <button
+            onClick={() => setRenameOpen(false)}
+            style={{
+              width: "100%",
+              background: "none",
+              border: "none",
+              padding: "14px 0 0",
+              ...serif(15, 400, { color: "rgba(244,243,239,0.45)" }),
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+        </Sheet>
+      )}
     </div>
   );
 }

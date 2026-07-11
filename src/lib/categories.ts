@@ -22,6 +22,47 @@ export const SPEND_CATEGORIES = [
   "Other",
 ] as const;
 
+export interface CategoryMeta {
+  name: string;
+  emoji: string | null;
+  color: string;
+  isDefault: boolean;
+}
+
+// Preset categories shown in the "Add a category" picker.
+export const SUGGESTED_CATEGORIES: { name: string; emoji: string; color: string }[] = [
+  { name: "Beauty", emoji: "💄", color: "#B07E8A" },
+  { name: "Car", emoji: "🚗", color: "#6B8AB0" },
+  { name: "Children", emoji: "🚸", color: "#C49A6B" },
+  { name: "Dance", emoji: "💃", color: "#B07E8A" },
+  { name: "Donations", emoji: "🤝", color: "#7FE08A" },
+  { name: "Gym", emoji: "👟", color: "#D98A7F" },
+  { name: "Healthcare", emoji: "💊", color: "#D98A7F" },
+  { name: "Home", emoji: "🏠", color: "#C49A6B" },
+  { name: "Loans", emoji: "💰", color: "#8A8594" },
+  { name: "Pets", emoji: "🐶", color: "#C49A6B" },
+  { name: "Recreation", emoji: "🎫", color: "#B07E8A" },
+  { name: "Senior Care", emoji: "👵", color: "#6B8AB0" },
+  { name: "Sports", emoji: "🚴", color: "#6B8AB0" },
+  { name: "Subscriptions", emoji: "💳", color: "#8A8594" },
+  { name: "Transportation", emoji: "🚌", color: "#6B8AB0" },
+  { name: "Travel & Vacation", emoji: "🏖️", color: "#6B8AB0" },
+  { name: "Utilities", emoji: "🔌", color: "#8A8594" },
+  { name: "Yoga & Pilates", emoji: "🧘", color: "#D98A7F" },
+];
+
+const DEFAULT_EMOJI: Partial<Record<string, string>> = {
+  "Food & Drink": "🍽️",
+  Shopping: "🛍️",
+  Bills: "📄",
+  Transport: "🚗",
+  Entertainment: "🎬",
+  Health: "💊",
+  Other: "📁",
+  Income: "💵",
+  Transfer: "↔️",
+};
+
 // Categories excluded from spending stats (Stats "Excluded" tab).
 export const EXCLUDED_CATEGORIES = ["Income", "Transfer"] as const;
 
@@ -51,8 +92,22 @@ export function mapPfcToCategory(pfcPrimary: string | null | undefined): string 
   return PFC_TO_APP[pfcPrimary] ?? "Other";
 }
 
-export function categoryColor(category: string): string {
-  return CATEGORY_COLORS[category] ?? CATEGORY_COLORS.Other;
+export function categoryColor(category: string, extra?: Record<string, string>): string {
+  return extra?.[category] ?? CATEGORY_COLORS[category] ?? CATEGORY_COLORS.Other;
+}
+
+export function categoryEmoji(category: string, extra?: Record<string, string | null>): string | null {
+  if (extra && category in extra) return extra[category] ?? null;
+  return DEFAULT_EMOJI[category] ?? null;
+}
+
+export function buildDefaultCategories(): CategoryMeta[] {
+  return SPEND_CATEGORIES.map((name) => ({
+    name,
+    emoji: DEFAULT_EMOJI[name] ?? null,
+    color: CATEGORY_COLORS[name],
+    isDefault: true,
+  }));
 }
 
 // Asset category labels + colors for the Accounts screen (from the prototype).

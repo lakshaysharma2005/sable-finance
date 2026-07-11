@@ -1,5 +1,6 @@
 "use client";
 
+import { AddCategorySheet } from "@/components/AddCategorySheet";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -33,6 +34,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const { start: startLink } = usePlaidConnect(() => {
@@ -141,6 +143,16 @@ export function BottomNav() {
               </div>
             </div>
             <SheetAction
+              icon={<span style={{ fontSize: 20 }}>🏷️</span>}
+              iconBg="rgba(107,138,176,0.14)"
+              title="Add a new category"
+              subtitle="Create a custom spending category"
+              onClick={() => {
+                setSheetOpen(false);
+                setAddCategoryOpen(true);
+              }}
+            />
+            <SheetAction
               icon={<BankIcon />}
               iconBg="rgba(127,224,138,0.14)"
               title="Connect a bank account"
@@ -161,6 +173,8 @@ export function BottomNav() {
           </div>
         </div>
       )}
+
+      {addCategoryOpen && <AddCategorySheet onClose={() => setAddCategoryOpen(false)} />}
     </>
   );
 }

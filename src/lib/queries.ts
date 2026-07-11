@@ -1,6 +1,7 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { db, accounts, transactions, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
-import { ASSET_CATEGORIES, categoryColor, EXCLUDED_CATEGORIES } from "@/lib/categories";
+import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES } from "@/lib/categories";
+import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
 
 // ---------- shared ----------
 
@@ -28,6 +29,7 @@ function iso(d: Date): string {
 }
 
 async function fetchTx(from: string, to: string, accountIds?: number[]): Promise<TxItem[]> {
+  const categoryLookups = await getCategoryLookups();
   const rows = await db
     .select({
       id: transactions.id,
@@ -71,7 +73,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
         amount: r.amount,
         pending: r.pending,
         category,
-        color: categoryColor(category),
+        color: resolveCategoryColor(category, categoryLookups.colors),
         accountId: r.accountId,
         accountName: r.customName ?? r.accountName,
         accountMask: r.accountMask,
@@ -141,9 +143,11 @@ export async function getDashboardData(today = iso(new Date())) {
 
   // Category breakdown for the donut
   const byCat = new Map<string, number>();
+  const catColors = new Map<string, string>();
   for (const tx of monthTx) {
     if (tx.amount <= 0 || isExcluded(tx.category)) continue;
     byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
+    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
   }
   const cats = [...byCat.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -151,7 +155,7 @@ export async function getDashboardData(today = iso(new Date())) {
       name,
       amount,
       pct: spent > 0 ? Math.round((amount / spent) * 100) : 0,
-      color: categoryColor(name),
+      color: catColors.get(name) ?? resolveCategoryColor(name, {}),
     }));
 
   // Recent transactions (last 14 days)
@@ -231,13 +235,15 @@ export async function getStatsData(range: StatsRange, today = iso(new Date())) {
   const curFrom = buckets[cur].from;
   const curTx = txs.filter((tx) => tx.date >= curFrom);
   const byCat = new Map<string, number>();
+  const catColors = new Map<string, string>();
   for (const tx of curTx) {
     if (tx.amount <= 0 || isExcluded(tx.category)) continue;
     byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
+    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
   }
   const top = [...byCat.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([name, amount]) => ({ name, amount, color: categoryColor(name) }));
+    .map(([name, amount]) => ({ name, amount, color: catColors.get(name) ?? resolveCategoryColor(name, {}) }));
 
   const excluded = curTx
     .filter((tx) => isExcluded(tx.category))
@@ -429,10 +435,12 @@ export async function getCategoryData(category: string, today = iso(new Date()))
   const yearAvg = monthsElapsed > 0 ? yearTotal / monthsElapsed : 0;
 
   const groups = groupByMonth(catTx);
+  const { colors, emojis } = await getCategoryLookups();
 
   return {
     name: category,
-    color: categoryColor(category),
+    emoji: resolveCategoryEmoji(category, emojis),
+    color: resolveCategoryColor(category, colors),
     monthSpent,
     monthName: new Date(Date.UTC(year, t.getUTCMonth(), 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" }),
     year,

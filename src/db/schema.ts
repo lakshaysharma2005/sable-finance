@@ -87,6 +87,15 @@ export const transactions = pgTable(
   ],
 );
 
+// User-created spending categories (beyond the built-in defaults).
+export const userCategories = pgTable("user_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  emoji: text("emoji").notNull().default("📁"),
+  color: text("color").notNull().default("#8A8594"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // "Apply to all / create rule" from the category-change sheet.
 export const categoryRules = pgTable("category_rules", {
   id: serial("id").primaryKey(),
