@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties, ReactNode } from "react";
 
 // Bottom sheet overlay, styled after the prototype's sheets.
+// Portaled to document.body so position:fixed isn't trapped by page
+// animations (transform) or the scrollable .shell-scroll container.
 export function Sheet({
   onClose,
   children,
@@ -16,7 +20,20 @@ export function Sheet({
   zIndex?: number;
   style?: CSSProperties;
 }) {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const scroll = document.querySelector<HTMLElement>(".shell-scroll");
+    if (scroll) scroll.style.overflow = "hidden";
+    return () => {
+      if (scroll) scroll.style.overflow = "";
+    };
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex, maxWidth: 402, margin: "0 auto" }}>
       <div
         onClick={onClose}
@@ -43,6 +60,7 @@ export function Sheet({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
