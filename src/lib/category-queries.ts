@@ -27,12 +27,21 @@ export async function getUserCategories(): Promise<CategoryMeta[]> {
 
 export async function getCategoriesList(): Promise<CategoriesListData> {
   const user = await getUserCategories();
-  const existing = new Set([...SPEND_CATEGORIES, ...user.map((c) => c.name)]);
+  const userByName = new Map(user.map((c) => [c.name, c]));
+
+  const defaults = buildDefaultCategories().map((d) => {
+    const override = userByName.get(d.name);
+    if (override) {
+      userByName.delete(d.name);
+      return { ...d, emoji: override.emoji, color: override.color };
+    }
+    return d;
+  });
+
+  const categories = [...defaults, ...userByName.values()];
+  const existing = new Set(categories.map((c) => c.name));
   const suggested = SUGGESTED_CATEGORIES.filter((s) => !existing.has(s.name));
-  return {
-    categories: [...buildDefaultCategories(), ...user],
-    suggested,
-  };
+  return { categories, suggested };
 }
 
 export async function createUserCategory(input: {
@@ -66,53 +75,73 @@ async function allRegisteredNames(): Promise<Set<string>> {
   return new Set([...SPEND_CATEGORIES, ...user.map((c) => c.name)]);
 }
 
-export async function renameCategory(oldName: string, newName: string): Promise<CategoryMeta> {
-  const trimmed = newName.trim();
-  if (!trimmed) throw new Error("Category name is required");
-  if (trimmed === oldName) {
+export async function updateCategory(
+  oldName: string,
+  input: { name?: string; emoji?: string },
+): Promise<CategoryMeta> {
+  if ((EXCLUDED_CATEGORIES as readonly string[]).includes(oldName)) {
+    throw new Error("Cannot edit this category");
+  }
+
+  const { colors, emojis } = await getCategoryLookups();
+  const currentEmoji = resolveCategoryEmoji(oldName, emojis) ?? "📁";
+  const nextName = input.name?.trim() || oldName;
+  const nextEmoji = input.emoji?.trim() || currentEmoji;
+
+  if (!nextName) throw new Error("Category name is required");
+
+  const nameChanging = nextName !== oldName;
+  const emojiChanging = nextEmoji !== currentEmoji;
+
+  if (!nameChanging && !emojiChanging) {
     const user = await getUserCategories();
     const existing = user.find((c) => c.name === oldName);
     if (existing) return existing;
     return {
       name: oldName,
-      emoji: categoryEmoji(oldName),
-      color: categoryColor(oldName),
+      emoji: currentEmoji,
+      color: categoryColor(oldName, colors),
       isDefault: (SPEND_CATEGORIES as readonly string[]).includes(oldName),
     };
   }
 
-  if ((EXCLUDED_CATEGORIES as readonly string[]).includes(oldName)) {
-    throw new Error("Cannot rename this category");
+  if (nameChanging) {
+    const names = await allRegisteredNames();
+    if (names.has(nextName)) throw new Error("Category already exists");
+
+    await db.update(transactions).set({ category: nextName }).where(eq(transactions.category, oldName));
+    await db.update(transactions).set({ categoryOverride: nextName }).where(eq(transactions.categoryOverride, oldName));
+    await db.update(categoryRules).set({ category: nextName }).where(eq(categoryRules.category, oldName));
   }
-
-  const names = await allRegisteredNames();
-  if (names.has(trimmed)) throw new Error("Category already exists");
-
-  await db.update(transactions).set({ category: trimmed }).where(eq(transactions.category, oldName));
-  await db.update(transactions).set({ categoryOverride: trimmed }).where(eq(transactions.categoryOverride, oldName));
-  await db.update(categoryRules).set({ category: trimmed }).where(eq(categoryRules.category, oldName));
 
   const [existing] = await db.select().from(userCategories).where(eq(userCategories.name, oldName)).limit(1);
   if (existing) {
     const [row] = await db
       .update(userCategories)
-      .set({ name: trimmed })
+      .set({
+        ...(nameChanging ? { name: nextName } : {}),
+        ...(emojiChanging ? { emoji: nextEmoji } : {}),
+      })
       .where(eq(userCategories.name, oldName))
       .returning();
     return { name: row.name, emoji: row.emoji, color: row.color, isDefault: false };
   }
 
-  const { colors, emojis } = await getCategoryLookups();
   const [row] = await db
     .insert(userCategories)
     .values({
-      name: trimmed,
-      emoji: categoryEmoji(oldName, emojis) ?? "📁",
+      name: nextName,
+      emoji: nextEmoji,
       color: categoryColor(oldName, colors),
     })
     .returning();
 
   return { name: row.name, emoji: row.emoji, color: row.color, isDefault: false };
+}
+
+/** @deprecated Use updateCategory */
+export async function renameCategory(oldName: string, newName: string): Promise<CategoryMeta> {
+  return updateCategory(oldName, { name: newName });
 }
 
 /** Color + emoji maps for transaction display. */

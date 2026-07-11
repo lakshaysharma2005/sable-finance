@@ -15,11 +15,12 @@ export default function CategoryPage() {
   const router = useRouter();
   const rawName = params.name;
   const name = decodeURIComponent(Array.isArray(rawName) ? rawName[0] : (rawName ?? ""));
-  const { data, loading, error } = useData<CategoryData>(`/api/categories/${encodeURIComponent(name)}`);
-  const [renameOpen, setRenameOpen] = useState(false);
+  const { data, loading, error, reload } = useData<CategoryData>(`/api/categories/${encodeURIComponent(name)}`);
+  const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState(name);
+  const [draftEmoji, setDraftEmoji] = useState("📁");
   const [saving, setSaving] = useState(false);
-  const [renameError, setRenameError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   if (loading && !data) {
     return (
@@ -56,37 +57,50 @@ export default function CategoryPage() {
   const groups = data.groups ?? [];
   const monthSpent = data.monthSpent ?? 0;
   const displayName = data.name ?? name;
+  const displayEmoji = data.emoji ?? "📁";
 
-  function openRename() {
+  function openEdit() {
     setDraft(displayName);
-    setRenameError(null);
-    setRenameOpen(true);
+    setDraftEmoji(displayEmoji);
+    setEditError(null);
+    setEditOpen(true);
   }
 
-  async function saveRename() {
-    const next = draft.trim();
-    if (!next || next === displayName) {
-      setRenameOpen(false);
+  async function saveEdit() {
+    const nextName = draft.trim();
+    const nextEmoji = draftEmoji.trim() || displayEmoji;
+    if (!nextName) return;
+
+    const unchanged = nextName === displayName && nextEmoji === displayEmoji;
+    if (unchanged) {
+      setEditOpen(false);
       return;
     }
+
     setSaving(true);
-    setRenameError(null);
+    setEditError(null);
     try {
       const res = await fetch(`/api/categories/${encodeURIComponent(displayName)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: next }),
+        body: JSON.stringify({ name: nextName, emoji: nextEmoji }),
       });
       const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Failed to rename category");
-      setRenameOpen(false);
-      router.replace(`/categories/${encodeURIComponent(next)}`);
+      if (!res.ok) throw new Error(body.error ?? "Failed to update category");
+      setEditOpen(false);
+      if (nextName !== displayName) {
+        router.replace(`/categories/${encodeURIComponent(nextName)}`);
+      } else {
+        reload();
+      }
     } catch (e) {
-      setRenameError(e instanceof Error ? e.message : "Failed to rename category");
+      setEditError(e instanceof Error ? e.message : "Failed to update category");
     } finally {
       setSaving(false);
     }
   }
+
+  const editUnchanged = draft.trim() === displayName && (draftEmoji.trim() || displayEmoji) === displayEmoji;
 
   return (
     <div style={{ animation: "fadeUp .3s ease both", paddingBottom: 24 }}>
@@ -137,7 +151,7 @@ export default function CategoryPage() {
           )}
         </div>
         <button
-          onClick={openRename}
+          onClick={openEdit}
           style={{
             background: "none",
             border: "none",
@@ -238,8 +252,8 @@ export default function CategoryPage() {
         ))}
       </div>
 
-      {renameOpen && (
-        <Sheet onClose={() => setRenameOpen(false)} background="#161618" zIndex={35} style={{ padding: "0 24px 28px" }}>
+      {editOpen && (
+        <Sheet onClose={() => setEditOpen(false)} background="#161618" zIndex={35} style={{ padding: "0 24px 28px" }}>
           <div
             style={{
               textAlign: "center",
@@ -247,33 +261,49 @@ export default function CategoryPage() {
               padding: "6px 0 18px",
             }}
           >
-            Rename category
+            Edit category
           </div>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Category name"
-            autoFocus
-            style={{
-              width: "100%",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 14,
-              padding: "14px 16px",
-              color: TEXT,
-              ...serif(16),
-              outline: "none",
-              marginBottom: renameError ? 10 : 16,
-            }}
-          />
-          {renameError && (
+          <div style={{ display: "flex", gap: 10, marginBottom: editError ? 10 : 16 }}>
+            <input
+              value={draftEmoji}
+              onChange={(e) => setDraftEmoji(e.target.value.slice(0, 4))}
+              style={{
+                width: 52,
+                flex: "none",
+                textAlign: "center",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 14,
+                padding: "14px 8px",
+                fontSize: 22,
+                outline: "none",
+              }}
+            />
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Category name"
+              autoFocus
+              style={{
+                flex: 1,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 14,
+                padding: "14px 16px",
+                color: TEXT,
+                ...serif(16),
+                outline: "none",
+              }}
+            />
+          </div>
+          {editError && (
             <div style={{ ...mono(12, 400, { color: "#D98A7F", marginBottom: 16, textAlign: "center" }) }}>
-              {renameError}
+              {editError}
             </div>
           )}
           <button
-            onClick={saveRename}
-            disabled={saving || !draft.trim()}
+            onClick={saveEdit}
+            disabled={saving || !draft.trim() || editUnchanged}
             style={{
               width: "100%",
               padding: 15,
@@ -281,15 +311,15 @@ export default function CategoryPage() {
               border: "none",
               background: ACCENT,
               color: "#0D0D0F",
-              opacity: saving || !draft.trim() ? 0.5 : 1,
+              opacity: saving || !draft.trim() || editUnchanged ? 0.5 : 1,
               ...mono(12, 600, { letterSpacing: 1, textTransform: "uppercase" }),
-              cursor: saving || !draft.trim() ? "default" : "pointer",
+              cursor: saving || !draft.trim() || editUnchanged ? "default" : "pointer",
             }}
           >
             {saving ? "Saving…" : "Save"}
           </button>
           <button
-            onClick={() => setRenameOpen(false)}
+            onClick={() => setEditOpen(false)}
             style={{
               width: "100%",
               background: "none",
