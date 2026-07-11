@@ -132,16 +132,19 @@ export default function CategoryPage() {
 
       {/* category title */}
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div
+        <button
+          onClick={openEdit}
           style={{
             width: 52,
             height: 52,
             borderRadius: 16,
             background: (data.color ?? "#8A8594") + "22",
+            border: "none",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 14px",
+            cursor: "pointer",
           }}
         >
           {data.emoji ? (
@@ -149,7 +152,7 @@ export default function CategoryPage() {
           ) : (
             <span style={{ width: 16, height: 16, borderRadius: 5, background: data.color ?? "#8A8594" }} />
           )}
-        </div>
+        </button>
         <button
           onClick={openEdit}
           style={{
