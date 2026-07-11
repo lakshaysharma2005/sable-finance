@@ -379,3 +379,68 @@ export async function getAccountsData(today = iso(new Date())) {
 }
 
 export type AccountsData = Awaited<ReturnType<typeof getAccountsData>>;
+
+// ---------- Category detail ----------
+
+export interface MonthGroup {
+  monthKey: string; // YYYY-MM
+  label: string; // "July"
+  items: TxItem[];
+}
+
+function monthLabel(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" });
+}
+
+function groupByMonth(txs: TxItem[]): MonthGroup[] {
+  const map = new Map<string, TxItem[]>();
+  for (const tx of txs) {
+    const monthKey = tx.date.slice(0, 7);
+    const list = map.get(monthKey) ?? [];
+    list.push(tx);
+    map.set(monthKey, list);
+  }
+  return [...map.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([monthKey, items]) => ({
+      monthKey,
+      label: monthLabel(monthKey),
+      items,
+    }));
+}
+
+export async function getCategoryData(category: string, today = iso(new Date())) {
+  const t = new Date(today + "T00:00:00Z");
+  const year = t.getUTCFullYear();
+  const yearStart = `${year}-01-01`;
+  const monthStart = iso(new Date(Date.UTC(year, t.getUTCMonth(), 1)));
+
+  const allTx = await fetchTx(yearStart, today);
+  const catTx = allTx.filter((tx) => tx.category === category);
+
+  const monthSpent = catTx
+    .filter((tx) => tx.date >= monthStart && tx.amount > 0)
+    .reduce((s, tx) => s + tx.amount, 0);
+
+  const yearTx = catTx.filter((tx) => tx.amount > 0);
+  const yearTotal = yearTx.reduce((s, tx) => s + tx.amount, 0);
+  const monthsElapsed = t.getUTCMonth() + 1;
+  const yearAvg = monthsElapsed > 0 ? yearTotal / monthsElapsed : 0;
+
+  const groups = groupByMonth(catTx);
+
+  return {
+    name: category,
+    color: categoryColor(category),
+    monthSpent,
+    monthName: new Date(Date.UTC(year, t.getUTCMonth(), 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" }),
+    year,
+    yearTotal,
+    yearAvg,
+    txCount: catTx.length,
+    groups,
+  };
+}
+
+export type CategoryData = Awaited<ReturnType<typeof getCategoryData>>;

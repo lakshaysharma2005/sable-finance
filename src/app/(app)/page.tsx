@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
@@ -91,21 +92,24 @@ export default function DashboardPage() {
         )}
         <div data-rows="1">
           {data?.cats.map((c) => (
-            <div
+            <Link
               key={c.name}
+              href={`/categories/${encodeURIComponent(c.name)}`}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
                 padding: "11px 0",
                 borderTop: "1px solid rgba(255,255,255,0.06)",
+                textDecoration: "none",
+                cursor: "pointer",
               }}
             >
               <span style={{ width: 9, height: 9, borderRadius: 3, flex: "none", background: c.color }} />
               <span style={{ flex: 1, ...serif(15, 400, { color: TEXT }) }}>{c.name}</span>
               <span style={mono(11, 400, { color: TER, marginRight: 12 })}>{c.pct}%</span>
               <span style={mono(14, 500, { color: TEXT })}>{money(c.amount, 2)}</span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

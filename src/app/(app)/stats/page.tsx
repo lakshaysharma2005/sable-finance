@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
@@ -192,7 +193,11 @@ export default function StatsPage() {
             {data?.top.map((t, i) => {
               const max = data.top[0]?.amount ?? 1;
               return (
-                <div key={t.name}>
+                <Link
+                  key={t.name}
+                  href={`/categories/${encodeURIComponent(t.name)}`}
+                  style={{ display: "block", textDecoration: "none", cursor: "pointer" }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
                     <span style={serif(15, 400, { color: TEXT })}>{t.name}</span>
                     <span style={mono(14, 500, { color: TEXT })}>{money(Math.round(t.amount), 0)}</span>
@@ -208,7 +213,7 @@ export default function StatsPage() {
                       }}
                     />
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
