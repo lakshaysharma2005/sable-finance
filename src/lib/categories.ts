@@ -1,16 +1,55 @@
 // App spending categories — names and colors come from the design prototype.
 
+// Distinct colors for category charts and the color picker.
+export const CATEGORY_PALETTE = [
+  "#E6262D",
+  "#EA451C",
+  "#ED631B",
+  "#EF8935",
+  "#BC792D",
+  "#DAA329",
+  "#E8BE2B",
+  "#F2D630",
+  "#AFB927",
+  "#41AF24",
+  "#45C290",
+  "#44BCD5",
+  "#3787F8",
+  "#845DF9",
+  "#9C51F6",
+  "#B247F5",
+  "#C73DF4",
+  "#EA1CC7",
+  "#E93C69",
+  "#8D94A4",
+] as const;
+
 export const CATEGORY_COLORS: Record<string, string> = {
-  "Food & Drink": "#7FE08A",
-  Shopping: "#C49A6B",
-  Bills: "#8A8594",
-  Transport: "#6B8AB0",
-  Entertainment: "#B07E8A",
-  Health: "#D98A7F",
-  Income: "#7FE08A",
-  Transfer: "#8A8594",
-  Other: "#8A8594",
+  "Food & Drink": CATEGORY_PALETTE[9],
+  Shopping: CATEGORY_PALETTE[3],
+  Bills: CATEGORY_PALETTE[19],
+  Transport: CATEGORY_PALETTE[12],
+  Entertainment: CATEGORY_PALETTE[15],
+  Health: CATEGORY_PALETTE[18],
+  Income: CATEGORY_PALETTE[8],
+  Transfer: CATEGORY_PALETTE[11],
+  Other: CATEGORY_PALETTE[13],
 };
+
+function normalizeHex(color: string): string {
+  return color.trim().toLowerCase();
+}
+
+/** Pick a palette color not already used; falls back to a generated hue if the palette is full. */
+export function pickUnusedCategoryColor(used: Set<string>, preferred?: string): string {
+  const taken = new Set([...used].map(normalizeHex));
+  if (preferred && !taken.has(normalizeHex(preferred))) return preferred;
+  for (const color of CATEGORY_PALETTE) {
+    if (!taken.has(normalizeHex(color))) return color;
+  }
+  const hue = (taken.size * 47) % 360;
+  return `hsl(${hue}, 45%, 65%)`;
+}
 
 export const SPEND_CATEGORIES = [
   "Food & Drink",
@@ -31,24 +70,24 @@ export interface CategoryMeta {
 
 // Preset categories shown in the "Add a category" picker.
 export const SUGGESTED_CATEGORIES: { name: string; emoji: string; color: string }[] = [
-  { name: "Beauty", emoji: "💄", color: "#B07E8A" },
-  { name: "Car", emoji: "🚗", color: "#6B8AB0" },
-  { name: "Children", emoji: "🚸", color: "#C49A6B" },
-  { name: "Dance", emoji: "💃", color: "#B07E8A" },
-  { name: "Donations", emoji: "🤝", color: "#7FE08A" },
-  { name: "Gym", emoji: "👟", color: "#D98A7F" },
-  { name: "Healthcare", emoji: "💊", color: "#D98A7F" },
-  { name: "Home", emoji: "🏠", color: "#C49A6B" },
-  { name: "Loans", emoji: "💰", color: "#8A8594" },
-  { name: "Pets", emoji: "🐶", color: "#C49A6B" },
-  { name: "Recreation", emoji: "🎫", color: "#B07E8A" },
-  { name: "Senior Care", emoji: "👵", color: "#6B8AB0" },
-  { name: "Sports", emoji: "🚴", color: "#6B8AB0" },
-  { name: "Subscriptions", emoji: "💳", color: "#8A8594" },
-  { name: "Transportation", emoji: "🚌", color: "#6B8AB0" },
-  { name: "Travel & Vacation", emoji: "🏖️", color: "#6B8AB0" },
-  { name: "Utilities", emoji: "🔌", color: "#8A8594" },
-  { name: "Yoga & Pilates", emoji: "🧘", color: "#D98A7F" },
+  { name: "Beauty", emoji: "💄", color: CATEGORY_PALETTE[17] },
+  { name: "Car", emoji: "🚗", color: CATEGORY_PALETTE[12] },
+  { name: "Children", emoji: "🚸", color: CATEGORY_PALETTE[4] },
+  { name: "Dance", emoji: "💃", color: CATEGORY_PALETTE[16] },
+  { name: "Donations", emoji: "🤝", color: CATEGORY_PALETTE[9] },
+  { name: "Gym", emoji: "👟", color: CATEGORY_PALETTE[0] },
+  { name: "Healthcare", emoji: "💊", color: CATEGORY_PALETTE[18] },
+  { name: "Home", emoji: "🏠", color: CATEGORY_PALETTE[5] },
+  { name: "Loans", emoji: "💰", color: CATEGORY_PALETTE[19] },
+  { name: "Pets", emoji: "🐶", color: CATEGORY_PALETTE[6] },
+  { name: "Recreation", emoji: "🎫", color: CATEGORY_PALETTE[14] },
+  { name: "Senior Care", emoji: "👵", color: CATEGORY_PALETTE[11] },
+  { name: "Sports", emoji: "🚴", color: CATEGORY_PALETTE[10] },
+  { name: "Subscriptions", emoji: "💳", color: CATEGORY_PALETTE[13] },
+  { name: "Transportation", emoji: "🚌", color: CATEGORY_PALETTE[12] },
+  { name: "Travel & Vacation", emoji: "🏖️", color: CATEGORY_PALETTE[11] },
+  { name: "Utilities", emoji: "🔌", color: CATEGORY_PALETTE[7] },
+  { name: "Yoga & Pilates", emoji: "🧘", color: CATEGORY_PALETTE[10] },
 ];
 
 const DEFAULT_EMOJI: Partial<Record<string, string>> = {

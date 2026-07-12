@@ -19,11 +19,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ name: 
   try {
     const { name } = await params;
     const oldName = decodeURIComponent(name);
-    const body = (await req.json()) as { name?: string; emoji?: string };
-    if (!body.name?.trim() && body.emoji === undefined) {
-      return NextResponse.json({ error: "Name or emoji is required" }, { status: 400 });
+    const body = (await req.json()) as { name?: string; emoji?: string; color?: string };
+    if (!body.name?.trim() && body.emoji === undefined && !body.color?.trim()) {
+      return NextResponse.json({ error: "Name, emoji, or color is required" }, { status: 400 });
     }
-    const category = await updateCategory(oldName, { name: body.name, emoji: body.emoji });
+    const category = await updateCategory(oldName, { name: body.name, emoji: body.emoji, color: body.color });
     return NextResponse.json(category);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to rename category";

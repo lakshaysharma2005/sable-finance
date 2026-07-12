@@ -10,6 +10,7 @@ import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { MINUS, money } from "@/lib/format";
 import type { CategoryData, TxItem } from "@/lib/queries";
 import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
+import { CATEGORY_PALETTE } from "@/lib/categories";
 import { useData } from "@/lib/useData";
 
 export default function CategoryPage() {
@@ -22,6 +23,7 @@ export default function CategoryPage() {
   const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
   const [draft, setDraft] = useState(name);
   const [draftEmoji, setDraftEmoji] = useState("📁");
+  const [draftColor, setDraftColor] = useState("#8A8594");
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -61,10 +63,12 @@ export default function CategoryPage() {
   const monthSpent = data.monthSpent ?? 0;
   const displayName = data.name ?? name;
   const displayEmoji = data.emoji ?? "📁";
+  const displayColor = data.color ?? "#8A8594";
 
   function openEdit() {
     setDraft(displayName);
     setDraftEmoji(displayEmoji);
+    setDraftColor(displayColor);
     setEditError(null);
     setEditOpen(true);
   }
@@ -72,9 +76,11 @@ export default function CategoryPage() {
   async function saveEdit() {
     const nextName = draft.trim();
     const nextEmoji = draftEmoji.trim() || displayEmoji;
+    const nextColor = draftColor.trim() || displayColor;
     if (!nextName) return;
 
-    const unchanged = nextName === displayName && nextEmoji === displayEmoji;
+    const unchanged =
+      nextName === displayName && nextEmoji === displayEmoji && nextColor === displayColor;
     if (unchanged) {
       setEditOpen(false);
       return;
@@ -86,7 +92,7 @@ export default function CategoryPage() {
       const res = await fetch(`/api/categories/${encodeURIComponent(displayName)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nextName, emoji: nextEmoji }),
+        body: JSON.stringify({ name: nextName, emoji: nextEmoji, color: nextColor }),
       });
       const body = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(body.error ?? "Failed to update category");
@@ -103,7 +109,10 @@ export default function CategoryPage() {
     }
   }
 
-  const editUnchanged = draft.trim() === displayName && (draftEmoji.trim() || displayEmoji) === displayEmoji;
+  const editUnchanged =
+    draft.trim() === displayName &&
+    (draftEmoji.trim() || displayEmoji) === displayEmoji &&
+    draftColor === displayColor;
 
   return (
     <div style={{ animation: "fadeUp .3s ease both", paddingBottom: 24 }}>
@@ -306,6 +315,32 @@ export default function CategoryPage() {
                 outline: "none",
               }}
             />
+          </div>
+          <div style={{ marginBottom: editError ? 10 : 16 }}>
+            <div style={{ ...microLabel, color: TER, marginBottom: 10 }}>Color</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {CATEGORY_PALETTE.map((color) => {
+                const selected = draftColor === color;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setDraftColor(color)}
+                    aria-label={`Color ${color}`}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      background: color,
+                      border: selected ? "2px solid #F4F3EF" : "2px solid transparent",
+                      boxShadow: selected ? `0 0 0 2px ${color}` : "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
           {editError && (
             <div style={{ ...mono(12, 400, { color: "#D98A7F", marginBottom: 16, textAlign: "center" }) }}>
