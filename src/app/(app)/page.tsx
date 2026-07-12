@@ -2,7 +2,7 @@
 
 import { CategoryIcon } from "@/components/CategoryIcon";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
 import type { DashboardData } from "@/lib/queries";
@@ -145,41 +145,104 @@ export default function DashboardPage() {
   );
 }
 
+function donutPoint(cx: number, cy: number, radius: number, degrees: number) {
+  const rad = ((degrees - 90) * Math.PI) / 180;
+  return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+}
+
+function donutSegmentPath(cx: number, cy: number, innerR: number, outerR: number, startDeg: number, endDeg: number) {
+  const sweep = endDeg - startDeg;
+  if (sweep <= 0) return "";
+  if (sweep >= 359.999) {
+    const east = { x: cx + outerR, y: cy };
+    const west = { x: cx - outerR, y: cy };
+    const eastInner = { x: cx + innerR, y: cy };
+    const westInner = { x: cx - innerR, y: cy };
+    return [
+      `M ${east.x} ${east.y}`,
+      `A ${outerR} ${outerR} 0 1 1 ${west.x} ${west.y}`,
+      `A ${outerR} ${outerR} 0 1 1 ${east.x} ${east.y}`,
+      `M ${eastInner.x} ${eastInner.y}`,
+      `A ${innerR} ${innerR} 0 1 0 ${westInner.x} ${westInner.y}`,
+      `A ${innerR} ${innerR} 0 1 0 ${eastInner.x} ${eastInner.y}`,
+      "Z",
+    ].join(" ");
+  }
+
+  const largeArc = sweep > 180 ? 1 : 0;
+  const outerStart = donutPoint(cx, cy, outerR, startDeg);
+  const outerEnd = donutPoint(cx, cy, outerR, endDeg);
+  const innerEnd = donutPoint(cx, cy, innerR, endDeg);
+  const innerStart = donutPoint(cx, cy, innerR, startDeg);
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+    "Z",
+  ].join(" ");
+}
+
 function Donut({ cats }: { cats: DashboardData["cats"] }) {
-  const r = 80;
-  const C = 2 * Math.PI * r;
-  const gap = 6;
-  let acc = 0;
-  const segments = cats.map((c) => {
-    const len = (C * c.pct) / 100;
-    const vis = Math.max(len - gap, 0.001);
-    const seg = { dash: `${vis.toFixed(2)} ${(C - vis).toFixed(2)}`, offset: (-acc).toFixed(2), color: c.color };
-    acc += len;
-    return seg;
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const cx = 110;
+  const cy = 110;
+  const innerR = 67;
+  const outerR = 93;
+  const total = cats.reduce((sum, c) => sum + c.amount, 0);
+  let cursor = 0;
+  const segments = cats.map((c, i) => {
+    const sweep = total > 0 ? (c.amount / total) * 360 : 0;
+    const start = cursor;
+    cursor += sweep;
+    return {
+      path: donutSegmentPath(cx, cy, innerR, outerR, start, cursor),
+      start,
+      color: c.color,
+      cat: c,
+      index: i,
+    };
   });
-  const topCat = cats[0];
+  const activeIdx = Math.min(selectedIdx, cats.length - 1);
+  const activeCat = cats[activeIdx] ?? cats[0];
+
+  useEffect(() => {
+    setSelectedIdx(0);
+  }, [cats]);
 
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 16px" }}>
       <div style={{ position: "relative", width: 220, height: 220, animation: "donutIn .5s ease both" }}>
         <svg width="220" height="220" viewBox="0 0 220 220">
-          <g transform="rotate(-90 110 110)">
-            <circle cx="110" cy="110" r={r} fill="none" stroke="rgba(255,255,255,0.045)" strokeWidth="26" />
-            {segments.map((s, i) => (
-              <circle
-                key={i}
-                cx="110"
-                cy="110"
-                r={r}
-                fill="none"
-                stroke={s.color}
-                strokeWidth="26"
-                strokeLinecap="butt"
-                strokeDasharray={s.dash}
-                strokeDashoffset={s.offset}
-              />
-            ))}
-          </g>
+          {segments.map((s) => (
+            <path
+              key={s.index}
+              d={s.path}
+              fill={s.color}
+              fillRule="evenodd"
+              opacity={activeIdx === s.index ? 1 : 0.82}
+              pointerEvents="visiblePainted"
+              style={{ cursor: "pointer", transition: "opacity .15s ease" }}
+              onClick={() => setSelectedIdx(s.index)}
+            />
+          ))}
+          {cats.length > 1 &&
+            segments.map((s) => {
+              const inner = donutPoint(cx, cy, innerR, s.start);
+              const outer = donutPoint(cx, cy, outerR, s.start);
+              return (
+                <line
+                  key={`divider-${s.index}`}
+                  x1={inner.x}
+                  y1={inner.y}
+                  x2={outer.x}
+                  y2={outer.y}
+                  stroke="#0D0D0F"
+                  strokeWidth={2}
+                  pointerEvents="none"
+                />
+              );
+            })}
         </svg>
         <div
           style={{
@@ -189,11 +252,12 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
+            pointerEvents: "none",
           }}
         >
-          <div style={mono(32, 500, { color: topCat.color, letterSpacing: -1 })}>{topCat.pct}%</div>
-          {topCat.emoji && <div style={{ fontSize: 22, lineHeight: 1, marginTop: 4 }}>{topCat.emoji}</div>}
-          <div style={{ ...microLabel, color: "rgba(244,243,239,0.5)", marginTop: 3 }}>{topCat.name}</div>
+          <div style={mono(32, 500, { color: activeCat.color, letterSpacing: -1 })}>{activeCat.pct}%</div>
+          {activeCat.emoji && <div style={{ fontSize: 22, lineHeight: 1, marginTop: 4 }}>{activeCat.emoji}</div>}
+          <div style={{ ...microLabel, color: "rgba(244,243,239,0.5)", marginTop: 3 }}>{activeCat.name}</div>
         </div>
       </div>
     </div>
