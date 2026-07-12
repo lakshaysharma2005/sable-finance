@@ -14,6 +14,7 @@ export interface TxItem {
   amount: number; // Plaid convention: positive = outflow
   pending: boolean;
   category: string;
+  emoji: string | null;
   color: string;
   accountId: number;
   accountName: string;
@@ -73,6 +74,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
         amount: r.amount,
         pending: r.pending,
         category,
+        emoji: resolveCategoryEmoji(category, categoryLookups.emojis),
         color: resolveCategoryColor(category, categoryLookups.colors),
         accountId: r.accountId,
         accountName: r.customName ?? r.accountName,
@@ -144,10 +146,12 @@ export async function getDashboardData(today = iso(new Date())) {
   // Category breakdown for the donut
   const byCat = new Map<string, number>();
   const catColors = new Map<string, string>();
+  const catEmojis = new Map<string, string | null>();
   for (const tx of monthTx) {
     if (tx.amount <= 0 || isExcluded(tx.category)) continue;
     byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
     if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
+    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
   }
   const cats = [...byCat.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -156,6 +160,7 @@ export async function getDashboardData(today = iso(new Date())) {
       amount,
       pct: spent > 0 ? Math.round((amount / spent) * 100) : 0,
       color: catColors.get(name) ?? resolveCategoryColor(name, {}),
+      emoji: catEmojis.get(name) ?? null,
     }));
 
   // Recent transactions (last 14 days)
@@ -236,14 +241,21 @@ export async function getStatsData(range: StatsRange, today = iso(new Date())) {
   const curTx = txs.filter((tx) => tx.date >= curFrom);
   const byCat = new Map<string, number>();
   const catColors = new Map<string, string>();
+  const catEmojis = new Map<string, string | null>();
   for (const tx of curTx) {
     if (tx.amount <= 0 || isExcluded(tx.category)) continue;
     byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
     if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
+    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
   }
   const top = [...byCat.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([name, amount]) => ({ name, amount, color: catColors.get(name) ?? resolveCategoryColor(name, {}) }));
+    .map(([name, amount]) => ({
+      name,
+      amount,
+      color: catColors.get(name) ?? resolveCategoryColor(name, {}),
+      emoji: catEmojis.get(name) ?? null,
+    }));
 
   const excluded = curTx
     .filter((tx) => isExcluded(tx.category))

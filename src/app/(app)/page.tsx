@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryIcon } from "@/components/CategoryIcon";
 import Link from "next/link";
 import { useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
@@ -105,7 +106,7 @@ export default function DashboardPage() {
                 cursor: "pointer",
               }}
             >
-              <span style={{ width: 9, height: 9, borderRadius: 3, flex: "none", background: c.color }} />
+              <CategoryIcon emoji={c.emoji} color={c.color} size="sm" />
               <span style={{ flex: 1, ...serif(15, 400, { color: TEXT }) }}>{c.name}</span>
               <span style={mono(11, 400, { color: TER, marginRight: 12 })}>{c.pct}%</span>
               <span style={mono(14, 500, { color: TEXT })}>{money(c.amount, 2)}</span>
@@ -191,6 +192,7 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
           }}
         >
           <div style={mono(32, 500, { color: topCat.color, letterSpacing: -1 })}>{topCat.pct}%</div>
+          {topCat.emoji && <div style={{ fontSize: 22, lineHeight: 1, marginTop: 4 }}>{topCat.emoji}</div>}
           <div style={{ ...microLabel, color: "rgba(244,243,239,0.5)", marginTop: 3 }}>{topCat.name}</div>
         </div>
       </div>
@@ -300,7 +302,10 @@ function ToReview({ data, reload }: { data: DashboardData; reload: () => void })
                   >
                     {it.name}
                   </div>
-                  <div style={{ ...microLabel, letterSpacing: 1, color: "rgba(244,243,239,0.5)", marginTop: 2 }}>{it.category}</div>
+                  <div style={{ ...microLabel, letterSpacing: 1, color: "rgba(244,243,239,0.5)", marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
+                    <CategoryIcon emoji={it.emoji} color={it.color} size="sm" />
+                    {it.category}
+                  </div>
                 </div>
                 <div style={mono(15, 500, { color: it.amount < 0 ? ACCENT : TEXT, flex: "none" })}>
                   {it.amount < 0 ? `+${money(-it.amount)}` : `${MINUS}${money(it.amount)}`}

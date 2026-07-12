@@ -3,10 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { ChevronRightIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
+import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { MINUS, money } from "@/lib/format";
-import type { CategoryData } from "@/lib/queries";
+import type { CategoryData, TxItem } from "@/lib/queries";
 import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
@@ -17,6 +19,7 @@ export default function CategoryPage() {
   const name = decodeURIComponent(Array.isArray(rawName) ? rawName[0] : (rawName ?? ""));
   const { data, loading, error, reload } = useData<CategoryData>(`/api/categories/${encodeURIComponent(name)}`);
   const [editOpen, setEditOpen] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
   const [draft, setDraft] = useState(name);
   const [draftEmoji, setDraftEmoji] = useState("📁");
   const [saving, setSaving] = useState(false);
@@ -147,11 +150,7 @@ export default function CategoryPage() {
             cursor: "pointer",
           }}
         >
-          {data.emoji ? (
-            <span style={{ fontSize: 24, lineHeight: 1 }}>{data.emoji}</span>
-          ) : (
-            <span style={{ width: 16, height: 16, borderRadius: 5, background: data.color ?? "#8A8594" }} />
-          )}
+          <CategoryIcon emoji={data.emoji} color={data.color ?? "#8A8594"} size="lg" />
         </button>
         <button
           onClick={openEdit}
@@ -220,12 +219,14 @@ export default function CategoryPage() {
                 return (
                   <div
                     key={it.id}
+                    onClick={() => setSelectedTx(it)}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 12,
                       padding: "13px 14px",
                       borderTop: "1px solid rgba(255,255,255,0.06)",
+                      cursor: "pointer",
                     }}
                   >
                     <span style={{ ...mono(11, 500, { color: (data.color ?? TER) + "cc" }), flex: "none", width: 42 }}>
@@ -254,6 +255,13 @@ export default function CategoryPage() {
           </div>
         ))}
       </div>
+
+      <TransactionDetailSheets
+        tx={selectedTx}
+        onClose={() => setSelectedTx(null)}
+        onTxUpdate={setSelectedTx}
+        onCategoryChanged={reload}
+      />
 
       {editOpen && (
         <Sheet onClose={() => setEditOpen(false)} background="#161618" zIndex={35} style={{ padding: "0 24px 28px" }}>

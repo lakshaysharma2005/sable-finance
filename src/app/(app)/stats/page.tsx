@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryIcon } from "@/components/CategoryIcon";
 import Link from "next/link";
 import { useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
@@ -199,7 +200,10 @@ export default function StatsPage() {
                   style={{ display: "block", textDecoration: "none", cursor: "pointer" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                    <span style={serif(15, 400, { color: TEXT })}>{t.name}</span>
+                    <span style={{ ...serif(15, 400, { color: TEXT }), display: "flex", alignItems: "center", gap: 8 }}>
+                      <CategoryIcon emoji={t.emoji} color={t.color} size="sm" />
+                      {t.name}
+                    </span>
                     <span style={mono(14, 500, { color: TEXT })}>{money(Math.round(t.amount), 0)}</span>
                   </div>
                   <div style={{ height: 6, borderRadius: 6, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>

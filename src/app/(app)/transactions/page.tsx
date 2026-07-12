@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AddCategorySheet } from "@/components/AddCategorySheet";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { FilterIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
+import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { TxAvatar } from "@/components/TxAvatar";
-import type { CategoriesListData } from "@/lib/category-queries";
-import { CATEGORY_COLORS } from "@/lib/categories";
 import { MINUS, money } from "@/lib/format";
 import type { TransactionsData, TxItem } from "@/lib/queries";
 import { ACCENT, card, chipBase, chipOff, chipOn, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
@@ -19,13 +18,9 @@ export default function TransactionsPage() {
   const [sort, setSort] = useState<Sort>("date");
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
-  const [catPickerOpen, setCatPickerOpen] = useState(false);
-  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
-  const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
 
   const query = selAccts.length > 0 ? `?accounts=${selAccts.join(",")}` : "";
   const { data, reload } = useData<TransactionsData>(`/api/transactions${query}`);
-  const { data: categoriesData, reload: reloadCategories } = useData<CategoriesListData>("/api/categories");
 
   const allActive = selAccts.length === 0;
 
@@ -45,35 +40,6 @@ export default function TransactionsPage() {
     const sorted = [...flat].sort((a, b) => (sort === "hl" ? b.amount - a.amount : a.amount - b.amount));
     return [{ date: "", label: "ALL · SORTED BY AMOUNT", net: 0, items: sorted }];
   }, [data, sort]);
-
-  async function changeCategory(category: string) {
-    if (!selectedTx) return;
-    const catMeta = categoriesData?.categories.find((c) => c.name === category);
-    await fetch(`/api/transactions/${selectedTx.id}/category`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category }),
-    });
-    setCatPickerOpen(false);
-    setCatChanged({ tx: selectedTx, category });
-    setSelectedTx({
-      ...selectedTx,
-      category,
-      color: catMeta?.color ?? CATEGORY_COLORS[category] ?? selectedTx.color,
-    });
-    reload();
-  }
-
-  async function createRule() {
-    if (!catChanged) return;
-    await fetch(`/api/transactions/${catChanged.tx.id}/category`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category: catChanged.category, createRule: true }),
-    });
-    setCatChanged(null);
-    reload();
-  }
 
   return (
     <div style={{ animation: "fadeUp .3s ease both" }}>
@@ -167,7 +133,8 @@ export default function TransactionsPage() {
                   >
                     {it.name}
                   </div>
-                  <div style={{ ...microLabel, letterSpacing: 0.5, color: "rgba(244,243,239,0.5)", marginTop: 2 }}>
+                  <div style={{ ...microLabel, letterSpacing: 0.5, color: "rgba(244,243,239,0.5)", marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
+                    <CategoryIcon emoji={it.emoji} color={it.color} size="sm" />
                     {it.category} · ••{it.accountMask ?? "????"}
                   </div>
                 </div>
@@ -193,193 +160,12 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* transaction detail sheet */}
-      {selectedTx && !catPickerOpen && !catChanged && (
-        <Sheet onClose={() => setSelectedTx(null)}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px 12px" }}>
-            <div>
-              <div style={mono(10, 600, { letterSpacing: 2, textTransform: "uppercase", color: ACCENT })}>Transaction</div>
-              <div style={mono(10, 400, { color: "rgba(244,243,239,0.38)", marginTop: 3 })}>
-                {new Date(selectedTx.date + "T00:00:00").toLocaleDateString("en-US", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
-            </div>
-          </div>
-          <div style={{ textAlign: "center", padding: "10px 20px 6px" }}>
-            <div style={{ marginBottom: 16 }}>
-              <span style={serif(32, 400, { color: TEXT })}>{selectedTx.name}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: 16 }}>
-              <span style={mono(22, 500, { color: "rgba(244,243,239,0.4)" })}>
-                {selectedTx.amount < 0 ? "+" : MINUS}$
-              </span>
-              <span style={mono(46, 500, { color: TEXT, letterSpacing: -2 })}>
-                {Math.abs(selectedTx.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-          <div style={{ padding: "22px 20px 16px" }}>
-            <div style={{ ...microLabel, fontWeight: 600, letterSpacing: 2, textAlign: "center", marginBottom: 12 }}>
-              Category
-            </div>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <button
-                onClick={() => setCatPickerOpen(true)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 9,
-                  background: selectedTx.color + "22",
-                  borderRadius: 999,
-                  padding: "11px 22px",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{ width: 9, height: 9, borderRadius: "50%", background: selectedTx.color, flex: "none" }} />
-                <span style={mono(12, 700, { letterSpacing: 1, color: selectedTx.color })}>{selectedTx.category}</span>
-              </button>
-            </div>
-          </div>
-          <div style={{ padding: "0 20px 28px", display: "flex", justifyContent: "center" }}>
-            <div
-              style={{
-                borderRadius: 14,
-                padding: "12px 14px",
-                background: selectedTx.accountColor + "18",
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                width: 130,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={mono(9, 700, { color: selectedTx.accountColor, letterSpacing: 1 })}>
-                  {selectedTx.accountName.toUpperCase().slice(0, 12)}
-                </span>
-                <span
-                  style={{
-                    width: 15,
-                    height: 15,
-                    borderRadius: "50%",
-                    background: selectedTx.accountColor,
-                    opacity: 0.85,
-                    flex: "none",
-                  }}
-                />
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <span style={mono(13, 500, { color: "rgba(244,243,239,0.65)" })}>••{selectedTx.accountMask ?? "????"}</span>
-              </div>
-            </div>
-          </div>
-        </Sheet>
-      )}
-
-      {/* category picker */}
-      {catPickerOpen && selectedTx && (
-        <Sheet onClose={() => setCatPickerOpen(false)} background="#161618" zIndex={25}>
-          <div
-            style={{
-              textAlign: "center",
-              ...mono(11, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: ACCENT }),
-              padding: "6px 0 10px",
-            }}
-          >
-            Change category
-          </div>
-          {categoriesData?.categories.map((c) => (
-            <div
-              key={c.name}
-              onClick={() => changeCategory(c.name)}
-              style={{
-                padding: "15px 24px",
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-              }}
-            >
-              {c.emoji ? (
-                <span style={{ fontSize: 16, lineHeight: 1, flex: "none" }}>{c.emoji}</span>
-              ) : (
-                <span style={{ width: 9, height: 9, borderRadius: "50%", background: c.color, flex: "none" }} />
-              )}
-              <span style={serif(16, 400, { color: c.name === selectedTx.category ? ACCENT : TEXT })}>{c.name}</span>
-              {c.name === selectedTx.category && <span style={mono(13, 600, { color: ACCENT })}>✓</span>}
-            </div>
-          ))}
-          <div
-            onClick={() => {
-              setCatPickerOpen(false);
-              setAddCategoryOpen(true);
-            }}
-            style={{
-              padding: "15px 24px",
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              cursor: "pointer",
-            }}
-          >
-            <span style={serif(16, 400, { color: "#6B8AB0" })}>Add a category</span>
-          </div>
-          <div style={{ paddingBottom: 18 }} />
-        </Sheet>
-      )}
-
-      {addCategoryOpen && (
-        <AddCategorySheet
-          onClose={() => setAddCategoryOpen(false)}
-          onCreated={() => {
-            reloadCategories();
-            reload();
-          }}
-        />
-      )}
-
-      {/* category changed confirmation */}
-      {catChanged && (
-        <Sheet onClose={() => setCatChanged(null)} zIndex={30} style={{ padding: "0 24px 34px" }}>
-          <div style={{ textAlign: "center", ...mono(15, 700, { letterSpacing: 1.5, color: "#6B8AB0" }) }}>
-            CATEGORY CHANGED
-          </div>
-          <div
-            style={{
-              textAlign: "center",
-              ...serif(18, 400, { color: "rgba(140,163,196,0.75)", lineHeight: 1.4, marginTop: 16 }),
-            }}
-          >
-            Do you want to apply the same change to similar transactions?
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 36 }}>
-            <button
-              onClick={createRule}
-              style={{ background: "none", border: "none", padding: "14px 0", ...serif(18, 400, { color: TEXT }), cursor: "pointer" }}
-            >
-              Create a rule based on the name
-            </button>
-            <button
-              onClick={() => setCatChanged(null)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "14px 0 4px",
-                ...serif(18, 400, { color: "rgba(244,243,239,0.45)" }),
-                cursor: "pointer",
-              }}
-            >
-              No thanks
-            </button>
-          </div>
-        </Sheet>
-      )}
+      <TransactionDetailSheets
+        tx={selectedTx}
+        onClose={() => setSelectedTx(null)}
+        onTxUpdate={setSelectedTx}
+        onCategoryChanged={reload}
+      />
 
       {/* filter & sort sheet */}
       {filterOpen && (
