@@ -70,24 +70,15 @@ export interface CategoryMeta {
 
 // Preset categories shown in the "Add a category" picker.
 export const SUGGESTED_CATEGORIES: { name: string; emoji: string; color: string }[] = [
-  { name: "Beauty", emoji: "💄", color: CATEGORY_PALETTE[17] },
   { name: "Car", emoji: "🚗", color: CATEGORY_PALETTE[12] },
-  { name: "Children", emoji: "🚸", color: CATEGORY_PALETTE[4] },
-  { name: "Dance", emoji: "💃", color: CATEGORY_PALETTE[16] },
-  { name: "Donations", emoji: "🤝", color: CATEGORY_PALETTE[9] },
   { name: "Gym", emoji: "👟", color: CATEGORY_PALETTE[0] },
   { name: "Healthcare", emoji: "💊", color: CATEGORY_PALETTE[18] },
-  { name: "Home", emoji: "🏠", color: CATEGORY_PALETTE[5] },
-  { name: "Loans", emoji: "💰", color: CATEGORY_PALETTE[19] },
-  { name: "Pets", emoji: "🐶", color: CATEGORY_PALETTE[6] },
   { name: "Recreation", emoji: "🎫", color: CATEGORY_PALETTE[14] },
-  { name: "Senior Care", emoji: "👵", color: CATEGORY_PALETTE[11] },
   { name: "Sports", emoji: "🚴", color: CATEGORY_PALETTE[10] },
   { name: "Subscriptions", emoji: "💳", color: CATEGORY_PALETTE[13] },
   { name: "Transportation", emoji: "🚌", color: CATEGORY_PALETTE[12] },
   { name: "Travel & Vacation", emoji: "🏖️", color: CATEGORY_PALETTE[11] },
   { name: "Utilities", emoji: "🔌", color: CATEGORY_PALETTE[7] },
-  { name: "Yoga & Pilates", emoji: "🧘", color: CATEGORY_PALETTE[10] },
 ];
 
 const DEFAULT_EMOJI: Partial<Record<string, string>> = {
