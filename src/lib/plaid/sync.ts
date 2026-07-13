@@ -3,6 +3,7 @@ import type { RemovedTransaction, Transaction } from "plaid";
 import { db, accounts, plaidItems, transactions, categoryRules, balanceSnapshots } from "@/db";
 import { decryptToken } from "@/lib/crypto";
 import { mapPfcToCategory } from "@/lib/categories";
+import { isLocalPlaidId } from "@/lib/cash";
 import { plaidClient } from "./client";
 
 const MUTATION_ERROR = "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION";
@@ -156,6 +157,7 @@ export async function syncAllItems() {
   const items = await db.select().from(plaidItems);
   const results = [];
   for (const item of items) {
+    if (isLocalPlaidId(item.plaidItemId)) continue;
     try {
       results.push({ item: item.plaidItemId, ...(await syncItem(item)) });
     } catch (err: unknown) {
@@ -173,6 +175,7 @@ export async function syncAllItems() {
 export async function refreshBalances() {
   const items = await db.select().from(plaidItems);
   for (const item of items) {
+    if (isLocalPlaidId(item.plaidItemId)) continue;
     const accessToken = decryptToken(item.accessTokenEncrypted);
     try {
       const { data } = await plaidClient.accountsBalanceGet({ access_token: accessToken });

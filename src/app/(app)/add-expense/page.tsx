@@ -6,11 +6,15 @@ import { CloseIcon } from "@/components/Icons";
 import type { CategoriesListData } from "@/lib/category-queries";
 import { EXCLUDED_CATEGORIES } from "@/lib/categories";
 import { tint } from "@/lib/format";
+import { CASH_PAY_FROM } from "@/lib/cash";
 import type { AccountsData } from "@/lib/queries";
 import { ACCENT, chipBase, chipOff, chipOn, microLabel, mono, serif, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"] as const;
+const CASH_COLOR = "#C49A6B";
+
+type PayFromId = number | typeof CASH_PAY_FROM;
 
 function formatAmtDisplay(amt: string): string {
   const parts = amt.split(".");
@@ -41,20 +45,30 @@ export default function AddExpensePage() {
       ),
     [categoriesData],
   );
-  const accounts = accountsData?.accounts ?? [];
+  const accounts = useMemo(
+    () => (accountsData?.accounts ?? []).filter((a) => a.name.toLowerCase() !== "cash"),
+    [accountsData],
+  );
+
+  const payFromOptions = useMemo(
+    () => [
+      { id: CASH_PAY_FROM as PayFromId, name: "Cash", mask: null as string | null, color: CASH_COLOR },
+      ...accounts.map((a) => ({
+        id: a.id as PayFromId,
+        name: a.name,
+        mask: a.mask,
+        color: a.color,
+      })),
+    ],
+    [accounts],
+  );
 
   const [amt, setAmt] = useState("");
   const [category, setCategory] = useState("Food & Drink");
-  const [accountId, setAccountId] = useState<number | null>(null);
+  const [payFrom, setPayFrom] = useState<PayFromId>(CASH_PAY_FROM);
   const [saving, setSaving] = useState(false);
   const [savedLabel, setSavedLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (accountId === null && accounts.length > 0) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accounts, accountId]);
 
   useEffect(() => {
     if (categories.length > 0 && !categories.some((c) => c.name === category)) {
@@ -62,11 +76,11 @@ export default function AddExpensePage() {
     }
   }, [categories, category]);
 
-  const canSave = parseFloat(amt) > 0 && accountId !== null && !saving;
+  const canSave = parseFloat(amt) > 0 && !saving;
   const display = formatAmtDisplay(amt);
 
   async function save() {
-    if (!canSave || accountId === null) return;
+    if (!canSave) return;
     setSaving(true);
     setError(null);
     try {
@@ -76,7 +90,7 @@ export default function AddExpensePage() {
         body: JSON.stringify({
           amount: parseFloat(amt),
           category,
-          accountId,
+          accountId: payFrom,
         }),
       });
       const body = (await res.json()) as { error?: string; accountName?: string };
@@ -170,39 +184,34 @@ export default function AddExpensePage() {
       </div>
 
       <div style={{ ...microLabel, marginBottom: 9 }}>Pay from</div>
-      {accounts.length === 0 ? (
-        <div style={mono(12, 400, { color: "rgba(244,243,239,0.4)", marginBottom: 8 })}>
-          Connect a bank account first to log an expense.
-        </div>
-      ) : (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 8 }}>
-          {accounts.map((a) => {
-            const selected = accountId === a.id;
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setAccountId(a.id)}
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 8 }}>
+        {payFromOptions.map((a) => {
+          const selected = payFrom === a.id;
+          const isCash = a.id === CASH_PAY_FROM;
+          return (
+            <button
+              key={String(a.id)}
+              type="button"
+              onClick={() => setPayFrom(a.id)}
+              style={{
+                ...chipBase,
+                ...(selected ? chipOn : chipOff),
+              }}
+            >
+              <span
                 style={{
-                  ...chipBase,
-                  ...(selected ? chipOn : chipOff),
+                  width: 8,
+                  height: 8,
+                  borderRadius: 3,
+                  flex: "none",
+                  background: a.color,
                 }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 3,
-                    flex: "none",
-                    background: a.color,
-                  }}
-                />
-                {a.name} ••{a.mask ?? "????"}
-              </button>
-            );
-          })}
-        </div>
-      )}
+              />
+              {isCash ? "Cash" : `${a.name} ••${a.mask ?? "????"}`}
+            </button>
+          );
+        })}
+      </div>
 
       {error && (
         <div style={{ ...mono(12, 400, { color: "#D98A7F", textAlign: "center", marginTop: 8 }) }}>{error}</div>

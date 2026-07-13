@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createManualExpense } from "@/lib/manual-expense";
+import { CASH_PAY_FROM, createManualExpense } from "@/lib/manual-expense";
 import { getTransactionsData } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       amount?: number | string;
       category?: string;
-      accountId?: number;
+      accountId?: number | string;
     };
     const amount = typeof body.amount === "string" ? parseFloat(body.amount) : body.amount;
     if (amount === undefined || Number.isNaN(amount)) {
@@ -30,14 +30,20 @@ export async function POST(request: Request) {
     if (!body.category?.trim()) {
       return NextResponse.json({ error: "Category is required" }, { status: 400 });
     }
-    if (body.accountId === undefined || Number.isNaN(Number(body.accountId))) {
+
+    let accountId: number | typeof CASH_PAY_FROM;
+    if (body.accountId === CASH_PAY_FROM || body.accountId === "cash") {
+      accountId = CASH_PAY_FROM;
+    } else if (body.accountId === undefined || Number.isNaN(Number(body.accountId))) {
       return NextResponse.json({ error: "Account is required" }, { status: 400 });
+    } else {
+      accountId = Number(body.accountId);
     }
 
     const result = await createManualExpense({
       amount,
       category: body.category,
-      accountId: Number(body.accountId),
+      accountId,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (e) {

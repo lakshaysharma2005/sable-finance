@@ -325,7 +325,8 @@ export async function getAccountsData(today = iso(new Date())) {
 
   const itemStatus = new Map(items.map((i) => [i.id, i.status]));
 
-  const accountList = acctRows.map((a) => {
+  // Exclude local cash / non-Plaid accounts from portfolio net worth UI.
+  const accountList = acctRows.filter((a) => !a.plaidAccountId.startsWith("local_")).map((a) => {
     // Signed balance: credit balances count against net worth
     const raw = a.currentBalance ?? 0;
     const signed = a.assetCategory === "cc" ? -raw : raw;

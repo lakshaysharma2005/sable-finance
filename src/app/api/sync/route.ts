@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, plaidItems } from "@/db";
 import { decryptToken } from "@/lib/crypto";
+import { isLocalPlaidId } from "@/lib/cash";
 import { plaidClient } from "@/lib/plaid/client";
 import { syncAllItems, refreshBalances, snapshotBalances } from "@/lib/plaid/sync";
 
@@ -10,6 +11,7 @@ export async function POST() {
   const items = await db.select().from(plaidItems);
 
   for (const item of items) {
+    if (isLocalPlaidId(item.plaidItemId)) continue;
     try {
       await plaidClient.transactionsRefresh({
         access_token: decryptToken(item.accessTokenEncrypted),
