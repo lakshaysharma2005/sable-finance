@@ -159,6 +159,23 @@ export async function renameCategory(oldName: string, newName: string): Promise<
   return updateCategory(oldName, { name: newName });
 }
 
+export async function deleteCategory(name: string): Promise<void> {
+  if ((EXCLUDED_CATEGORIES as readonly string[]).includes(name) || name === "Other") {
+    throw new Error("Cannot delete this category");
+  }
+  if ((SPEND_CATEGORIES as readonly string[]).includes(name)) {
+    throw new Error("Cannot delete a built-in category");
+  }
+
+  await db.update(transactions).set({ category: "Other" }).where(eq(transactions.category, name));
+  await db
+    .update(transactions)
+    .set({ categoryOverride: "Other" })
+    .where(eq(transactions.categoryOverride, name));
+  await db.delete(categoryRules).where(eq(categoryRules.category, name));
+  await db.delete(userCategories).where(eq(userCategories.name, name));
+}
+
 /** Color + emoji maps for transaction display. */
 export async function getCategoryLookups(): Promise<{
   colors: Record<string, string>;

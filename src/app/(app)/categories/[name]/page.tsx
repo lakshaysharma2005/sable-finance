@@ -1,10 +1,10 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { ChevronRightIcon } from "@/components/Icons";
+import { ChevronRightIcon, DotsIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
 import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { MINUS, money } from "@/lib/format";
@@ -20,12 +20,28 @@ export default function CategoryPage() {
   const name = decodeURIComponent(Array.isArray(rawName) ? rawName[0] : (rawName ?? ""));
   const { data, loading, error, reload } = useData<CategoryData>(`/api/categories/${encodeURIComponent(name)}`);
   const [editOpen, setEditOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
   const [draft, setDraft] = useState(name);
   const [draftEmoji, setDraftEmoji] = useState("📁");
   const [draftColor, setDraftColor] = useState("#8A8594");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen]);
 
   if (loading && !data) {
     return (
@@ -109,6 +125,24 @@ export default function CategoryPage() {
     }
   }
 
+  async function confirmDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/categories/${encodeURIComponent(displayName)}`, {
+        method: "DELETE",
+      });
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(body.error ?? "Failed to delete category");
+      setDeleteOpen(false);
+      router.replace("/");
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete category");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const editUnchanged =
     draft.trim() === displayName &&
     (draftEmoji.trim() || displayEmoji) === displayEmoji &&
@@ -139,7 +173,61 @@ export default function CategoryPage() {
         <div style={mono(10, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: data.color ?? TER })}>
           Category
         </div>
-        <div style={{ width: 40 }} />
+        <div ref={menuRef} style={{ position: "relative", width: 40, height: 40 }}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Category options"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              background: "#161618",
+              border: "1px solid rgba(255,255,255,0.07)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <DotsIcon />
+          </button>
+          {menuOpen && (
+            <div
+              style={{
+                position: "absolute",
+                top: 46,
+                right: 0,
+                background: "#202022",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderRadius: 14,
+                padding: 6,
+                minWidth: 170,
+                boxShadow: "0 12px 28px rgba(0,0,0,0.5)",
+                zIndex: 5,
+              }}
+            >
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setDeleteError(null);
+                  setDeleteOpen(true);
+                }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  background: "none",
+                  border: "none",
+                  padding: "11px 12px",
+                  borderRadius: 9,
+                  ...serif(14, 400, { color: "#D98A7F" }),
+                  cursor: "pointer",
+                }}
+              >
+                Delete category
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* category title */}
@@ -366,6 +454,63 @@ export default function CategoryPage() {
           </button>
           <button
             onClick={() => setEditOpen(false)}
+            style={{
+              width: "100%",
+              background: "none",
+              border: "none",
+              padding: "14px 0 0",
+              ...serif(15, 400, { color: "rgba(244,243,239,0.45)" }),
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+        </Sheet>
+      )}
+
+      {deleteOpen && (
+        <Sheet onClose={() => setDeleteOpen(false)} background="#161618" zIndex={35} style={{ padding: "0 24px 28px" }}>
+          <div
+            style={{
+              textAlign: "center",
+              ...mono(11, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: "#D98A7F" }),
+              padding: "6px 0 14px",
+            }}
+          >
+            Delete category
+          </div>
+          <div
+            style={{
+              textAlign: "center",
+              ...serif(16, 400, { color: "rgba(244,243,239,0.7)", lineHeight: 1.45, marginBottom: deleteError ? 12 : 20 }),
+            }}
+          >
+            Delete {displayName}? Transactions in this category will move to Other.
+          </div>
+          {deleteError && (
+            <div style={{ ...mono(12, 400, { color: "#D98A7F", marginBottom: 16, textAlign: "center" }) }}>
+              {deleteError}
+            </div>
+          )}
+          <button
+            onClick={confirmDelete}
+            disabled={deleting}
+            style={{
+              width: "100%",
+              padding: 15,
+              borderRadius: 14,
+              border: "none",
+              background: "#D98A7F",
+              color: "#0D0D0F",
+              opacity: deleting ? 0.5 : 1,
+              ...mono(12, 600, { letterSpacing: 1, textTransform: "uppercase" }),
+              cursor: deleting ? "default" : "pointer",
+            }}
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </button>
+          <button
+            onClick={() => setDeleteOpen(false)}
             style={{
               width: "100%",
               background: "none",

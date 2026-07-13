@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCategoryData } from "@/lib/queries";
-import { updateCategory } from "@/lib/category-queries";
+import { deleteCategory, updateCategory } from "@/lib/category-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +29,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ name: 
     const msg = e instanceof Error ? e.message : "Failed to rename category";
     console.error("PATCH /api/categories/[name]", e);
     const status = msg.includes("already exists") || msg.includes("Cannot rename") ? 409 : 500;
+    return NextResponse.json({ error: msg }, { status });
+  }
+}
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ name: string }> }) {
+  try {
+    const { name } = await params;
+    const category = decodeURIComponent(name);
+    await deleteCategory(category);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to delete category";
+    console.error("DELETE /api/categories/[name]", e);
+    const status = msg.includes("Cannot delete") ? 409 : 500;
     return NextResponse.json({ error: msg }, { status });
   }
 }
