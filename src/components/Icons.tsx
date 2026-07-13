@@ -107,6 +107,15 @@ export function FilterIcon({ size = 17, color = "rgba(244,243,239,0.6)", strokeW
   );
 }
 
+export function SearchIcon({ size = 18, color = "rgba(244,243,239,0.6)", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4-4" />
+    </svg>
+  );
+}
+
 export function LogoutIcon({ size = 18, color = "rgba(244,243,239,0.6)", strokeWidth = 1.8 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">

@@ -54,6 +54,8 @@ export function BottomNav() {
     }
   }
 
+  if (pathname === "/add-expense") return null;
+
   const iconColor = (active: boolean) => (active ? ACTIVE : INACTIVE);
 
   return (
@@ -139,9 +141,23 @@ export function BottomNav() {
             <div style={{ textAlign: "center", padding: "12px 0 10px" }}>
               <div style={{ width: 36, height: 4, borderRadius: 100, background: "rgba(255,255,255,0.15)", margin: "0 auto 14px" }} />
               <div style={mono(10, 400, { letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(244,243,239,0.32)" })}>
-                Sable
+                Add to Sable
               </div>
             </div>
+            <SheetAction
+              icon={
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#D98A7F" strokeWidth="2" strokeLinecap="round">
+                  <path d="M5 12h14" />
+                </svg>
+              }
+              iconBg="rgba(217,138,127,0.14)"
+              title="Add an expense"
+              subtitle="Log something you spent"
+              onClick={() => {
+                setSheetOpen(false);
+                router.push("/add-expense");
+              }}
+            />
             <SheetAction
               icon={<span style={{ fontSize: 20 }}>🏷️</span>}
               iconBg="rgba(107,138,176,0.14)"

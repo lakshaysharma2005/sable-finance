@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { FilterIcon } from "@/components/Icons";
+import { FilterIcon, SearchIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
 import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { TxAvatar } from "@/components/TxAvatar";
@@ -14,6 +15,7 @@ import { useData } from "@/lib/useData";
 type Sort = "date" | "hl" | "lh";
 
 export default function TransactionsPage() {
+  const router = useRouter();
   const [selAccts, setSelAccts] = useState<number[]>([]);
   const [sort, setSort] = useState<Sort>("date");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -46,22 +48,42 @@ export default function TransactionsPage() {
       {/* header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
         <div style={serif(22, 400, { color: TEXT })}>Transactions</div>
-        <button
-          onClick={() => setFilterOpen(true)}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 14,
-            background: "#161618",
-            border: "1px solid rgba(255,255,255,0.07)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <FilterIcon />
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => router.push("/search")}
+            aria-label="Search transactions"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              background: "#161618",
+              border: "1px solid rgba(255,255,255,0.07)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <SearchIcon />
+          </button>
+          <button
+            onClick={() => setFilterOpen(true)}
+            aria-label="Filter and sort"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              background: "#161618",
+              border: "1px solid rgba(255,255,255,0.07)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <FilterIcon />
+          </button>
+        </div>
       </div>
 
       {/* account selector */}
