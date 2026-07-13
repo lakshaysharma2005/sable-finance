@@ -305,9 +305,25 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {groups.map((g) => (
+        {groups.map((g) => {
+          const monthTotal = (g.items ?? [])
+            .filter((it) => it.amount > 0)
+            .reduce((s, it) => s + it.amount, 0);
+          return (
           <div key={g.monthKey} style={{ marginBottom: 20 }}>
-            <div style={{ ...serif(16, 400, { color: TEXT }), marginBottom: 10, padding: "0 2px" }}>{g.label}</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 10,
+                padding: "0 2px",
+              }}
+            >
+              <div style={serif(16, 400, { color: TEXT })}>{g.label}</div>
+              <div style={mono(13, 500, { color: TER })}>{money(monthTotal)}</div>
+            </div>
             <div data-rows="1" style={{ ...card, borderRadius: 18, overflow: "hidden" }}>
               {(g.items ?? []).map((it) => {
                 const [, m, d] = it.date.split("-").map(Number);
@@ -350,7 +366,8 @@ export default function CategoryPage() {
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <TransactionDetailSheets
