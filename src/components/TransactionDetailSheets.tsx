@@ -8,7 +8,7 @@ import type { CategoriesListData } from "@/lib/category-queries";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import { MINUS } from "@/lib/format";
 import type { TxItem } from "@/lib/queries";
-import { ACCENT, microLabel, mono, serif, TEXT } from "@/lib/ui";
+import { ACCENT, CREDIT_CARD_ASPECT, microLabel, mono, serif, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 type Props = {
@@ -123,8 +123,10 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                 background: tx.accountColor + "18",
                 display: "flex",
                 flexDirection: "column",
-                gap: 12,
+                justifyContent: "space-between",
                 width: 130,
+                aspectRatio: CREDIT_CARD_ASPECT,
+                boxSizing: "border-box",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

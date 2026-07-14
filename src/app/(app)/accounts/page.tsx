@@ -6,7 +6,7 @@ import { usePlaidConnect } from "@/components/PlaidLinkButton";
 import { Sheet } from "@/components/Sheet";
 import { MINUS, money } from "@/lib/format";
 import type { AccountsData } from "@/lib/queries";
-import { ACCENT, card, chipBase, chipOff, chipOn, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
+import { ACCENT, card, chipBase, chipOff, chipOn, CREDIT_CARD_ASPECT, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 type Acct = AccountsData["accounts"][number];
@@ -388,7 +388,7 @@ function AccountRow({
       <div
         style={{
           width: 82,
-          height: 54,
+          aspectRatio: CREDIT_CARD_ASPECT,
           borderRadius: 10,
           background: theme.grad,
           padding: "9px 10px",
@@ -396,6 +396,7 @@ function AccountRow({
           flexDirection: "column",
           justifyContent: "space-between",
           flex: "none",
+          boxSizing: "border-box",
         }}
       >
         <span style={mono(9, 700, { color: theme.accent, letterSpacing: 0.5 })}>{theme.typeLabel}</span>
@@ -620,7 +621,7 @@ function AccountDetailSheet({
           <div
             style={{
               width: 100,
-              height: 64,
+              aspectRatio: CREDIT_CARD_ASPECT,
               borderRadius: 12,
               background: theme.grad,
               padding: "10px 12px",
@@ -628,6 +629,7 @@ function AccountDetailSheet({
               flexDirection: "column",
               justifyContent: "space-between",
               marginBottom: 20,
+              boxSizing: "border-box",
             }}
           >
             <span style={mono(10, 700, { color: theme.accent, letterSpacing: 0.5 })}>{theme.typeLabel}</span>
