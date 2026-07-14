@@ -191,6 +191,75 @@ export type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export type StatsRange = "week" | "month" | "year";
 
+const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const MONTH_FULL = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function statsPeriodLabel(
+  range: StatsRange,
+  bucket: { from: string; to: string },
+  isCurrent: boolean,
+  today: string,
+): string {
+  if (range === "week") {
+    if (bucket.from === today) return "Today";
+    const d = new Date(bucket.from + "T00:00:00Z");
+    return WEEKDAY_NAMES[(d.getUTCDay() + 6) % 7];
+  }
+  if (range === "month") {
+    if (isCurrent) return "This month";
+    const m = Number(bucket.from.slice(5, 7)) - 1;
+    return MONTH_FULL[m];
+  }
+  if (isCurrent) return "This year";
+  return bucket.from.slice(0, 4);
+}
+
+function bucketBreakdown(txs: TxItem[]) {
+  const byCat = new Map<string, number>();
+  const catColors = new Map<string, string>();
+  const catEmojis = new Map<string, string | null>();
+  for (const tx of txs) {
+    if (tx.amount <= 0 || isExcluded(tx.category)) continue;
+    byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
+    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
+    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
+  }
+  const top = [...byCat.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, amount]) => ({
+      name,
+      amount,
+      color: catColors.get(name) ?? resolveCategoryColor(name, {}),
+      emoji: catEmojis.get(name) ?? null,
+    }));
+
+  const excluded = txs
+    .filter((tx) => isExcluded(tx.category))
+    .slice(0, 20)
+    .map((tx) => ({
+      name: tx.name,
+      reason: tx.category,
+      amount: tx.amount,
+      color: tx.color,
+      logoUrl: tx.logoUrl,
+    }));
+
+  return { top, excluded };
+}
+
 export async function getStatsData(range: StatsRange, today = iso(new Date())) {
   const t = new Date(today + "T00:00:00Z");
 
@@ -227,62 +296,57 @@ export async function getStatsData(range: StatsRange, today = iso(new Date())) {
 
   const from = buckets[0].from;
   const to = buckets[buckets.length - 1].to;
-  const txs = await fetchTx(from, to > today ? to : today);
+  const txs = await fetchTx(from, to > today ? today : to);
 
-  const vals = buckets.map((b) => spendTotal(txs.filter((tx) => tx.date >= b.from && tx.date <= b.to)));
-  const cur = buckets.length - 1;
-  const curTotal = vals[cur];
-  const prevTotal = vals[cur - 1] ?? 0;
-  const deltaPct = prevTotal > 0 ? Math.round(Math.abs(((curTotal - prevTotal) / prevTotal) * 100)) : 0;
-  const deltaDir = curTotal > prevTotal ? "up" : curTotal < prevTotal ? "down" : "flat";
+  const vals = buckets.map((b) => {
+    const end = b.to > today ? today : b.to;
+    return spendTotal(txs.filter((tx) => tx.date >= b.from && tx.date <= end));
+  });
 
-  // Current-period bucket totals for Top Spending + Excluded
-  const curFrom = buckets[cur].from;
-  const curTx = txs.filter((tx) => tx.date >= curFrom);
-  const byCat = new Map<string, number>();
-  const catColors = new Map<string, string>();
-  const catEmojis = new Map<string, string | null>();
-  for (const tx of curTx) {
-    if (tx.amount <= 0 || isExcluded(tx.category)) continue;
-    byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
-    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
-    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
+  // Default selection: today within the week, else the latest (current) bucket
+  let cur = buckets.length - 1;
+  if (range === "week") {
+    const todayIdx = buckets.findIndex((b) => b.key === today);
+    if (todayIdx >= 0) cur = todayIdx;
   }
-  const top = [...byCat.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, amount]) => ({
-      name,
-      amount,
-      color: catColors.get(name) ?? resolveCategoryColor(name, {}),
-      emoji: catEmojis.get(name) ?? null,
-    }));
 
-  const excluded = curTx
-    .filter((tx) => isExcluded(tx.category))
-    .slice(0, 20)
-    .map((tx) => ({
-      name: tx.name,
-      reason: tx.category,
-      amount: tx.amount,
-      color: tx.color,
-      logoUrl: tx.logoUrl,
-    }));
+  const periods = buckets.map((b, i) => {
+    const end = b.to > today ? today : b.to;
+    const bucketTx = txs.filter((tx) => tx.date >= b.from && tx.date <= end);
+    const total = vals[i];
+    const prevTotal = i > 0 ? vals[i - 1] : 0;
+    const deltaPct = prevTotal > 0 ? Math.round(Math.abs(((total - prevTotal) / prevTotal) * 100)) : 0;
+    const deltaDir = total > prevTotal ? ("up" as const) : total < prevTotal ? ("down" as const) : ("flat" as const);
+    const isCurrent =
+      range === "week" ? b.key === today : i === buckets.length - 1;
+    const compareLabel = i === 0 ? "" : `vs ${buckets[i - 1].label}`;
+    const { top, excluded } = bucketBreakdown(bucketTx);
+    return {
+      periodLabel: statsPeriodLabel(range, b, isCurrent, today),
+      total,
+      deltaPct,
+      deltaDir,
+      compareLabel,
+      top,
+      excluded,
+    };
+  });
 
-  const periodLabel = range === "week" ? "This week" : range === "month" ? "This month" : "This year";
-  const compareLabel =
-    range === "week" ? "vs last wk" : range === "month" ? `vs ${buckets[cur - 1]?.label ?? ""}` : "vs last yr";
+  const selected = periods[cur];
 
   return {
     labels: buckets.map((b) => b.label),
     vals,
     cur,
-    total: curTotal,
-    periodLabel,
-    deltaPct,
-    deltaDir,
-    compareLabel,
-    top,
-    excluded,
+    periods,
+    // Flat fields for the default (current) selection — kept for convenience
+    total: selected.total,
+    periodLabel: selected.periodLabel,
+    deltaPct: selected.deltaPct,
+    deltaDir: selected.deltaDir,
+    compareLabel: selected.compareLabel,
+    top: selected.top,
+    excluded: selected.excluded,
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { CategoryIcon } from "@/components/CategoryIcon";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
 import type { StatsData, StatsRange } from "@/lib/queries";
@@ -18,7 +18,15 @@ const RANGES: { key: StatsRange; label: string }[] = [
 export default function StatsPage() {
   const [range, setRange] = useState<StatsRange>("month");
   const [tab, setTab] = useState<"top" | "excl">("top");
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const { data } = useData<StatsData>(`/api/stats?range=${range}`);
+
+  useEffect(() => {
+    setSelectedIdx(null);
+  }, [range]);
+
+  const sel = selectedIdx ?? data?.cur ?? 0;
+  const period = data?.periods[sel];
 
   return (
     <div style={{ animation: "fadeUp .3s ease both" }}>
@@ -63,12 +71,14 @@ export default function StatsPage() {
       <div style={{ ...card, marginTop: 16, padding: "22px 18px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ ...microLabel, fontSize: 11, color: "rgba(244,243,239,0.5)" }}>{data?.periodLabel ?? ""}</div>
+            <div style={{ ...microLabel, fontSize: 11, color: "rgba(244,243,239,0.5)" }}>
+              {period?.periodLabel ?? data?.periodLabel ?? ""}
+            </div>
             <div style={mono(30, 500, { color: TEXT, marginTop: 8, letterSpacing: -1 })}>
-              {data ? money(data.total, 2) : "$—"}
+              {period ? money(period.total, 2) : data ? money(data.total, 2) : "$—"}
             </div>
           </div>
-          {data && data.deltaPct > 0 && (
+          {period && period.deltaPct > 0 && (
             <span
               style={{
                 background: "rgba(127,224,138,0.12)",
@@ -79,7 +89,7 @@ export default function StatsPage() {
                 marginTop: 4,
               }}
             >
-              {data.deltaDir === "up" ? "▲" : "▼"} {data.deltaPct}% {data.compareLabel}
+              {period.deltaDir === "up" ? "▲" : "▼"} {period.deltaPct}% {period.compareLabel}
             </span>
           )}
         </div>
@@ -98,10 +108,14 @@ export default function StatsPage() {
             (() => {
               const maxv = Math.max(...data.vals, 1);
               return data.vals.map((v, i) => {
-                const current = i === data.cur;
+                const current = i === sel;
                 return (
-                  <div
+                  <button
                     key={i}
+                    type="button"
+                    onClick={() => setSelectedIdx(i)}
+                    aria-pressed={current}
+                    aria-label={`${data.labels[i]} · ${money(Math.round(v), 0)}`}
                     style={{
                       flex: 1,
                       display: "flex",
@@ -111,6 +125,11 @@ export default function StatsPage() {
                       height: "100%",
                       justifyContent: "flex-end",
                       position: "relative",
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      WebkitTapHighlightColor: "transparent",
                     }}
                   >
                     {current && v > 0 && (
@@ -127,6 +146,7 @@ export default function StatsPage() {
                           padding: "5px 9px",
                           borderRadius: 8,
                           boxShadow: "0 4px 12px rgba(127,224,138,0.25)",
+                          pointerEvents: "none",
                         }}
                       >
                         {data.labels[i]} · {v >= 10000 ? "$" + (v / 1000).toFixed(1) + "k" : money(Math.round(v), 0)}
@@ -141,10 +161,11 @@ export default function StatsPage() {
                         background: current ? ACCENT : "rgba(244,243,239,0.13)",
                         transformOrigin: "bottom",
                         animation: "grow .4s ease both",
+                        transition: "background .2s",
                       }}
                     />
                     <span style={mono(10, 400, { color: current ? ACCENT : TER })}>{data.labels[i]}</span>
-                  </div>
+                  </button>
                 );
               });
             })()}
@@ -186,13 +207,13 @@ export default function StatsPage() {
 
         {tab === "top" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {data?.top.length === 0 && (
+            {(period?.top ?? data?.top ?? []).length === 0 && (
               <div style={{ textAlign: "center", ...serif(14, 400, { color: "rgba(244,243,239,0.4)" }) }}>
                 No spending in this period
               </div>
             )}
-            {data?.top.map((t, i) => {
-              const max = data.top[0]?.amount ?? 1;
+            {(period?.top ?? data?.top ?? []).map((t) => {
+              const max = (period?.top ?? data?.top ?? [])[0]?.amount ?? 1;
               return (
                 <Link
                   key={t.name}
@@ -223,12 +244,12 @@ export default function StatsPage() {
           </div>
         ) : (
           <div data-rows="1" style={{ ...card, borderRadius: 18, overflow: "hidden" }}>
-            {data?.excluded.length === 0 && (
+            {(period?.excluded ?? data?.excluded ?? []).length === 0 && (
               <div style={{ padding: 20, textAlign: "center", ...serif(14, 400, { color: "rgba(244,243,239,0.4)" }) }}>
                 Nothing excluded in this period
               </div>
             )}
-            {data?.excluded.map((e, i) => (
+            {(period?.excluded ?? data?.excluded ?? []).map((e, i) => (
               <div
                 key={i}
                 style={{
