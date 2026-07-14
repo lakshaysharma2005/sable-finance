@@ -495,7 +495,7 @@ input::placeholder{color:rgba(244,243,239,0.3)}
               </div>
             </div>
             <div style="padding:0 20px 20px;display:flex;justify-content:center">
-              <div style="border-radius: 14px; padding: 12px 14px; background: {{ detailAcctBg }}; display: flex; flex-direction: column; gap: 12px; width: 110px; z-index: 0">
+              <div style="border-radius: 14px; padding: 12px 14px; background: {{ detailAcctBg }}; display: flex; flex-direction: column; justify-content: space-between; width: 130px; aspect-ratio: 1.588; box-sizing: border-box; z-index: 0">
                 <div style="display:flex;align-items:center;justify-content:space-between">
                   <span style="font:700 9px 'JetBrains Mono';color:{{ detailAcctColor }};letter-spacing:1px">{{ detailAcctLabel }}</span>
                   <span style="width:15px;height:15px;border-radius:50%;background:{{ detailAcctColor }};opacity:0.85;flex:none"></span>
@@ -726,7 +726,7 @@ input::placeholder{color:rgba(244,243,239,0.3)}
           <sc-if value="{{ acctOpenCc }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex;flex-direction:column;gap:8px">
               <div onClick="{{ openDetailsCrd }}" style="display:flex;align-items:center;gap:12px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:13px;cursor:pointer">
-                <div style="width:82px;height:54px;border-radius:10px;background:linear-gradient(135deg,#2a1a14,#3d200f);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none">
+                <div style="width:82px;aspect-ratio:1.588;border-radius:10px;background:linear-gradient(135deg,#2a1a14,#3d200f);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none;box-sizing:border-box">
                   <span style="font:700 9px 'JetBrains Mono';color:#D98A7F;letter-spacing:.5px">CREDIT</span>
                   <span style="font:10px 'JetBrains Mono';color:rgba(217,138,127,0.7)">••9012</span>
                 </div>
@@ -755,7 +755,7 @@ input::placeholder{color:rgba(244,243,239,0.3)}
           <sc-if value="{{ acctOpenDepo }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex;flex-direction:column;gap:8px">
               <div onClick="{{ openDetailsChk }}" style="display:flex;align-items:center;gap:12px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:13px;cursor:pointer">
-                <div style="width:82px;height:54px;border-radius:10px;background:linear-gradient(135deg,#0f2a1e,#1a3d2a);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none">
+                <div style="width:82px;aspect-ratio:1.588;border-radius:10px;background:linear-gradient(135deg,#0f2a1e,#1a3d2a);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none;box-sizing:border-box">
                   <span style="font:700 9px 'JetBrains Mono';color:#7FE08A;letter-spacing:.5px">CHECKING</span>
                   <span style="font:10px 'JetBrains Mono';color:rgba(127,224,138,0.6)">••1234</span>
                 </div>
@@ -768,7 +768,7 @@ input::placeholder{color:rgba(244,243,239,0.3)}
                 </div>
               </div>
               <div onClick="{{ openDetailsSav }}" style="display:flex;align-items:center;gap:12px;background:#161618;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:13px;cursor:pointer">
-                <div style="width:82px;height:54px;border-radius:10px;background:linear-gradient(135deg,#0f1f2e,#1a2e42);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none">
+                <div style="width:82px;aspect-ratio:1.588;border-radius:10px;background:linear-gradient(135deg,#0f1f2e,#1a2e42);padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;flex:none;box-sizing:border-box">
                   <span style="font:700 9px 'JetBrains Mono';color:#6B8AB0;letter-spacing:.5px">SAVINGS</span>
                   <span style="font:10px 'JetBrains Mono';color:rgba(107,138,176,0.7)">••5678</span>
                 </div>
@@ -831,7 +831,7 @@ input::placeholder{color:rgba(244,243,239,0.3)}
                 </div>
               </div>
 
-              <div style="width:100px;height:64px;border-radius:12px;background:{{ acctGrad }};padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;margin-bottom:20px">
+              <div style="width:100px;aspect-ratio:1.588;border-radius:12px;background:{{ acctGrad }};padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;margin-bottom:20px;box-sizing:border-box">
                 <span style="font:700 10px 'JetBrains Mono';color:{{ acctAccent }};letter-spacing:.5px">{{ acctType }}</span>
                 <span style="font:11px 'JetBrains Mono';color:{{ acctAccent }};opacity:0.75">••{{ acctMask }}</span>
               </div>

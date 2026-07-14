@@ -9,6 +9,9 @@ export const RED = "#D98A7F";
 export const BORDER = "1px solid rgba(255,255,255,0.07)";
 export const TER = "rgba(244,243,239,0.32)";
 
+/** ISO/IEC 7810 ID-1 physical credit card ratio (width ÷ height). */
+export const CREDIT_CARD_ASPECT = 1.588;
+
 export const MONO = "var(--font-mono), monospace";
 export const SERIF = "var(--font-serif), serif";
 
