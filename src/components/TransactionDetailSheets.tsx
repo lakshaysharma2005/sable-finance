@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AddCategorySheet } from "@/components/AddCategorySheet";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Sheet } from "@/components/Sheet";
+import { SplitTransactionSheet } from "@/components/SplitTransactionSheet";
 import type { CategoriesListData } from "@/lib/category-queries";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import { MINUS } from "@/lib/format";
@@ -20,6 +21,7 @@ type Props = {
 
 export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryChanged }: Props) {
   const [catPickerOpen, setCatPickerOpen] = useState(false);
+  const [splitOpen, setSplitOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
 
@@ -57,15 +59,19 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
 
   function handleClose() {
     setCatPickerOpen(false);
+    setSplitOpen(false);
     setCatChanged(null);
     onClose();
   }
 
   if (!tx) return null;
 
+  const canSplit = tx.originalAmount > 0;
+  const showDetail = !catPickerOpen && !catChanged && !splitOpen;
+
   return (
     <>
-      {!catPickerOpen && !catChanged && (
+      {showDetail && (
         <Sheet onClose={handleClose}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px 12px" }}>
             <div>
@@ -83,7 +89,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
             <div style={{ marginBottom: 16 }}>
               <span style={serif(32, 400, { color: TEXT })}>{tx.name}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: tx.excludedAmount > 0 ? 6 : 16 }}>
               <span style={mono(22, 500, { color: "rgba(244,243,239,0.4)" })}>
                 {tx.amount < 0 ? "+" : MINUS}$
               </span>
@@ -91,6 +97,11 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                 {Math.abs(tx.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </span>
             </div>
+            {tx.excludedAmount > 0 && (
+              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>
+                Originally ${tx.originalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </div>
+            )}
           </div>
           <div style={{ padding: "22px 20px 16px" }}>
             <div style={{ ...microLabel, fontWeight: 600, letterSpacing: 2, textAlign: "center", marginBottom: 12 }}>
@@ -115,7 +126,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               </button>
             </div>
           </div>
-          <div style={{ padding: "0 20px 28px", display: "flex", justifyContent: "center" }}>
+          <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "center" }}>
             <div
               style={{
                 borderRadius: 14,
@@ -149,7 +160,49 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               </div>
             </div>
           </div>
+          {canSplit && (
+            <div style={{ padding: "0 20px 28px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: 999,
+                  padding: 4,
+                  maxWidth: 320,
+                  margin: "0 auto",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSplitOpen(true)}
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                    padding: "13px 0",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    ...mono(13, 600, { letterSpacing: 0.3, color: "rgba(244,243,239,0.6)" }),
+                  }}
+                >
+                  Split
+                </button>
+              </div>
+            </div>
+          )}
         </Sheet>
+      )}
+
+      {splitOpen && (
+        <SplitTransactionSheet
+          tx={tx}
+          onClose={() => setSplitOpen(false)}
+          onSaved={(updated) => {
+            onTxUpdate(updated);
+            onCategoryChanged?.();
+          }}
+        />
       )}
 
       {catPickerOpen && (

@@ -15,6 +15,13 @@
       "when": 1783792259711,
       "tag": "0001_cultured_black_widow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784075252693,
+      "tag": "0002_numerous_ben_urich",
+      "breakpoints": true
     }
   ]
 }

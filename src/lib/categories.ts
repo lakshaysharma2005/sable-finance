@@ -31,6 +31,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Transport: CATEGORY_PALETTE[12],
   Entertainment: CATEGORY_PALETTE[15],
   Health: CATEGORY_PALETTE[18],
+  Splits: CATEGORY_PALETTE[16],
   Income: CATEGORY_PALETTE[8],
   Transfer: CATEGORY_PALETTE[11],
   Other: CATEGORY_PALETTE[13],
@@ -58,6 +59,7 @@ export const SPEND_CATEGORIES = [
   "Transport",
   "Entertainment",
   "Health",
+  "Splits",
   "Other",
 ] as const;
 
@@ -88,6 +90,7 @@ const DEFAULT_EMOJI: Partial<Record<string, string>> = {
   Transport: "🚗",
   Entertainment: "🎬",
   Health: "💊",
+  Splits: "🤝",
   Other: "📁",
   Income: "💵",
   Transfer: "↔️",

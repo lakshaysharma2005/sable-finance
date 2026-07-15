@@ -96,6 +96,20 @@ export const userCategories = pgTable("user_categories", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Friends' portions excluded from a parent expense via the split sheet.
+export const transactionSplits = pgTable(
+  "transaction_splits",
+  {
+    id: serial("id").primaryKey(),
+    transactionId: integer("transaction_id")
+      .notNull()
+      .references(() => transactions.id, { onDelete: "cascade" }),
+    amount: numeric("amount", { precision: 14, scale: 2, mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("transaction_splits_tx_idx").on(t.transactionId)],
+);
+
 // "Apply to all / create rule" from the category-change sheet.
 export const categoryRules = pgTable("category_rules", {
   id: serial("id").primaryKey(),

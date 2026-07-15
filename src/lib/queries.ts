@@ -1,9 +1,16 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { db, accounts, transactions, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { db, accounts, transactions, transactionSplits, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
 import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES } from "@/lib/categories";
 import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
 
 // ---------- shared ----------
+
+export const SPLITS_CATEGORY = "Splits";
+
+export interface TxSplit {
+  id: number;
+  amount: number;
+}
 
 export interface TxItem {
   id: number;
@@ -11,7 +18,10 @@ export interface TxItem {
   name: string;
   merchantName: string | null;
   logoUrl: string | null;
-  amount: number; // Plaid convention: positive = outflow
+  amount: number; // effective (your share) for display and category totals
+  originalAmount: number; // raw Plaid amount
+  excludedAmount: number; // sum of split portions
+  splits: TxSplit[];
   pending: boolean;
   category: string;
   emoji: string | null;
@@ -21,12 +31,73 @@ export interface TxItem {
   accountMask: string | null;
   accountColor: string;
   note: string | null;
+  /** Synthetic row from transaction_splits on the Splits category page */
+  isSplitPortion?: boolean;
+  parentTxId?: number;
+  splitRowId?: number;
+}
+
+interface SplitInRange {
+  id: number;
+  transactionId: number;
+  amount: number;
+  date: string;
+  name: string;
+  merchantName: string | null;
+  logoUrl: string | null;
+  accountId: number;
+  accountName: string;
+  accountMask: string | null;
+  accountColor: string;
 }
 
 const isExcluded = (cat: string) => (EXCLUDED_CATEGORIES as readonly string[]).includes(cat);
 
 function iso(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRange[]> {
+  const rows = await db
+    .select({
+      id: transactionSplits.id,
+      transactionId: transactionSplits.transactionId,
+      amount: transactionSplits.amount,
+      date: transactions.date,
+      name: transactions.name,
+      merchantName: transactions.merchantName,
+      logoUrl: transactions.logoUrl,
+      accountId: accounts.id,
+      accountName: accounts.name,
+      customName: accounts.customName,
+      accountMask: accounts.mask,
+      accountColor: accounts.color,
+    })
+    .from(transactionSplits)
+    .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+    .innerJoin(accounts, eq(transactions.accountId, accounts.id))
+    .where(
+      and(
+        eq(transactions.removed, false),
+        eq(accounts.hidden, false),
+        gte(transactions.date, from),
+        lte(transactions.date, to),
+      ),
+    );
+
+  return rows.map((r) => ({
+    id: r.id,
+    transactionId: r.transactionId,
+    amount: r.amount,
+    date: r.date,
+    name: r.merchantName ?? r.name,
+    merchantName: r.merchantName,
+    logoUrl: r.logoUrl,
+    accountId: r.accountId,
+    accountName: r.customName ?? r.accountName,
+    accountMask: r.accountMask,
+    accountColor: r.accountColor,
+  }));
 }
 
 async function fetchTx(from: string, to: string, accountIds?: number[]): Promise<TxItem[]> {
@@ -61,32 +132,146 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
     )
     .orderBy(sql`${transactions.date} DESC, ${transactions.id} DESC`);
 
-  return rows
-    .filter((r) => !accountIds || accountIds.includes(r.accountId))
-    .map((r) => {
-      const category = r.categoryOverride ?? r.category;
-      return {
-        id: r.id,
-        date: r.date,
-        name: r.merchantName ?? r.name,
-        merchantName: r.merchantName,
-        logoUrl: r.logoUrl,
-        amount: r.amount,
-        pending: r.pending,
-        category,
-        emoji: resolveCategoryEmoji(category, categoryLookups.emojis),
-        color: resolveCategoryColor(category, categoryLookups.colors),
-        accountId: r.accountId,
-        accountName: r.customName ?? r.accountName,
-        accountMask: r.accountMask,
-        accountColor: r.accountColor,
-        note: r.note,
-      };
-    });
+  const filtered = rows.filter((r) => !accountIds || accountIds.includes(r.accountId));
+  const txIds = filtered.map((r) => r.id);
+
+  const splitRows =
+    txIds.length > 0
+      ? await db
+          .select({
+            id: transactionSplits.id,
+            transactionId: transactionSplits.transactionId,
+            amount: transactionSplits.amount,
+          })
+          .from(transactionSplits)
+          .where(inArray(transactionSplits.transactionId, txIds))
+      : [];
+
+  const splitsByTx = new Map<number, TxSplit[]>();
+  for (const s of splitRows) {
+    const list = splitsByTx.get(s.transactionId) ?? [];
+    list.push({ id: s.id, amount: s.amount });
+    splitsByTx.set(s.transactionId, list);
+  }
+
+  return filtered.map((r) => {
+    const category = r.categoryOverride ?? r.category;
+    const splits = splitsByTx.get(r.id) ?? [];
+    const excludedAmount = splits.reduce((sum, s) => sum + s.amount, 0);
+    const originalAmount = r.amount;
+    const effectiveAmount = Math.max(0, originalAmount - excludedAmount);
+    return {
+      id: r.id,
+      date: r.date,
+      name: r.merchantName ?? r.name,
+      merchantName: r.merchantName,
+      logoUrl: r.logoUrl,
+      amount: effectiveAmount,
+      originalAmount,
+      excludedAmount,
+      splits,
+      pending: r.pending,
+      category,
+      emoji: resolveCategoryEmoji(category, categoryLookups.emojis),
+      color: resolveCategoryColor(category, categoryLookups.colors),
+      accountId: r.accountId,
+      accountName: r.customName ?? r.accountName,
+      accountMask: r.accountMask,
+      accountColor: r.accountColor,
+      note: r.note,
+    };
+  });
 }
 
-function spendTotal(txs: TxItem[]): number {
-  return txs.filter((t) => t.amount > 0 && !isExcluded(t.category)).reduce((s, t) => s + t.amount, 0);
+function spendTotal(txs: TxItem[], splits: SplitInRange[]): number {
+  let total = 0;
+  for (const tx of txs) {
+    if (isExcluded(tx.category)) continue;
+    if (tx.category === SPLITS_CATEGORY) {
+      total += tx.amount;
+    } else if (tx.amount > 0) {
+      total += tx.amount;
+    }
+  }
+  for (const s of splits) {
+    total += s.amount;
+  }
+  return total;
+}
+
+function buildCategoryTotals(
+  txs: TxItem[],
+  splits: SplitInRange[],
+  categoryLookups: { colors: Record<string, string>; emojis: Record<string, string | null> },
+) {
+  const byCat = new Map<string, number>();
+  const catColors = new Map<string, string>();
+  const catEmojis = new Map<string, string | null>();
+
+  for (const tx of txs) {
+    if (isExcluded(tx.category)) continue;
+    if (tx.category === SPLITS_CATEGORY) {
+      byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + tx.amount);
+      if (!catColors.has(SPLITS_CATEGORY)) {
+        catColors.set(SPLITS_CATEGORY, resolveCategoryColor(SPLITS_CATEGORY, categoryLookups.colors));
+        catEmojis.set(SPLITS_CATEGORY, resolveCategoryEmoji(SPLITS_CATEGORY, categoryLookups.emojis));
+      }
+    } else if (tx.amount > 0) {
+      byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
+      if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
+      if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
+    }
+  }
+
+  const splitsSum = splits.reduce((s, sp) => s + sp.amount, 0);
+  if (splitsSum !== 0) {
+    byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + splitsSum);
+    if (!catColors.has(SPLITS_CATEGORY)) {
+      catColors.set(SPLITS_CATEGORY, resolveCategoryColor(SPLITS_CATEGORY, categoryLookups.colors));
+      catEmojis.set(SPLITS_CATEGORY, resolveCategoryEmoji(SPLITS_CATEGORY, categoryLookups.emojis));
+    }
+  }
+
+  return { byCat, catColors, catEmojis };
+}
+
+function splitPortionsToTxItems(splits: SplitInRange[], categoryLookups: { colors: Record<string, string>; emojis: Record<string, string | null> }): TxItem[] {
+  const splitsColor = resolveCategoryColor(SPLITS_CATEGORY, categoryLookups.colors);
+  const splitsEmoji = resolveCategoryEmoji(SPLITS_CATEGORY, categoryLookups.emojis);
+  return splits.map((s) => ({
+    id: s.transactionId,
+    date: s.date,
+    name: s.name,
+    merchantName: s.merchantName,
+    logoUrl: s.logoUrl,
+    amount: s.amount,
+    originalAmount: s.amount,
+    excludedAmount: 0,
+    splits: [],
+    pending: false,
+    category: SPLITS_CATEGORY,
+    emoji: splitsEmoji,
+    color: splitsColor,
+    accountId: s.accountId,
+    accountName: s.accountName,
+    accountMask: s.accountMask,
+    accountColor: s.accountColor,
+    note: null,
+    isSplitPortion: true,
+    parentTxId: s.transactionId,
+    splitRowId: s.id,
+  }));
+}
+
+export async function getTransactionById(id: number): Promise<TxItem | null> {
+  const [row] = await db
+    .select({ date: transactions.date })
+    .from(transactions)
+    .where(eq(transactions.id, id))
+    .limit(1);
+  if (!row) return null;
+  const txs = await fetchTx(row.date, row.date);
+  return txs.find((t) => t.id === id) ?? null;
 }
 
 export interface DayGroup {
@@ -134,32 +319,26 @@ export async function getDashboardData(today = iso(new Date())) {
   const prevMonthStart = iso(new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - 1, 1)));
   const prevMonthEnd = iso(new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 0)));
 
-  const [monthTx, prevTx] = await Promise.all([
+  const [monthTx, prevTx, monthSplits, prevSplits, categoryLookups] = await Promise.all([
     fetchTx(monthStart, today),
     fetchTx(prevMonthStart, prevMonthEnd),
+    fetchSplitsInRange(monthStart, today),
+    fetchSplitsInRange(prevMonthStart, prevMonthEnd),
+    getCategoryLookups(),
   ]);
 
-  const spent = spendTotal(monthTx);
-  const prevSpent = spendTotal(prevTx);
+  const spent = spendTotal(monthTx, monthSplits);
+  const prevSpent = spendTotal(prevTx, prevSplits);
   const deltaPct = prevSpent > 0 ? ((prevSpent - spent) / prevSpent) * 100 : 0;
 
-  // Category breakdown for the donut
-  const byCat = new Map<string, number>();
-  const catColors = new Map<string, string>();
-  const catEmojis = new Map<string, string | null>();
-  for (const tx of monthTx) {
-    if (tx.amount <= 0 || isExcluded(tx.category)) continue;
-    byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
-    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
-    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
-  }
+  const { byCat, catColors, catEmojis } = buildCategoryTotals(monthTx, monthSplits, categoryLookups);
   const cats = [...byCat.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([name, amount]) => ({
       name,
       amount,
       pct: spent > 0 ? Math.round((amount / spent) * 100) : 0,
-      color: catColors.get(name) ?? resolveCategoryColor(name, {}),
+      color: catColors.get(name) ?? resolveCategoryColor(name, categoryLookups.colors),
       emoji: catEmojis.get(name) ?? null,
     }));
 
@@ -227,35 +406,22 @@ function statsPeriodLabel(
   return bucket.from.slice(0, 4);
 }
 
-function bucketBreakdown(txs: TxItem[]) {
-  const byCat = new Map<string, number>();
-  const catColors = new Map<string, string>();
-  const catEmojis = new Map<string, string | null>();
-  for (const tx of txs) {
-    if (tx.amount <= 0 || isExcluded(tx.category)) continue;
-    byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
-    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
-    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
-  }
+function bucketBreakdown(
+  txs: TxItem[],
+  splits: SplitInRange[],
+  categoryLookups: { colors: Record<string, string>; emojis: Record<string, string | null> },
+) {
+  const { byCat, catColors, catEmojis } = buildCategoryTotals(txs, splits, categoryLookups);
   const top = [...byCat.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([name, amount]) => ({
       name,
       amount,
-      color: catColors.get(name) ?? resolveCategoryColor(name, {}),
+      color: catColors.get(name) ?? resolveCategoryColor(name, categoryLookups.colors),
       emoji: catEmojis.get(name) ?? null,
     }));
 
-  const excluded = txs
-    .filter((tx) => isExcluded(tx.category))
-    .slice(0, 20)
-    .map((tx) => ({
-      name: tx.name,
-      reason: tx.category,
-      amount: tx.amount,
-      color: tx.color,
-      logoUrl: tx.logoUrl,
-    }));
+  const excluded = txs.filter((tx) => isExcluded(tx.category)).slice(0, 20);
 
   return { top, excluded };
 }
@@ -296,11 +462,18 @@ export async function getStatsData(range: StatsRange, today = iso(new Date())) {
 
   const from = buckets[0].from;
   const to = buckets[buckets.length - 1].to;
-  const txs = await fetchTx(from, to > today ? today : to);
+  const end = to > today ? today : to;
+  const [txs, allSplits, categoryLookups] = await Promise.all([
+    fetchTx(from, end),
+    fetchSplitsInRange(from, end),
+    getCategoryLookups(),
+  ]);
 
   const vals = buckets.map((b) => {
-    const end = b.to > today ? today : b.to;
-    return spendTotal(txs.filter((tx) => tx.date >= b.from && tx.date <= end));
+    const bucketEnd = b.to > today ? today : b.to;
+    const bucketTx = txs.filter((tx) => tx.date >= b.from && tx.date <= bucketEnd);
+    const bucketSplits = allSplits.filter((s) => s.date >= b.from && s.date <= bucketEnd);
+    return spendTotal(bucketTx, bucketSplits);
   });
 
   // Default selection: today within the week, else the latest (current) bucket
@@ -311,8 +484,9 @@ export async function getStatsData(range: StatsRange, today = iso(new Date())) {
   }
 
   const periods = buckets.map((b, i) => {
-    const end = b.to > today ? today : b.to;
-    const bucketTx = txs.filter((tx) => tx.date >= b.from && tx.date <= end);
+    const bucketEnd = b.to > today ? today : b.to;
+    const bucketTx = txs.filter((tx) => tx.date >= b.from && tx.date <= bucketEnd);
+    const bucketSplits = allSplits.filter((s) => s.date >= b.from && s.date <= bucketEnd);
     const total = vals[i];
     const prevTotal = i > 0 ? vals[i - 1] : 0;
     const deltaPct = prevTotal > 0 ? Math.round(Math.abs(((total - prevTotal) / prevTotal) * 100)) : 0;
@@ -320,7 +494,7 @@ export async function getStatsData(range: StatsRange, today = iso(new Date())) {
     const isCurrent =
       range === "week" ? b.key === today : i === buckets.length - 1;
     const compareLabel = i === 0 ? "" : `vs ${buckets[i - 1].label}`;
-    const { top, excluded } = bucketBreakdown(bucketTx);
+    const { top, excluded } = bucketBreakdown(bucketTx, bucketSplits, categoryLookups);
     return {
       periodLabel: statsPeriodLabel(range, b, isCurrent, today),
       total,
@@ -358,14 +532,18 @@ export async function getTransactionsData(accountIds: number[] | undefined, toda
   const t = new Date(today + "T00:00:00Z");
   const from = iso(new Date(t.getTime() - 89 * 86400000)); // last 90 days
 
-  const [txs, acctRows] = await Promise.all([
+  const [txs, splits, acctRows] = await Promise.all([
     fetchTx(from, today, accountIds && accountIds.length > 0 ? accountIds : undefined),
+    fetchSplitsInRange(from, today),
     db.select().from(accounts).where(eq(accounts.hidden, false)),
   ]);
 
+  const filteredSplits =
+    accountIds && accountIds.length > 0 ? splits.filter((s) => accountIds.includes(s.accountId)) : splits;
+
   const groups = groupByDay(txs, today);
   const txCount = txs.length;
-  const txSpent = spendTotal(txs);
+  const txSpent = spendTotal(txs, filteredSplits);
 
   const acctChips = acctRows.map((a) => ({
     id: a.id,
@@ -499,20 +677,35 @@ export async function getCategoryData(category: string, today = iso(new Date()))
   const yearStart = `${year}-01-01`;
   const monthStart = iso(new Date(Date.UTC(year, t.getUTCMonth(), 1)));
 
-  const allTx = await fetchTx(yearStart, today);
-  const catTx = allTx.filter((tx) => tx.category === category);
+  const [allTx, yearSplits, categoryLookups] = await Promise.all([
+    fetchTx(yearStart, today),
+    fetchSplitsInRange(yearStart, today),
+    getCategoryLookups(),
+  ]);
+
+  let catTx = allTx.filter((tx) => tx.category === category);
+
+  if (category === SPLITS_CATEGORY) {
+    const splitPortions = splitPortionsToTxItems(yearSplits, categoryLookups);
+    catTx = [...catTx, ...splitPortions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }
 
   const monthSpent = catTx
-    .filter((tx) => tx.date >= monthStart && tx.amount > 0)
-    .reduce((s, tx) => s + tx.amount, 0);
+    .filter((tx) => tx.date >= monthStart)
+    .reduce((s, tx) => {
+      if (tx.category === SPLITS_CATEGORY) return s + tx.amount;
+      return tx.amount > 0 ? s + tx.amount : s;
+    }, 0);
 
-  const yearTx = catTx.filter((tx) => tx.amount > 0);
-  const yearTotal = yearTx.reduce((s, tx) => s + tx.amount, 0);
+  const yearTotal = catTx.reduce((s, tx) => {
+    if (tx.category === SPLITS_CATEGORY) return s + tx.amount;
+    return tx.amount > 0 ? s + tx.amount : s;
+  }, 0);
   const monthsElapsed = t.getUTCMonth() + 1;
   const yearAvg = monthsElapsed > 0 ? yearTotal / monthsElapsed : 0;
 
   const groups = groupByMonth(catTx);
-  const { colors, emojis } = await getCategoryLookups();
+  const { colors, emojis } = categoryLookups;
 
   return {
     name: category,

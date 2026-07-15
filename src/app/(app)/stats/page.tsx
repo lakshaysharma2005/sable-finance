@@ -3,9 +3,10 @@
 import { CategoryIcon } from "@/components/CategoryIcon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
-import type { StatsData, StatsRange } from "@/lib/queries";
+import type { StatsData, StatsRange, TxItem } from "@/lib/queries";
 import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
@@ -19,10 +20,12 @@ export default function StatsPage() {
   const [range, setRange] = useState<StatsRange>("month");
   const [tab, setTab] = useState<"top" | "excl">("top");
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const { data } = useData<StatsData>(`/api/stats?range=${range}`);
+  const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
+  const { data, reload } = useData<StatsData>(`/api/stats?range=${range}`);
 
   useEffect(() => {
     setSelectedIdx(null);
+    setSelectedTx(null);
   }, [range]);
 
   const sel = selectedIdx ?? data?.cur ?? 0;
@@ -249,15 +252,17 @@ export default function StatsPage() {
                 Nothing excluded in this period
               </div>
             )}
-            {(period?.excluded ?? data?.excluded ?? []).map((e, i) => (
+            {(period?.excluded ?? data?.excluded ?? []).map((e) => (
               <div
-                key={i}
+                key={e.id}
+                onClick={() => setSelectedTx(e)}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
                   padding: "13px 14px",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
+                  cursor: "pointer",
                 }}
               >
                 <TxAvatar name={e.name} color={e.color} logoUrl={e.logoUrl} />
@@ -272,7 +277,7 @@ export default function StatsPage() {
                   >
                     {e.name}
                   </div>
-                  <div style={{ ...microLabel, letterSpacing: 1, color: "rgba(244,243,239,0.3)", marginTop: 2 }}>{e.reason}</div>
+                  <div style={{ ...microLabel, letterSpacing: 1, color: "rgba(244,243,239,0.3)", marginTop: 2 }}>{e.category}</div>
                 </div>
                 <div style={mono(14, 500, { color: "rgba(244,243,239,0.4)", flex: "none" })}>
                   {e.amount < 0 ? `+${money(-e.amount)}` : `${MINUS}${money(e.amount)}`}
@@ -282,6 +287,13 @@ export default function StatsPage() {
           </div>
         )}
       </div>
+
+      <TransactionDetailSheets
+        tx={selectedTx}
+        onClose={() => setSelectedTx(null)}
+        onTxUpdate={setSelectedTx}
+        onCategoryChanged={reload}
+      />
     </div>
   );
 }
