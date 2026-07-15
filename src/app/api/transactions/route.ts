@@ -13,7 +13,8 @@ export async function GET(request: Request) {
         .map((s) => parseInt(s, 10))
         .filter((n) => !isNaN(n))
     : undefined;
-  return NextResponse.json(await getTransactionsData(accountIds));
+  const month = url.searchParams.get("month") ?? undefined;
+  return NextResponse.json(await getTransactionsData(accountIds, { month }));
 }
 
 export async function POST(request: Request) {

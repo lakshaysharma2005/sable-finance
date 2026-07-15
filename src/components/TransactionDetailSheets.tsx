@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AddCategorySheet } from "@/components/AddCategorySheet";
+import { AccountMiniCard } from "@/components/AccountMiniCard";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { EditAmountSheet } from "@/components/EditAmountSheet";
 import { Sheet } from "@/components/Sheet";
@@ -10,7 +11,7 @@ import type { CategoriesListData } from "@/lib/category-queries";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import { MINUS } from "@/lib/format";
 import type { TxItem } from "@/lib/queries";
-import { ACCENT, CREDIT_CARD_ASPECT, microLabel, mono, serif, TEXT } from "@/lib/ui";
+import { ACCENT, microLabel, mono, serif, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 type Props = {
@@ -145,38 +146,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
             </div>
           </div>
           <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "center" }}>
-            <div
-              style={{
-                borderRadius: 14,
-                padding: "12px 14px",
-                background: tx.accountColor + "18",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                width: 130,
-                aspectRatio: CREDIT_CARD_ASPECT,
-                boxSizing: "border-box",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={mono(9, 700, { color: tx.accountColor, letterSpacing: 1 })}>
-                  {tx.accountName.toUpperCase().slice(0, 12)}
-                </span>
-                <span
-                  style={{
-                    width: 15,
-                    height: 15,
-                    borderRadius: "50%",
-                    background: tx.accountColor,
-                    opacity: 0.85,
-                    flex: "none",
-                  }}
-                />
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <span style={mono(13, 500, { color: "rgba(244,243,239,0.65)" })}>••{tx.accountMask ?? "????"}</span>
-              </div>
-            </div>
+            <AccountMiniCard name={tx.accountName} mask={tx.accountMask} color={tx.accountColor} />
           </div>
           {canSplit && (
             <div style={{ padding: "0 20px 28px" }}>

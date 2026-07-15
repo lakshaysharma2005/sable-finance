@@ -531,20 +531,36 @@ export type StatsData = Awaited<ReturnType<typeof getStatsData>>;
 
 // ---------- Transactions ----------
 
-export async function getTransactionsData(accountIds: number[] | undefined, today = iso(new Date())) {
-  const t = new Date(today + "T00:00:00Z");
-  const from = iso(new Date(t.getTime() - 89 * 86400000)); // last 90 days
+export async function getTransactionsData(
+  accountIds: number[] | undefined,
+  opts: { today?: string; month?: string } = {},
+) {
+  const today = opts.today ?? iso(new Date());
+  let from: string;
+  let to: string;
+
+  if (opts.month && /^\d{4}-\d{2}$/.test(opts.month)) {
+    const [y, m] = opts.month.split("-").map(Number);
+    from = `${opts.month}-01`;
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const monthEnd = `${opts.month}-${String(lastDay).padStart(2, "0")}`;
+    to = monthEnd < today ? monthEnd : today;
+  } else {
+    const t = new Date(today + "T00:00:00Z");
+    from = iso(new Date(t.getTime() - 89 * 86400000)); // last 90 days
+    to = today;
+  }
 
   const [txs, splits, acctRows] = await Promise.all([
-    fetchTx(from, today, accountIds && accountIds.length > 0 ? accountIds : undefined),
-    fetchSplitsInRange(from, today),
+    fetchTx(from, to, accountIds && accountIds.length > 0 ? accountIds : undefined),
+    fetchSplitsInRange(from, to),
     db.select().from(accounts).where(eq(accounts.hidden, false)),
   ]);
 
   const filteredSplits =
     accountIds && accountIds.length > 0 ? splits.filter((s) => accountIds.includes(s.accountId)) : splits;
 
-  const groups = groupByDay(txs, today);
+  const groups = groupByDay(txs, to);
   const txCount = txs.length;
   const txSpent = spendTotal(txs, filteredSplits);
 

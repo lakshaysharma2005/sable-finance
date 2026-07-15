@@ -4,27 +4,61 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { FilterIcon, SearchIcon } from "@/components/Icons";
-import { Sheet } from "@/components/Sheet";
 import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
+import { TransactionsFilterSheet, type TxSort } from "@/components/TransactionsFilterSheet";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
-import type { TransactionsData, TxItem } from "@/lib/queries";
+import type { DayGroup, TransactionsData, TxItem } from "@/lib/queries";
 import { ACCENT, card, chipBase, chipOff, chipOn, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
-type Sort = "date" | "hl" | "lh";
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+function dayLabel(dateStr: string, today: string): string {
+  const [, m, d] = dateStr.split("-").map(Number);
+  const base = `${MONTHS[m - 1]} ${d}`;
+  const t = new Date(today + "T00:00:00Z");
+  const yesterday = new Date(t.getTime() - 86400000).toISOString().slice(0, 10);
+  if (dateStr === today) return `TODAY · ${base}`;
+  if (dateStr === yesterday) return `YESTERDAY · ${base}`;
+  return base;
+}
+
+function groupByDay(txs: TxItem[], today: string): DayGroup[] {
+  const map = new Map<string, TxItem[]>();
+  for (const tx of txs) {
+    const list = map.get(tx.date) ?? [];
+    list.push(tx);
+    map.set(tx.date, list);
+  }
+  return [...map.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([date, items]) => ({
+      date,
+      label: dayLabel(date, today),
+      net: -items.reduce((s, t) => s + t.amount, 0),
+      items,
+    }));
+}
 
 export default function TransactionsPage() {
   const router = useRouter();
   const [selAccts, setSelAccts] = useState<number[]>([]);
-  const [sort, setSort] = useState<Sort>("date");
+  const [selCategory, setSelCategory] = useState<string | null>(null);
+  const [selMonth, setSelMonth] = useState<string | null>(null);
+  const [sort, setSort] = useState<TxSort>("date");
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
 
-  const query = selAccts.length > 0 ? `?accounts=${selAccts.join(",")}` : "";
+  const params = new URLSearchParams();
+  if (selAccts.length > 0) params.set("accounts", selAccts.join(","));
+  if (selMonth) params.set("month", selMonth);
+  const query = params.toString() ? `?${params}` : "";
   const { data, reload } = useData<TransactionsData>(`/api/transactions${query}`);
 
   const allActive = selAccts.length === 0;
+  const hasActiveFilters =
+    selAccts.length > 0 || selCategory !== null || selMonth !== null || sort !== "date";
 
   function toggleAccount(id: number) {
     setSelAccts((cur) => {
@@ -34,14 +68,40 @@ export default function TransactionsPage() {
     });
   }
 
+  function resetAllFilters() {
+    setSelAccts([]);
+    setSelCategory(null);
+    setSelMonth(null);
+    setSort("date");
+  }
+
+  const filteredItems = useMemo(() => {
+    if (!data) return [];
+    let items = data.groups.flatMap((g) => g.items);
+    if (selCategory) {
+      items = items.filter((t) => t.category === selCategory);
+    }
+    return items;
+  }, [data, selCategory]);
+
+  const { txCount, txSpent } = useMemo(() => {
+    if (!selCategory && data) {
+      return { txCount: data.txCount, txSpent: data.txSpent };
+    }
+    return {
+      txCount: filteredItems.length,
+      txSpent: filteredItems.reduce((s, t) => (t.amount > 0 ? s + t.amount : s), 0),
+    };
+  }, [data, filteredItems, selCategory]);
+
+  const today = new Date().toISOString().slice(0, 10);
+
   const groups = useMemo(() => {
     if (!data) return [];
-    if (sort === "date") return data.groups;
-    const flat = data.groups.flatMap((g) => g.items);
-    // UI spend magnitude sorting on Plaid amounts (positive = outflow)
-    const sorted = [...flat].sort((a, b) => (sort === "hl" ? b.amount - a.amount : a.amount - b.amount));
+    if (sort === "date") return groupByDay(filteredItems, today);
+    const sorted = [...filteredItems].sort((a, b) => (sort === "hl" ? b.amount - a.amount : a.amount - b.amount));
     return [{ date: "", label: "ALL · SORTED BY AMOUNT", net: 0, items: sorted }];
-  }, [data, sort]);
+  }, [data, filteredItems, sort, today]);
 
   return (
     <div style={{ animation: "fadeUp .3s ease both" }}>
@@ -73,15 +133,29 @@ export default function TransactionsPage() {
               width: 40,
               height: 40,
               borderRadius: 14,
-              background: "#161618",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: hasActiveFilters ? `${ACCENT}18` : "#161618",
+              border: `1px solid ${hasActiveFilters ? `${ACCENT}55` : "rgba(255,255,255,0.07)"}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
+              position: "relative",
             }}
           >
             <FilterIcon />
+            {hasActiveFilters && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: ACCENT,
+                }}
+              />
+            )}
           </button>
         </div>
       </div>
@@ -114,11 +188,11 @@ export default function TransactionsPage() {
         }}
       >
         <span style={mono(11, 400, { letterSpacing: 1, textTransform: "uppercase", color: "rgba(244,243,239,0.5)" })}>
-          {data?.txCount ?? 0} transactions
+          {txCount} transactions
         </span>
         <span style={mono(13, 500, { color: TEXT })}>
           {MINUS}
-          {money(data?.txSpent ?? 0)} spent
+          {money(txSpent)} spent
         </span>
       </div>
 
@@ -176,9 +250,9 @@ export default function TransactionsPage() {
           </div>
         </div>
       ))}
-      {data && data.groups.length === 0 && (
+      {data && groups.length === 0 && (
         <div style={{ marginTop: 24, textAlign: "center", ...serif(14, 400, { color: "rgba(244,243,239,0.4)" }) }}>
-          No transactions in the last 90 days
+          {selCategory || selMonth ? "No transactions match your filters" : "No transactions in the last 90 days"}
         </div>
       )}
 
@@ -189,48 +263,21 @@ export default function TransactionsPage() {
         onCategoryChanged={reload}
       />
 
-      {/* filter & sort sheet */}
-      {filterOpen && (
-        <Sheet onClose={() => setFilterOpen(false)} background="#161618">
-          <div
-            style={{
-              textAlign: "center",
-              ...mono(11, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: ACCENT }),
-              padding: "6px 0 10px",
-            }}
-          >
-            Sorting
-          </div>
-          {(
-            [
-              { key: "date", label: "Sort by date" },
-              { key: "hl", label: "Sort by amount (high to low)" },
-              { key: "lh", label: "Sort by amount (low to high)" },
-            ] as { key: Sort; label: string }[]
-          ).map((s) => (
-            <div
-              key={s.key}
-              onClick={() => {
-                setSort(s.key);
-                setFilterOpen(false);
-              }}
-              style={{
-                padding: "15px 24px",
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-              }}
-            >
-              <span style={serif(16, 400, { color: sort === s.key ? ACCENT : TEXT })}>{s.label}</span>
-              {sort === s.key && <span style={mono(13, 600, { color: ACCENT })}>✓</span>}
-            </div>
-          ))}
-          <div style={{ paddingBottom: 24 }} />
-        </Sheet>
-      )}
+      <TransactionsFilterSheet
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        sort={sort}
+        onSortChange={setSort}
+        selAccts={selAccts}
+        onSelAcctsChange={setSelAccts}
+        selCategory={selCategory}
+        onSelCategoryChange={setSelCategory}
+        selMonth={selMonth}
+        onSelMonthChange={setSelMonth}
+        accounts={data?.accounts ?? []}
+        hasActiveFilters={hasActiveFilters}
+        onResetAll={resetAllFilters}
+      />
     </div>
   );
 }
