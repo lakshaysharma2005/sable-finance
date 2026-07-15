@@ -68,6 +68,8 @@ export const transactions = pgTable(
     logoUrl: text("logo_url"),
     // Plaid convention preserved: positive = money out, negative = money in
     amount: numeric("amount", { precision: 14, scale: 2, mode: "number" }).notNull(),
+    // Manual user override; wins over `amount` when set
+    amountOverride: numeric("amount_override", { precision: 14, scale: 2, mode: "number" }),
     isoCurrencyCode: text("iso_currency_code"),
     pending: boolean("pending").notNull().default(false),
     pfcPrimary: text("pfc_primary"),

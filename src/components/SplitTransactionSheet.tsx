@@ -49,8 +49,9 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
   const splitsEmoji = "🤝";
 
   const splitTotal = useMemo(() => rows.reduce((sum, r) => sum + parseAmount(r.amount), 0), [rows]);
-  const remaining = Math.max(0, tx.originalAmount - splitTotal);
-  const canSave = splitTotal > 0 && splitTotal <= tx.originalAmount && !saving;
+  const originalTotal = tx.amount + tx.excludedAmount;
+  const remaining = Math.max(0, originalTotal - splitTotal);
+  const canSave = splitTotal > 0 && splitTotal <= originalTotal && !saving;
 
   function updateRow(key: string, amount: string) {
     setRows((prev) => prev.map((r) => (r.key === key ? { ...r, amount: normalizeInput(amount) } : r)));
@@ -105,7 +106,7 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
         </div>
         <div style={{ ...serif(22, 400, { color: TEXT }), marginTop: 10 }}>{tx.name}</div>
         <div style={{ ...mono(14, 500, { color: "rgba(244,243,239,0.55)" }), marginTop: 6 }}>
-          ${formatAmount(tx.originalAmount)}
+          ${formatAmount(originalTotal)}
         </div>
       </div>
 

@@ -110,6 +110,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       merchantName: transactions.merchantName,
       logoUrl: transactions.logoUrl,
       amount: transactions.amount,
+      amountOverride: transactions.amountOverride,
       pending: transactions.pending,
       category: transactions.category,
       categoryOverride: transactions.categoryOverride,
@@ -158,8 +159,10 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
     const category = r.categoryOverride ?? r.category;
     const splits = splitsByTx.get(r.id) ?? [];
     const excludedAmount = splits.reduce((sum, s) => sum + s.amount, 0);
-    const originalAmount = r.amount;
-    const effectiveAmount = Math.max(0, originalAmount - excludedAmount);
+    const plaidAmount = r.amount;
+    const baseAmount = r.amountOverride ?? plaidAmount;
+    const isInflow = baseAmount < 0;
+    const effectiveAmount = isInflow ? baseAmount : Math.max(0, baseAmount - excludedAmount);
     return {
       id: r.id,
       date: r.date,
@@ -167,7 +170,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       merchantName: r.merchantName,
       logoUrl: r.logoUrl,
       amount: effectiveAmount,
-      originalAmount,
+      originalAmount: plaidAmount,
       excludedAmount,
       splits,
       pending: r.pending,

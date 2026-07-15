@@ -13,7 +13,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   const [tx] = await db.select().from(transactions).where(eq(transactions.id, txId));
   if (!tx) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (tx.amount <= 0) return NextResponse.json({ error: "only expenses can be split" }, { status: 400 });
+  const baseAmount = tx.amountOverride ?? tx.amount;
+  if (baseAmount <= 0) return NextResponse.json({ error: "only expenses can be split" }, { status: 400 });
 
   for (const s of splits) {
     if (typeof s.amount !== "number" || s.amount <= 0) {
@@ -22,7 +23,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const total = splits.reduce((sum, s) => sum + s.amount, 0);
-  if (total > tx.amount) {
+  if (total > baseAmount) {
     return NextResponse.json({ error: "split total exceeds transaction amount" }, { status: 400 });
   }
 
@@ -48,7 +49,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     ok: true,
     splits: saved,
     excludedAmount,
-    effectiveAmount: Math.max(0, tx.amount - excludedAmount),
+    effectiveAmount: Math.max(0, baseAmount - excludedAmount),
     originalAmount: tx.amount,
   });
 }

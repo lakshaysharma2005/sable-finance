@@ -92,7 +92,7 @@ async function upsertTransactions(itemId: number, txs: Transaction[]) {
           name: values.name,
           merchantName: values.merchantName,
           logoUrl: values.logoUrl,
-          amount: values.amount,
+          amount: sql`CASE WHEN ${transactions.amountOverride} IS NULL THEN ${values.amount} ELSE ${transactions.amount} END`,
           pending: values.pending,
           pfcPrimary: values.pfcPrimary,
           pfcDetailed: values.pfcDetailed,

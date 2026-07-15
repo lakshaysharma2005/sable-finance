@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AddCategorySheet } from "@/components/AddCategorySheet";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { EditAmountSheet } from "@/components/EditAmountSheet";
 import { Sheet } from "@/components/Sheet";
 import { SplitTransactionSheet } from "@/components/SplitTransactionSheet";
 import type { CategoriesListData } from "@/lib/category-queries";
@@ -22,6 +23,7 @@ type Props = {
 export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryChanged }: Props) {
   const [catPickerOpen, setCatPickerOpen] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
+  const [amountEditOpen, setAmountEditOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
 
@@ -60,6 +62,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
   function handleClose() {
     setCatPickerOpen(false);
     setSplitOpen(false);
+    setAmountEditOpen(false);
     setCatChanged(null);
     onClose();
   }
@@ -67,7 +70,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
   if (!tx) return null;
 
   const canSplit = tx.originalAmount > 0;
-  const showDetail = !catPickerOpen && !catChanged && !splitOpen;
+  const showDetail = !catPickerOpen && !catChanged && !splitOpen && !amountEditOpen;
 
   return (
     <>
@@ -89,14 +92,29 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
             <div style={{ marginBottom: 16 }}>
               <span style={serif(32, 400, { color: TEXT })}>{tx.name}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: tx.excludedAmount > 0 ? 6 : 16 }}>
+            <button
+              type="button"
+              onClick={() => setAmountEditOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "center",
+                gap: 2,
+                marginBottom: tx.excludedAmount > 0 ? 6 : 16,
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
               <span style={mono(22, 500, { color: "rgba(244,243,239,0.4)" })}>
                 {tx.amount < 0 ? "+" : MINUS}$
               </span>
               <span style={mono(46, 500, { color: TEXT, letterSpacing: -2 })}>
                 {Math.abs(tx.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </span>
-            </div>
+            </button>
             {tx.excludedAmount > 0 && (
               <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>
                 Originally ${tx.originalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -192,6 +210,17 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
             </div>
           )}
         </Sheet>
+      )}
+
+      {amountEditOpen && (
+        <EditAmountSheet
+          tx={tx}
+          onClose={() => setAmountEditOpen(false)}
+          onSaved={(updated) => {
+            onTxUpdate(updated);
+            onCategoryChanged?.();
+          }}
+        />
       )}
 
       {splitOpen && (
