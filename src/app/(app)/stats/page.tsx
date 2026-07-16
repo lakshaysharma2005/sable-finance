@@ -265,7 +265,7 @@ export default function StatsPage() {
                   cursor: "pointer",
                 }}
               >
-                <TxAvatar name={e.name} color={e.color} logoUrl={e.logoUrl} />
+                <TxAvatar name={e.name} color={e.color} logoUrl={e.logoUrl} accountName={e.accountName} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={serif(15, 400, {

@@ -271,7 +271,7 @@ export default function SearchPage() {
                     cursor: "pointer",
                   }}
                 >
-                  <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} />
+                  <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} accountName={it.accountName} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={serif(15, 400, {

@@ -354,7 +354,7 @@ function ToReview({ data, reload }: { data: DashboardData; reload: () => void })
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
-                <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} />
+                <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} accountName={it.accountName} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={serif(15, 400, {

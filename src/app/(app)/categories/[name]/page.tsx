@@ -358,7 +358,7 @@ export default function CategoryPage() {
                     <span style={{ ...mono(11, 500, { color: (data.color ?? TER) + "cc" }), flex: "none", width: 42 }}>
                       {dateLabel}
                     </span>
-                    <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} />
+                    <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} accountName={it.accountName} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={serif(15, 400, {

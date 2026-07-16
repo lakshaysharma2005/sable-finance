@@ -1,23 +1,33 @@
 import { initialOf, tint } from "@/lib/format";
 import { mono } from "@/lib/ui";
 
+const VENMO_LOGO = "/icons/venmo.png";
+
+function isVenmoAccount(accountName?: string | null): boolean {
+  return !!accountName && /venmo/i.test(accountName);
+}
+
 // Merchant avatar: Plaid logo when available, otherwise letter initial on a tinted square.
 export function TxAvatar({
   name,
   color,
   logoUrl,
+  accountName,
   size = 38,
 }: {
   name: string;
   color: string;
   logoUrl?: string | null;
+  accountName?: string | null;
   size?: number;
 }) {
-  if (logoUrl) {
+  const resolvedLogo = isVenmoAccount(accountName) ? VENMO_LOGO : logoUrl;
+
+  if (resolvedLogo) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={logoUrl}
+        src={resolvedLogo}
         alt=""
         width={size}
         height={size}
