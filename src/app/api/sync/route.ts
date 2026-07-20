@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, plaidItems } from "@/db";
 import { decryptToken } from "@/lib/crypto";
 import { isLocalPlaidId } from "@/lib/cash";
+import { syncKalshiBalance } from "@/lib/kalshi/sync";
 import { plaidClient } from "@/lib/plaid/client";
 import { syncAllItems, refreshBalances, snapshotBalances } from "@/lib/plaid/sync";
 
@@ -23,7 +24,8 @@ export async function POST() {
 
   const results = await syncAllItems();
   await refreshBalances();
+  const kalshi = await syncKalshiBalance();
   await snapshotBalances();
 
-  return NextResponse.json({ ok: true, results });
+  return NextResponse.json({ ok: true, results, kalshi });
 }

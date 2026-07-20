@@ -17,6 +17,9 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
   if (a.assetCategory === "cc") {
     return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: "#D98A7F", typeLabel: "CREDIT" };
   }
+  if (a.assetCategory === "betting" || a.subtype === "betting") {
+    return { grad: "linear-gradient(135deg,#2a1418,#3d1a22)", accent: "#B07E8A", typeLabel: "BETTING" };
+  }
   if (a.subtype === "savings") {
     return { grad: "linear-gradient(135deg,#0f1f2e,#1a2e42)", accent: "#6B8AB0", typeLabel: "SAVINGS" };
   }
@@ -167,9 +170,11 @@ export default function AccountsPage() {
                 <span style={serif(16, 400, { color: TEXT })}>{cat.label}</span>
                 <span style={mono(12, 500, { color: cat.color, marginLeft: 2 })}>{money(Math.abs(cat.amt))}</span>
               </button>
-              <span onClick={startLink} style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}>
-                Add ›
-              </span>
+              {cat.key !== "betting" && (
+                <span onClick={startLink} style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}>
+                  Add ›
+                </span>
+              )}
             </div>
             {isOpen && (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

@@ -1,5 +1,6 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db, accounts, transactions, transactionSplits, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
+import { CASH_PLAID_ACCOUNT_ID } from "@/lib/cash";
 import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES } from "@/lib/categories";
 import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
 
@@ -586,8 +587,9 @@ export async function getAccountsData(today = iso(new Date())) {
 
   const itemStatus = new Map(items.map((i) => [i.id, i.status]));
 
-  // Exclude local cash / non-Plaid accounts from portfolio net worth UI.
-  const accountList = acctRows.filter((a) => !a.plaidAccountId.startsWith("local_")).map((a) => {
+  // Exclude local cash (expense funding only) from portfolio net worth UI.
+  // Other synthetic accounts (e.g. Kalshi under Betting) are included.
+  const accountList = acctRows.filter((a) => a.plaidAccountId !== CASH_PLAID_ACCOUNT_ID).map((a) => {
     // Signed balance: credit balances count against net worth
     const raw = a.currentBalance ?? 0;
     const signed = a.assetCategory === "cc" ? -raw : raw;

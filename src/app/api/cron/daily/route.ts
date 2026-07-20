@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { syncKalshiBalance } from "@/lib/kalshi/sync";
 import { syncAllItems, refreshBalances, snapshotBalances } from "@/lib/plaid/sync";
 
 // Daily cron (vercel.json): fallback sync in case webhooks were missed,
@@ -11,7 +12,8 @@ export async function GET(request: Request) {
 
   const results = await syncAllItems();
   await refreshBalances();
+  const kalshi = await syncKalshiBalance();
   await snapshotBalances();
 
-  return NextResponse.json({ ok: true, results });
+  return NextResponse.json({ ok: true, results, kalshi });
 }
