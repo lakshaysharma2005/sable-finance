@@ -13,6 +13,17 @@ type Acct = AccountsData["accounts"][number];
 
 const ALL_KEYS = ["cc", "depo", "crypto", "invest", "betting", "others"];
 
+const CONNECTION_LOGOS: Record<string, string> = {
+  kalshi: "/icons/kalshi.png?v=2",
+};
+
+/** Institution/connection logo for non-bank accounts (Betting, etc.). */
+function connectionLogo(a: Acct): string | null {
+  const key = (a.name || a.officialName || "").toLowerCase().trim();
+  if (key.includes("kalshi")) return CONNECTION_LOGOS.kalshi;
+  return null;
+}
+
 function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string } {
   if (a.assetCategory === "cc") {
     return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: "#D98A7F", typeLabel: "CREDIT" };
@@ -27,6 +38,52 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
     return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: "#7FE08A", typeLabel: "CHECKING" };
   }
   return { grad: "linear-gradient(135deg,#1c1c22,#26262e)", accent: "#8A8594", typeLabel: (a.subtype ?? a.type).toUpperCase() };
+}
+
+function AccountThumb({ account }: { account: Acct }) {
+  const theme = cardTheme(account);
+  const logo = connectionLogo(account);
+
+  if (logo) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={logo}
+        alt=""
+        style={{
+          width: 82,
+          aspectRatio: CREDIT_CARD_ASPECT,
+          borderRadius: 10,
+          flex: "none",
+          objectFit: "contain",
+          objectPosition: "center",
+          background: "transparent",
+          padding: "10px 8px",
+          boxSizing: "border-box",
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: 82,
+        aspectRatio: CREDIT_CARD_ASPECT,
+        borderRadius: 10,
+        background: theme.grad,
+        padding: "9px 10px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        flex: "none",
+        boxSizing: "border-box",
+      }}
+    >
+      <span style={mono(9, 700, { color: theme.accent, letterSpacing: 0.5 })}>{theme.typeLabel}</span>
+      <span style={mono(10, 400, { color: theme.accent, opacity: 0.7 })}>••{account.mask ?? "????"}</span>
+    </div>
+  );
 }
 
 function fmtSignedBal(n: number): string {
@@ -168,7 +225,9 @@ export default function AccountsPage() {
               >
                 <span style={mono(9, 400, { color: "rgba(244,243,239,0.4)" })}>{isOpen ? "▼" : "▶"}</span>
                 <span style={serif(16, 400, { color: TEXT })}>{cat.label}</span>
-                <span style={mono(12, 500, { color: cat.color, marginLeft: 2 })}>{money(Math.abs(cat.amt))}</span>
+                <span style={mono(12, 500, { color: cat.key === "cc" ? cat.color : ACCENT, marginLeft: 2 })}>
+                  {money(Math.abs(cat.amt))}
+                </span>
               </button>
               {cat.key !== "betting" && (
                 <span onClick={startLink} style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}>
@@ -369,7 +428,6 @@ function AccountRow({
   onClick: () => void;
   onRelinked: () => void;
 }) {
-  const theme = cardTheme(account);
   const { start: relink } = usePlaidConnect(onRelinked, account.itemId);
   const isCredit = account.assetCategory === "cc";
   const utilization =
@@ -390,23 +448,7 @@ function AccountRow({
         cursor: "pointer",
       }}
     >
-      <div
-        style={{
-          width: 82,
-          aspectRatio: CREDIT_CARD_ASPECT,
-          borderRadius: 10,
-          background: theme.grad,
-          padding: "9px 10px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          flex: "none",
-          boxSizing: "border-box",
-        }}
-      >
-        <span style={mono(9, 700, { color: theme.accent, letterSpacing: 0.5 })}>{theme.typeLabel}</span>
-        <span style={mono(10, 400, { color: theme.accent, opacity: 0.7 })}>••{account.mask ?? "????"}</span>
-      </div>
+      <AccountThumb account={account} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={serif(14, 400, {
@@ -491,6 +533,7 @@ function AccountDetailSheet({
   const utilization =
     isCredit && account.creditLimit ? Math.round(((account.currentBalance ?? 0) / account.creditLimit) * 100) : null;
   const change = acctChangePct(account, data);
+  const logo = connectionLogo(account);
 
   async function saveRename() {
     if (!draft.trim()) return;
@@ -623,23 +666,42 @@ function AccountDetailSheet({
             </div>
           </div>
 
-          <div
-            style={{
-              width: 100,
-              aspectRatio: CREDIT_CARD_ASPECT,
-              borderRadius: 12,
-              background: theme.grad,
-              padding: "10px 12px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              marginBottom: 20,
-              boxSizing: "border-box",
-            }}
-          >
-            <span style={mono(10, 700, { color: theme.accent, letterSpacing: 0.5 })}>{theme.typeLabel}</span>
-            <span style={mono(11, 400, { color: theme.accent, opacity: 0.75 })}>••{account.mask ?? "????"}</span>
-          </div>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logo}
+              alt=""
+              style={{
+                width: 100,
+                aspectRatio: CREDIT_CARD_ASPECT,
+                borderRadius: 12,
+                objectFit: "contain",
+                objectPosition: "center",
+                background: "transparent",
+                padding: "12px 10px",
+                marginBottom: 20,
+                boxSizing: "border-box",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 100,
+                aspectRatio: CREDIT_CARD_ASPECT,
+                borderRadius: 12,
+                background: theme.grad,
+                padding: "10px 12px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                marginBottom: 20,
+                boxSizing: "border-box",
+              }}
+            >
+              <span style={mono(10, 700, { color: theme.accent, letterSpacing: 0.5 })}>{theme.typeLabel}</span>
+              <span style={mono(11, 400, { color: theme.accent, opacity: 0.75 })}>••{account.mask ?? "????"}</span>
+            </div>
+          )}
 
           <div style={{ display: "flex", justifyContent: "space-around", background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "18px 12px" }}>
             <div style={{ textAlign: "center" }}>
