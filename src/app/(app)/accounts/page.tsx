@@ -15,13 +15,92 @@ const ALL_KEYS = ["cc", "depo", "crypto", "invest", "betting", "others"];
 
 const CONNECTION_LOGOS: Record<string, string> = {
   kalshi: "/icons/kalshi.png?v=2",
+  venmo: "/icons/venmo.png?v=2",
+  chase: "/icons/chase.png?v=2",
 };
+
+function isChaseChecking(a: Acct): boolean {
+  if (a.subtype !== "checking") return false;
+  const haystack = [a.institutionName, a.name, a.officialName].filter(Boolean).join(" ");
+  return /chase/i.test(haystack);
+}
+
+function isVenmoAccount(a: Acct): boolean {
+  const key = (a.name || a.officialName || "").toLowerCase().trim();
+  return key.includes("venmo");
+}
+
+function showSecondAccountStat(a: Acct): boolean {
+  if (isVenmoAccount(a)) return false;
+  if (a.assetCategory === "depo") return false;
+  return true;
+}
 
 /** Institution/connection logo for non-bank accounts (Betting, etc.). */
 function connectionLogo(a: Acct): string | null {
   const key = (a.name || a.officialName || "").toLowerCase().trim();
   if (key.includes("kalshi")) return CONNECTION_LOGOS.kalshi;
+  if (isVenmoAccount(a)) return CONNECTION_LOGOS.venmo;
+  if (isChaseChecking(a)) return CONNECTION_LOGOS.chase;
   return null;
+}
+
+function isSquareBrandLogo(logo: string): boolean {
+  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase;
+}
+
+function squareBrandSlotStyle(size: "thumb" | "detail"): React.CSSProperties {
+  return {
+    width: size === "thumb" ? 82 : 100,
+    aspectRatio: CREDIT_CARD_ASPECT,
+    flex: "none",
+    display: "grid",
+    placeItems: "center",
+    ...(size === "detail" ? { marginBottom: 20 } : {}),
+  };
+}
+
+function squareBrandLogoImgStyle(size: "thumb" | "detail"): React.CSSProperties {
+  const dim = size === "thumb" ? 50 : 92;
+  return {
+    width: dim,
+    height: dim,
+    borderRadius: size === "thumb" ? 12 : 14,
+    objectFit: "contain",
+    objectPosition: "center",
+    display: "block",
+  };
+}
+
+function connectionLogoStyle(logo: string, size: "thumb" | "detail"): React.CSSProperties {
+  const width = size === "thumb" ? 82 : 100;
+  return {
+    width,
+    aspectRatio: CREDIT_CARD_ASPECT,
+    borderRadius: size === "thumb" ? 10 : 12,
+    flex: "none",
+    objectFit: "contain",
+    objectPosition: "center",
+    background: "transparent",
+    padding: size === "thumb" ? "10px 8px" : "12px 10px",
+    boxSizing: "border-box",
+    ...(size === "detail" ? { marginBottom: 20 } : {}),
+  };
+}
+
+function ConnectionLogo({ logo, size }: { logo: string; size: "thumb" | "detail" }) {
+  if (isSquareBrandLogo(logo)) {
+    return (
+      <div style={squareBrandSlotStyle(size)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logo} alt="" style={squareBrandLogoImgStyle(size)} />
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={logo} alt="" style={connectionLogoStyle(logo, size)} />
+  );
 }
 
 function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string } {
@@ -45,24 +124,7 @@ function AccountThumb({ account }: { account: Acct }) {
   const logo = connectionLogo(account);
 
   if (logo) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={logo}
-        alt=""
-        style={{
-          width: 82,
-          aspectRatio: CREDIT_CARD_ASPECT,
-          borderRadius: 10,
-          flex: "none",
-          objectFit: "contain",
-          objectPosition: "center",
-          background: "transparent",
-          padding: "10px 8px",
-          boxSizing: "border-box",
-        }}
-      />
-    );
+    return <ConnectionLogo logo={logo} size="thumb" />;
   }
 
   return (
@@ -106,7 +168,15 @@ export default function AccountsPage() {
     const cats = data.assetCats.filter((c) => selCats.includes(c.key));
     return {
       total: cats.reduce((s, c) => s + c.amt, 0),
-      nonzero: cats.filter((c) => c.amt !== 0).sort((a, b) => Math.abs(b.amt) - Math.abs(a.amt)),
+      // Assets (green) first, then liabilities (red); larger abs within each group.
+      nonzero: cats
+        .filter((c) => c.amt !== 0)
+        .sort((a, b) => {
+          const aPos = a.amt >= 0 ? 0 : 1;
+          const bPos = b.amt >= 0 ? 0 : 1;
+          if (aPos !== bPos) return aPos - bPos;
+          return Math.abs(b.amt) - Math.abs(a.amt);
+        }),
     };
   }, [data, selCats]);
 
@@ -430,9 +500,10 @@ function AccountRow({
 }) {
   const { start: relink } = usePlaidConnect(onRelinked, account.itemId);
   const isCredit = account.assetCategory === "cc";
+  const showSecondStat = showSecondAccountStat(account);
   const utilization =
     isCredit && account.creditLimit ? Math.round(((account.currentBalance ?? 0) / account.creditLimit) * 100) : null;
-  const change = acctChangePct(account, data);
+  const change = showSecondStat && !isCredit ? acctChangePct(account, data) : null;
 
   return (
     <div
@@ -480,7 +551,7 @@ function AccountRow({
             Re-link required
           </button>
         ) : (
-          <div style={{ display: "flex", justifyContent: "space-around" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
             <div>
               <div style={{ ...microLabel, fontSize: 8, color: "rgba(244,243,239,0.38)" }}>
                 {isCredit ? "Balance" : "Available"}
@@ -489,23 +560,25 @@ function AccountRow({
                 {money(Math.abs(isCredit ? (account.currentBalance ?? 0) : (account.availableBalance ?? account.currentBalance ?? 0)))}
               </div>
             </div>
-            <div>
-              <div style={{ ...microLabel, fontSize: 8, color: "rgba(244,243,239,0.38)" }}>
-                {isCredit ? "Utilized" : "Change"}
+            {showSecondStat && (
+              <div>
+                <div style={{ ...microLabel, fontSize: 8, color: "rgba(244,243,239,0.38)" }}>
+                  {isCredit ? "Utilized" : "Change"}
+                </div>
+                {isCredit ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
+                    <span style={mono(13, 500, { color: "#C49A6B" })}>{utilization !== null ? `${utilization}%` : "—"}</span>
+                    {utilization !== null && (
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C49A6B", flex: "none" }} />
+                    )}
+                  </div>
+                ) : (
+                  <div style={mono(13, 500, { color: change !== null && change >= 0 ? ACCENT : change !== null ? "#D98A7F" : TER, marginTop: 5 })}>
+                    {change !== null ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% ${change >= 0 ? "▲" : "▼"}` : "—"}
+                  </div>
+                )}
               </div>
-              {isCredit ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
-                  <span style={mono(13, 500, { color: "#C49A6B" })}>{utilization !== null ? `${utilization}%` : "—"}</span>
-                  {utilization !== null && (
-                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C49A6B", flex: "none" }} />
-                  )}
-                </div>
-              ) : (
-                <div style={mono(13, 500, { color: change !== null && change >= 0 ? ACCENT : change !== null ? "#D98A7F" : TER, marginTop: 5 })}>
-                  {change !== null ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% ${change >= 0 ? "▲" : "▼"}` : "—"}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )}
       </div>
@@ -530,9 +603,10 @@ function AccountDetailSheet({
   const [draft, setDraft] = useState(account.name);
 
   const isCredit = account.assetCategory === "cc";
+  const showSecondStat = showSecondAccountStat(account);
   const utilization =
     isCredit && account.creditLimit ? Math.round(((account.currentBalance ?? 0) / account.creditLimit) * 100) : null;
-  const change = acctChangePct(account, data);
+  const change = showSecondStat && !isCredit ? acctChangePct(account, data) : null;
   const logo = connectionLogo(account);
 
   async function saveRename() {
@@ -667,22 +741,7 @@ function AccountDetailSheet({
           </div>
 
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logo}
-              alt=""
-              style={{
-                width: 100,
-                aspectRatio: CREDIT_CARD_ASPECT,
-                borderRadius: 12,
-                objectFit: "contain",
-                objectPosition: "center",
-                background: "transparent",
-                padding: "12px 10px",
-                marginBottom: 20,
-                boxSizing: "border-box",
-              }}
-            />
+            <ConnectionLogo logo={logo} size="detail" />
           ) : (
             <div
               style={{
@@ -703,30 +762,40 @@ function AccountDetailSheet({
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "space-around", background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "18px 12px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: showSecondStat ? "1fr 1fr" : "1fr",
+              background: "rgba(255,255,255,0.04)",
+              borderRadius: 16,
+              padding: "18px 12px",
+            }}
+          >
             <div style={{ textAlign: "center" }}>
               <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{isCredit ? "Balance" : "Available"}</div>
               <div style={mono(17, 500, { color: TEXT, marginTop: 6 })}>
                 {money(Math.abs(isCredit ? (account.currentBalance ?? 0) : (account.availableBalance ?? account.currentBalance ?? 0)))}
               </div>
             </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{isCredit ? "Utilized" : "Change"}</div>
-              <div
-                style={mono(17, 500, {
-                  color: isCredit ? "#C49A6B" : change !== null && change >= 0 ? ACCENT : change !== null ? "#D98A7F" : TER,
-                  marginTop: 6,
-                })}
-              >
-                {isCredit
-                  ? utilization !== null
-                    ? `${utilization}%`
-                    : "—"
-                  : change !== null
-                    ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% ${change >= 0 ? "▲" : "▼"}`
-                    : "—"}
+            {showSecondStat && (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{isCredit ? "Utilized" : "Change"}</div>
+                <div
+                  style={mono(17, 500, {
+                    color: isCredit ? "#C49A6B" : change !== null && change >= 0 ? ACCENT : change !== null ? "#D98A7F" : TER,
+                    marginTop: 6,
+                  })}
+                >
+                  {isCredit
+                    ? utilization !== null
+                      ? `${utilization}%`
+                      : "—"
+                    : change !== null
+                      ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% ${change >= 0 ? "▲" : "▼"}`
+                      : "—"}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </>
       )}

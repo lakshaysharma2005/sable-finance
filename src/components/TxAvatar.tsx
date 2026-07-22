@@ -1,7 +1,7 @@
 import { initialOf, tint } from "@/lib/format";
 import { mono } from "@/lib/ui";
 
-const VENMO_LOGO = "/icons/venmo.png";
+const VENMO_LOGO = "/icons/venmo.png?v=2";
 
 function isVenmoAccount(accountName?: string | null): boolean {
   return !!accountName && /venmo/i.test(accountName);

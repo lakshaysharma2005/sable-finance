@@ -586,6 +586,7 @@ export async function getAccountsData(today = iso(new Date())) {
   ]);
 
   const itemStatus = new Map(items.map((i) => [i.id, i.status]));
+  const itemInstitution = new Map(items.map((i) => [i.id, i.institutionName]));
 
   // Exclude local cash (expense funding only) from portfolio net worth UI.
   // Other synthetic accounts (e.g. Kalshi under Betting) are included.
@@ -598,6 +599,7 @@ export async function getAccountsData(today = iso(new Date())) {
       itemId: a.itemId,
       name: a.customName ?? a.name,
       officialName: a.officialName,
+      institutionName: itemInstitution.get(a.itemId) ?? null,
       mask: a.mask,
       type: a.type,
       subtype: a.subtype,
