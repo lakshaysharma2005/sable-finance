@@ -171,7 +171,7 @@ export default function TransactionsPage() {
           return (
             <button key={a.id} onClick={() => toggleAccount(a.id)} style={{ ...chipBase, ...(active ? chipOn : chipOff) }}>
               <span style={{ width: 8, height: 8, borderRadius: 3, flex: "none", background: a.color }} />
-              {a.name} ••{a.mask ?? "????"}
+              {a.name}{a.mask ? ` ••${a.mask}` : ""}
             </button>
           );
         })}
