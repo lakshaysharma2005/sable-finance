@@ -8,7 +8,8 @@ import { EXCLUDED_CATEGORIES } from "@/lib/categories";
 import { tint } from "@/lib/format";
 import { CASH_PAY_FROM } from "@/lib/cash";
 import type { AccountsData } from "@/lib/queries";
-import { ACCENT, chipBase, chipOff, chipOn, microLabel, mono, serif, TEXT } from "@/lib/ui";
+import { MINUS } from "@/lib/format";
+import { ACCENT, chipBase, chipOff, chipOn, microLabel, mono, RED, serif, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 const CASH_COLOR = "#C49A6B";
@@ -48,6 +49,7 @@ export default function AddExpensePage() {
   );
 
   const [amt, setAmt] = useState("");
+  const [isInflow, setIsInflow] = useState(false);
   const [category, setCategory] = useState("Food & Drink");
   const [payFrom, setPayFrom] = useState<PayFromId>(CASH_PAY_FROM);
   const [saving, setSaving] = useState(false);
@@ -72,7 +74,7 @@ export default function AddExpensePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: parseFloat(amt),
+          amount: isInflow ? -parseFloat(amt) : parseFloat(amt),
           category,
           accountId: payFrom,
         }),
@@ -125,10 +127,41 @@ export default function AddExpensePage() {
         </button>
       </div>
 
-      <div style={{ textAlign: "center", padding: "18px 0 14px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3 }}>
-          <span style={mono(24, 500, { color: "rgba(244,243,239,0.4)" })}>−$</span>
-          <span style={mono(54, 500, { color: TEXT, letterSpacing: -2 })}>{display}</span>
+      <div style={{ display: "flex", justifyContent: "center", padding: "18px 0 14px" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            flexDirection: "row",
+            alignItems: "center",
+            flexWrap: "nowrap",
+            gap: 4,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setIsInflow((v) => !v)}
+            aria-label={isInflow ? "Switch to expense" : "Switch to income"}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              background: tint(isInflow ? ACCENT : RED),
+              border: `1px solid ${isInflow ? ACCENT : RED}66`,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flex: "none",
+              padding: 0,
+              ...mono(20, 500, { color: "rgba(244,243,239,0.6)" }),
+            }}
+          >
+            {isInflow ? "+" : MINUS}
+          </button>
+          <span style={mono(24, 500, { color: "rgba(244,243,239,0.4)", flex: "none", lineHeight: 1 })}>$</span>
+          <span style={mono(54, 500, { color: TEXT, letterSpacing: -2, lineHeight: 1, whiteSpace: "nowrap" })}>
+            {display}
+          </span>
         </div>
       </div>
 

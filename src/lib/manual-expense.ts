@@ -73,7 +73,7 @@ export async function createManualExpense(input: {
   accountId: number | typeof CASH_PAY_FROM;
 }): Promise<{ id: number; accountName: string }> {
   const amount = Number(input.amount);
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (!Number.isFinite(amount) || amount === 0) {
     throw new Error("Amount must be greater than zero");
   }
 
