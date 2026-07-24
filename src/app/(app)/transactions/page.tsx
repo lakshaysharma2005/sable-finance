@@ -90,7 +90,7 @@ export default function TransactionsPage() {
     }
     return {
       txCount: filteredItems.length,
-      txSpent: filteredItems.reduce((s, t) => s + t.amount, 0),
+      txSpent: filteredItems.reduce((s, t) => (t.amount > 0 ? s + t.amount : s), 0),
     };
   }, [data, filteredItems, selCategory]);
 

@@ -191,7 +191,11 @@ function spendTotal(txs: TxItem[], splits: SplitInRange[]): number {
   let total = 0;
   for (const tx of txs) {
     if (isExcluded(tx.category)) continue;
-    total += tx.amount;
+    if (tx.category === SPLITS_CATEGORY) {
+      total += tx.amount;
+    } else if (tx.amount > 0) {
+      total += tx.amount;
+    }
   }
   for (const s of splits) {
     total += s.amount;
@@ -210,9 +214,17 @@ function buildCategoryTotals(
 
   for (const tx of txs) {
     if (isExcluded(tx.category)) continue;
-    byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
-    if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
-    if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
+    if (tx.category === SPLITS_CATEGORY) {
+      byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + tx.amount);
+      if (!catColors.has(SPLITS_CATEGORY)) {
+        catColors.set(SPLITS_CATEGORY, resolveCategoryColor(SPLITS_CATEGORY, categoryLookups.colors));
+        catEmojis.set(SPLITS_CATEGORY, resolveCategoryEmoji(SPLITS_CATEGORY, categoryLookups.emojis));
+      }
+    } else if (tx.amount > 0) {
+      byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
+      if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
+      if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
+    }
   }
 
   const splitsSum = splits.reduce((s, sp) => s + sp.amount, 0);
@@ -703,9 +715,15 @@ export async function getCategoryData(category: string, today = iso(new Date()))
 
   const monthSpent = catTx
     .filter((tx) => tx.date >= monthStart)
-    .reduce((s, tx) => s + tx.amount, 0);
+    .reduce((s, tx) => {
+      if (tx.category === SPLITS_CATEGORY) return s + tx.amount;
+      return tx.amount > 0 ? s + tx.amount : s;
+    }, 0);
 
-  const yearTotal = catTx.reduce((s, tx) => s + tx.amount, 0);
+  const yearTotal = catTx.reduce((s, tx) => {
+    if (tx.category === SPLITS_CATEGORY) return s + tx.amount;
+    return tx.amount > 0 ? s + tx.amount : s;
+  }, 0);
   const monthsElapsed = t.getUTCMonth() + 1;
   const yearAvg = monthsElapsed > 0 ? yearTotal / monthsElapsed : 0;
 

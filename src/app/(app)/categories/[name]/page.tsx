@@ -9,6 +9,7 @@ import { Sheet } from "@/components/Sheet";
 import { TransactionDetailSheets } from "@/components/TransactionDetailSheets";
 import { MINUS, money } from "@/lib/format";
 import type { CategoryData, TxItem } from "@/lib/queries";
+import { SPLITS_CATEGORY } from "@/lib/queries";
 import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { CATEGORY_PALETTE } from "@/lib/categories";
 import { useData } from "@/lib/useData";
@@ -317,7 +318,10 @@ export default function CategoryPage() {
         )}
 
         {groups.map((g) => {
-          const monthTotal = (g.items ?? []).reduce((s, it) => s + it.amount, 0);
+          const monthTotal = (g.items ?? []).reduce((s, it) => {
+            if (name === SPLITS_CATEGORY) return s + it.amount;
+            return it.amount > 0 ? s + it.amount : s;
+          }, 0);
           return (
           <div key={g.monthKey} style={{ marginBottom: 20 }}>
             <div
