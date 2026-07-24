@@ -126,7 +126,7 @@ export default function DashboardPage() {
             Link your bank to start tracking spending automatically.
           </div>
           <button
-            onClick={startLink}
+            onClick={() => startLink()}
             style={{
               padding: "13px 24px",
               borderRadius: 14,

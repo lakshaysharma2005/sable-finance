@@ -4,7 +4,7 @@ import { decryptToken } from "@/lib/crypto";
 import { isLocalPlaidId } from "@/lib/cash";
 import { syncKalshiBalance } from "@/lib/kalshi/sync";
 import { plaidClient } from "@/lib/plaid/client";
-import { syncAllItems, refreshBalances, snapshotBalances } from "@/lib/plaid/sync";
+import { syncAllItems, refreshBalances, snapshotBalances, hideDuplicateAccounts } from "@/lib/plaid/sync";
 
 // Manual refresh: ask Plaid to check for new transactions, then pull
 // whatever is already available and refresh balances.
@@ -25,7 +25,8 @@ export async function POST() {
   const results = await syncAllItems();
   await refreshBalances();
   const kalshi = await syncKalshiBalance();
+  const hiddenDuplicates = await hideDuplicateAccounts();
   await snapshotBalances();
 
-  return NextResponse.json({ ok: true, results, kalshi });
+  return NextResponse.json({ ok: true, results, kalshi, hiddenDuplicates });
 }

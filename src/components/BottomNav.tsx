@@ -173,7 +173,7 @@ export function BottomNav() {
               iconBg="rgba(127,224,138,0.14)"
               title="Connect a bank account"
               subtitle="Link via Plaid"
-              onClick={startLink}
+              onClick={() => startLink()}
             />
             <SheetAction
               icon={

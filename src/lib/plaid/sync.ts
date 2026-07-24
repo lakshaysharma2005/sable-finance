@@ -1,14 +1,181 @@
 import { eq, inArray, sql } from "drizzle-orm";
-import type { RemovedTransaction, Transaction } from "plaid";
+import type { AccountBase, RemovedTransaction, Transaction } from "plaid";
 import { db, accounts, plaidItems, transactions, categoryRules, balanceSnapshots } from "@/db";
 import { decryptToken } from "@/lib/crypto";
-import { mapPfcToCategory } from "@/lib/categories";
+import { ACCOUNT_COLORS, mapAccountTypeToAssetCategory, mapPfcToCategory } from "@/lib/categories";
 import { isLocalPlaidId } from "@/lib/cash";
 import { plaidClient } from "./client";
 
 const MUTATION_ERROR = "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION";
 
 type ItemRow = typeof plaidItems.$inferSelect;
+
+/** Fingerprint for matching the same real-world account across duplicate Plaid Items. */
+export function accountFingerprint(institutionId: string | null | undefined, type: string, mask: string | null | undefined) {
+  if (!institutionId || !mask) return null;
+  return `${institutionId}|${type}|${mask}`;
+}
+
+async function existingFingerprints(excludeItemId?: number): Promise<Set<string>> {
+  const rows = await db
+    .select({
+      type: accounts.type,
+      mask: accounts.mask,
+      institutionId: plaidItems.institutionId,
+      itemId: accounts.itemId,
+      hidden: accounts.hidden,
+    })
+    .from(accounts)
+    .innerJoin(plaidItems, eq(accounts.itemId, plaidItems.id));
+
+  const out = new Set<string>();
+  for (const row of rows) {
+    if (excludeItemId != null && row.itemId === excludeItemId) continue;
+    if (row.hidden) continue;
+    const fp = accountFingerprint(row.institutionId, row.type, row.mask);
+    if (fp) out.add(fp);
+  }
+  return out;
+}
+
+/**
+ * Upsert Plaid accounts for an Item. Skips accounts that already exist under
+ * another Item at the same institution with the same type+mask (prevents the
+ * "linked Chase twice" duplicate-card problem). Never overwrites customName.
+ */
+export async function upsertAccountsForItem(
+  item: ItemRow,
+  plaidAccounts: AccountBase[],
+): Promise<{ inserted: number; updated: number; skippedDuplicates: number }> {
+  const known = await existingFingerprints(item.id);
+  const existingCount = (await db.select({ id: accounts.id }).from(accounts)).length;
+  let colorIdx = existingCount;
+  let inserted = 0;
+  let updated = 0;
+  let skippedDuplicates = 0;
+
+  for (const acct of plaidAccounts) {
+    const fp = accountFingerprint(item.institutionId, acct.type, acct.mask ?? null);
+    const [existing] = await db.select().from(accounts).where(eq(accounts.plaidAccountId, acct.account_id)).limit(1);
+
+    if (!existing && fp && known.has(fp)) {
+      skippedDuplicates++;
+      continue;
+    }
+
+    if (existing) {
+      await db
+        .update(accounts)
+        .set({
+          // Keep user renames; only refresh Plaid's raw name when no customName.
+          name: existing.customName ? existing.name : acct.name,
+          officialName: acct.official_name ?? existing.officialName,
+          currentBalance: acct.balances.current ?? null,
+          availableBalance: acct.balances.available ?? null,
+          creditLimit: acct.balances.limit ?? null,
+          isoCurrencyCode: acct.balances.iso_currency_code ?? existing.isoCurrencyCode,
+          updatedAt: new Date(),
+        })
+        .where(eq(accounts.id, existing.id));
+      updated++;
+      continue;
+    }
+
+    await db.insert(accounts).values({
+      plaidAccountId: acct.account_id,
+      itemId: item.id,
+      name: acct.name,
+      officialName: acct.official_name ?? null,
+      mask: acct.mask ?? null,
+      type: acct.type,
+      subtype: acct.subtype ?? null,
+      assetCategory: mapAccountTypeToAssetCategory(acct.type),
+      currentBalance: acct.balances.current ?? null,
+      availableBalance: acct.balances.available ?? null,
+      creditLimit: acct.balances.limit ?? null,
+      isoCurrencyCode: acct.balances.iso_currency_code ?? null,
+      color: ACCOUNT_COLORS[colorIdx++ % ACCOUNT_COLORS.length],
+    });
+    if (fp) known.add(fp);
+    inserted++;
+  }
+
+  return { inserted, updated, skippedDuplicates };
+}
+
+/** Pull /accounts/get for an Item and upsert into our DB. */
+export async function syncAccountsForItem(item: ItemRow) {
+  const accessToken = decryptToken(item.accessTokenEncrypted);
+  const { data } = await plaidClient.accountsGet({ access_token: accessToken });
+  return upsertAccountsForItem(item, data.accounts);
+}
+
+/**
+ * Hide newer duplicate account rows (same institution + type + mask) so the
+ * original linked accounts — and their manual categorizations — stay visible.
+ */
+export async function hideDuplicateAccounts(): Promise<number> {
+  const rows = await db
+    .select({
+      id: accounts.id,
+      type: accounts.type,
+      mask: accounts.mask,
+      createdAt: accounts.createdAt,
+      hidden: accounts.hidden,
+      institutionId: plaidItems.institutionId,
+    })
+    .from(accounts)
+    .innerJoin(plaidItems, eq(accounts.itemId, plaidItems.id))
+    .orderBy(accounts.createdAt);
+
+  const keeperByFp = new Map<string, number>();
+  const toHide: number[] = [];
+
+  for (const row of rows) {
+    const fp = accountFingerprint(row.institutionId, row.type, row.mask);
+    if (!fp) continue;
+    const keeper = keeperByFp.get(fp);
+    if (keeper == null) {
+      keeperByFp.set(fp, row.id);
+      continue;
+    }
+    if (!row.hidden) toHide.push(row.id);
+  }
+
+  if (toHide.length === 0) return 0;
+  await db.update(accounts).set({ hidden: true, updatedAt: new Date() }).where(inArray(accounts.id, toHide));
+  return toHide.length;
+}
+
+/** Remove a Plaid Item from Plaid + our DB when it contributed no new accounts. */
+export async function removeEmptyDuplicateItem(item: ItemRow) {
+  const remaining = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.itemId, item.id));
+  if (remaining.length > 0) return false;
+
+  try {
+    await plaidClient.itemRemove({ access_token: decryptToken(item.accessTokenEncrypted) });
+  } catch {
+    // Item may already be invalid; still drop our row.
+  }
+  await db.delete(plaidItems).where(eq(plaidItems.id, item.id));
+  return true;
+}
+
+/** After Link update mode (re-link or add accounts), refresh status + accounts + txs. */
+export async function completeItemUpdate(itemId: number) {
+  const [item] = await db.select().from(plaidItems).where(eq(plaidItems.id, itemId));
+  if (!item) throw new Error("item not found");
+
+  await db.update(plaidItems).set({ status: "ok" }).where(eq(plaidItems.id, item.id));
+  const accountResult = await syncAccountsForItem(item);
+  const [fresh] = await db.select().from(plaidItems).where(eq(plaidItems.id, item.id));
+  const syncResult = await syncItem(fresh);
+  await hideDuplicateAccounts();
+  await refreshBalances();
+  await snapshotBalances();
+
+  return { accountResult, syncResult };
+}
 
 async function fetchAllUpdates(accessToken: string, initialCursor: string | null) {
   let cursor = initialCursor;

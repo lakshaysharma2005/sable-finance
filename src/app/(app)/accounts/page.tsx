@@ -161,6 +161,21 @@ export default function AccountsPage() {
 
   const { start: startLink } = usePlaidConnect(() => window.location.reload());
 
+  /** Prefer adding accounts onto an existing Item (update mode) so re-selecting Chase doesn't clone cards. */
+  function startAddForCategory(catKey: string) {
+    const catAccounts = data?.accounts.filter((a) => a.assetCategory === catKey) ?? [];
+    if (catAccounts.length === 0) {
+      startLink();
+      return;
+    }
+    // Prefer an Item that already needs re-auth; otherwise the earliest-linked Item in this category
+    // (keeps history/categorizations on the original connection).
+    const needsRelink = catAccounts.find((a) => a.needsRelink);
+    const oldest = [...catAccounts].sort((a, b) => a.id - b.id)[0];
+    const itemId = needsRelink?.itemId ?? oldest.itemId;
+    startLink({ itemId, accountSelection: true });
+  }
+
   const allActive = selCats.length === ALL_KEYS.length;
 
   const selected = useMemo(() => {
@@ -300,7 +315,10 @@ export default function AccountsPage() {
                 </span>
               </button>
               {cat.key !== "betting" && (
-                <span onClick={startLink} style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}>
+                <span
+                  onClick={() => startAddForCategory(cat.key)}
+                  style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}
+                >
                   Add ›
                 </span>
               )}
@@ -320,7 +338,7 @@ export default function AccountsPage() {
         <div style={{ ...card, borderRadius: 16, padding: 22, textAlign: "center", marginBottom: 14 }}>
           <div style={serif(15, 400, { color: TEXT, marginBottom: 12 })}>No accounts connected yet</div>
           <button
-            onClick={startLink}
+            onClick={() => startLink()}
             style={{
               padding: "12px 22px",
               borderRadius: 14,

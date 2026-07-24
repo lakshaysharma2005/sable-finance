@@ -5,9 +5,15 @@ import { db, plaidItems } from "@/db";
 import { decryptToken } from "@/lib/crypto";
 import { plaidClient } from "@/lib/plaid/client";
 
-// Creates a link_token. Pass { itemId } to open Link in update mode for re-linking.
+// Creates a link_token.
+// - No itemId: new Link (connect a bank)
+// - itemId: update mode (re-link / repair)
+// - itemId + accountSelection: update mode that lets the user share additional accounts
 export async function POST(request: Request) {
-  const { itemId } = (await request.json().catch(() => ({}))) as { itemId?: number };
+  const { itemId, accountSelection } = (await request.json().catch(() => ({}))) as {
+    itemId?: number;
+    accountSelection?: boolean;
+  };
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
 
   const base = {
@@ -27,6 +33,7 @@ export async function POST(request: Request) {
       const { data } = await plaidClient.linkTokenCreate({
         ...base,
         access_token: decryptToken(item.accessTokenEncrypted),
+        ...(accountSelection ? { update: { account_selection_enabled: true } } : {}),
       });
       return NextResponse.json({ link_token: data.link_token });
     }

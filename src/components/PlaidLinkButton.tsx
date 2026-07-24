@@ -1,19 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 
-// Fetches a link_token on demand, opens Plaid Link, and exchanges the
-// public_token on success. Pass itemId to re-link an errored item.
-export function usePlaidConnect(onLinked: () => void, itemId?: number) {
+export type PlaidConnectOptions = {
+  /** Existing plaid_items.id — opens Link in update mode for that Item. */
+  itemId?: number;
+  /**
+   * When set with itemId, enables update mode Account Select so the user can
+   * share additional accounts on the existing Item (instead of creating a duplicate).
+   */
+  accountSelection?: boolean;
+};
+
+function normalizeOptions(options: PlaidConnectOptions | number = {}): PlaidConnectOptions {
+  return typeof options === "number" ? { itemId: options } : options;
+}
+
+// Fetches a link_token on demand, opens Plaid Link, and on success either
+// exchanges a new public_token or completes an Item update.
+//
+// Pass default options to the hook, and/or override them per `start()` call
+// (used by Accounts "Add ›" to add cards onto an existing Chase Item).
+export function usePlaidConnect(onLinked: () => void, defaultOptions: PlaidConnectOptions | number = {}) {
+  const defaultsRef = useRef(normalizeOptions(defaultOptions));
+  defaultsRef.current = normalizeOptions(defaultOptions);
+
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const sessionRef = useRef<PlaidConnectOptions>(defaultsRef.current);
 
   const onSuccess = useCallback(
     async (public_token: string) => {
       setBusy(true);
+      const { itemId } = sessionRef.current;
       try {
-        if (!itemId) {
+        if (itemId) {
+          // Update mode: access_token unchanged — refresh accounts + status server-side.
+          await fetch("/api/plaid/complete-update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemId }),
+          });
+        } else {
           await fetch("/api/plaid/exchange-token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -26,7 +55,7 @@ export function usePlaidConnect(onLinked: () => void, itemId?: number) {
         setLinkToken(null);
       }
     },
-    [onLinked, itemId],
+    [onLinked],
   );
 
   const { open, ready } = usePlaidLink({
@@ -40,20 +69,26 @@ export function usePlaidConnect(onLinked: () => void, itemId?: number) {
     if (linkToken && ready) open();
   }, [linkToken, ready, open]);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (overrides?: PlaidConnectOptions) => {
+    const opts = { ...defaultsRef.current, ...overrides };
+    sessionRef.current = opts;
     setBusy(true);
     try {
       const res = await fetch("/api/plaid/create-link-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(itemId ? { itemId } : {}),
+        body: JSON.stringify(
+          opts.itemId
+            ? { itemId: opts.itemId, ...(opts.accountSelection ? { accountSelection: true } : {}) }
+            : {},
+        ),
       });
       const data = await res.json();
       if (data.link_token) setLinkToken(data.link_token);
     } finally {
       setBusy(false);
     }
-  }, [itemId]);
+  }, []);
 
   return { start, busy };
 }

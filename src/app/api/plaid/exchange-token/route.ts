@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { db, accounts, plaidItems } from "@/db";
+import { db, plaidItems } from "@/db";
 import { encryptToken } from "@/lib/crypto";
-import { ACCOUNT_COLORS, mapAccountTypeToAssetCategory } from "@/lib/categories";
 import { plaidClient } from "@/lib/plaid/client";
-import { syncItem, snapshotBalances } from "@/lib/plaid/sync";
+import {
+  hideDuplicateAccounts,
+  removeEmptyDuplicateItem,
+  snapshotBalances,
+  syncItem,
+  upsertAccountsForItem,
+} from "@/lib/plaid/sync";
 
 export async function POST(request: Request) {
   const { public_token } = (await request.json().catch(() => ({}))) as { public_token?: string };
@@ -38,46 +43,34 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    // Accounts
+    // Accounts — skip ones that already exist under another Item (same bank + mask).
     const { data: accountsData } = await plaidClient.accountsGet({ access_token: accessToken });
-    const existingCount = (await db.select({ id: accounts.id }).from(accounts)).length;
-    let colorIdx = existingCount;
-    for (const acct of accountsData.accounts) {
-      await db
-        .insert(accounts)
-        .values({
-          plaidAccountId: acct.account_id,
-          itemId: itemRow.id,
-          name: acct.name,
-          officialName: acct.official_name ?? null,
-          mask: acct.mask ?? null,
-          type: acct.type,
-          subtype: acct.subtype ?? null,
-          assetCategory: mapAccountTypeToAssetCategory(acct.type),
-          currentBalance: acct.balances.current ?? null,
-          availableBalance: acct.balances.available ?? null,
-          creditLimit: acct.balances.limit ?? null,
-          isoCurrencyCode: acct.balances.iso_currency_code ?? null,
-          color: ACCOUNT_COLORS[colorIdx++ % ACCOUNT_COLORS.length],
-        })
-        .onConflictDoUpdate({
-          target: accounts.plaidAccountId,
-          set: {
-            name: acct.name,
-            currentBalance: acct.balances.current ?? null,
-            availableBalance: acct.balances.available ?? null,
-            creditLimit: acct.balances.limit ?? null,
-            updatedAt: new Date(),
-          },
-        });
+    const accountResult = await upsertAccountsForItem(itemRow, accountsData.accounts);
+
+    // If this Link session only re-selected cards we already have, drop the empty Item
+    // so we don't leave a useless second Chase connection hanging around.
+    if (accountResult.inserted === 0 && accountResult.updated === 0) {
+      await removeEmptyDuplicateItem(itemRow);
+      await hideDuplicateAccounts();
+      return NextResponse.json({
+        ok: true,
+        item_id: exchange.item_id,
+        removed_empty_duplicate: true,
+        accounts: accountResult,
+      });
     }
 
     // First transaction pull (more history arrives via webhook)
     const [freshItem] = await db.select().from(plaidItems).where(eq(plaidItems.id, itemRow.id));
     await syncItem(freshItem);
+    await hideDuplicateAccounts();
     await snapshotBalances();
 
-    return NextResponse.json({ ok: true, item_id: exchange.item_id });
+    return NextResponse.json({
+      ok: true,
+      item_id: exchange.item_id,
+      accounts: accountResult,
+    });
   } catch (err: unknown) {
     const detail = (err as { response?: { data?: unknown } })?.response?.data ?? String(err);
     console.error("exchange failed", detail);
