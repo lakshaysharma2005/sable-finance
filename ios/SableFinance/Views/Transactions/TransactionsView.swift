@@ -45,7 +45,7 @@ struct TransactionsView: View {
             return (data.txCount, data.txSpent)
         }
         let items = filteredItems
-        return (items.count, items.reduce(0) { $0 + ($1.amount > 0 ? $1.amount : 0) })
+        return (items.count, items.reduce(0) { $0 + $1.amount })
     }
 
     private var groups: [DayGroup] {
