@@ -17,12 +17,24 @@ const CONNECTION_LOGOS: Record<string, string> = {
   kalshi: "/icons/kalshi.png?v=2",
   venmo: "/icons/venmo.png?v=2",
   chase: "/icons/chase.png?v=2",
+  bofa: "/icons/bofa.png?v=1",
 };
+
+function accountHaystack(a: Acct): string {
+  return [a.institutionName, a.name, a.officialName].filter(Boolean).join(" ");
+}
 
 function isChaseChecking(a: Acct): boolean {
   if (a.subtype !== "checking") return false;
-  const haystack = [a.institutionName, a.name, a.officialName].filter(Boolean).join(" ");
-  return /chase/i.test(haystack);
+  return /chase/i.test(accountHaystack(a));
+}
+
+/** Bank of America Adv Plus / Advantage Plus checking. */
+function isBofaAdvPlusChecking(a: Acct): boolean {
+  if (a.subtype !== "checking") return false;
+  const haystack = accountHaystack(a);
+  if (/adv(?:antage)?\s*plus/i.test(haystack)) return true;
+  return /bank of america|bofa|\bb of a\b/i.test(haystack);
 }
 
 function isVenmoAccount(a: Acct): boolean {
@@ -36,17 +48,18 @@ function showSecondAccountStat(a: Acct): boolean {
   return true;
 }
 
-/** Institution/connection logo for non-bank accounts (Betting, etc.). */
+/** Institution/connection logo for branded accounts. */
 function connectionLogo(a: Acct): string | null {
   const key = (a.name || a.officialName || "").toLowerCase().trim();
   if (key.includes("kalshi")) return CONNECTION_LOGOS.kalshi;
   if (isVenmoAccount(a)) return CONNECTION_LOGOS.venmo;
   if (isChaseChecking(a)) return CONNECTION_LOGOS.chase;
+  if (isBofaAdvPlusChecking(a)) return CONNECTION_LOGOS.bofa;
   return null;
 }
 
 function isSquareBrandLogo(logo: string): boolean {
-  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase;
+  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase || logo === CONNECTION_LOGOS.bofa;
 }
 
 function squareBrandSlotStyle(size: "thumb" | "detail"): React.CSSProperties {
