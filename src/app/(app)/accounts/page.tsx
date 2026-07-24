@@ -108,7 +108,7 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
     return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: "#D98A7F", typeLabel: "CREDIT" };
   }
   if (a.assetCategory === "betting" || a.subtype === "betting") {
-    return { grad: "linear-gradient(135deg,#2a1418,#3d1a22)", accent: "#B07E8A", typeLabel: "BETTING" };
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: "#7FE08A", typeLabel: "BETTING" };
   }
   if (a.subtype === "savings") {
     return { grad: "linear-gradient(135deg,#0f1f2e,#1a2e42)", accent: "#6B8AB0", typeLabel: "SAVINGS" };

@@ -149,7 +149,7 @@ export const ASSET_CATEGORIES = [
   { key: "depo", label: "Banking", color: "#7FE08A" },
   { key: "crypto", label: "Crypto", color: "#C49A6B" },
   { key: "invest", label: "Stocks", color: "#6B8AB0" },
-  { key: "betting", label: "Betting", color: "#B07E8A" },
+  { key: "betting", label: "Betting", color: "#7FE08A" },
   { key: "others", label: "Others", color: "#8A8594" },
 ] as const;
 

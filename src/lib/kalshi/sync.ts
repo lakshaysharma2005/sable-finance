@@ -4,7 +4,7 @@ import { encryptToken } from "@/lib/crypto";
 import { fetchKalshiBalance, isKalshiConfigured } from "@/lib/kalshi/client";
 import { KALSHI_PLAID_ACCOUNT_ID, KALSHI_PLAID_ITEM_ID } from "@/lib/kalshi/ids";
 
-const BETTING_COLOR = "#B07E8A";
+const BETTING_COLOR = "#7FE08A";
 
 async function ensureKalshiAccount(): Promise<number> {
   const [existing] = await db
@@ -73,6 +73,8 @@ export async function syncKalshiBalance(): Promise<{ available: number; total: n
       .set({
         currentBalance: bal.total,
         availableBalance: bal.total,
+        color: BETTING_COLOR,
+        assetCategory: "betting",
         updatedAt: new Date(),
       })
       .where(eq(accounts.id, accountId));

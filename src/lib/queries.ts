@@ -579,7 +579,7 @@ export type TransactionsData = Awaited<ReturnType<typeof getTransactionsData>>;
 
 // ---------- Accounts ----------
 
-/** Portfolio amount matching account cards: available for assets, current (negated) for credit. */
+/** Portfolio sign: credit balances reduce net worth; all other categories (banking, betting, etc.) add. */
 function signedPortfolioBalance(
   assetCategory: string,
   currentBalance: number | null,
