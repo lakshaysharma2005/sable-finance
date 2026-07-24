@@ -579,6 +579,16 @@ export type TransactionsData = Awaited<ReturnType<typeof getTransactionsData>>;
 
 // ---------- Accounts ----------
 
+/** Portfolio amount matching account cards: available for assets, current (negated) for credit. */
+function signedPortfolioBalance(
+  assetCategory: string,
+  currentBalance: number | null,
+  availableBalance: number | null,
+): number {
+  if (assetCategory === "cc") return -(currentBalance ?? 0);
+  return availableBalance ?? currentBalance ?? 0;
+}
+
 export async function getAccountsData(today = iso(new Date())) {
   const [acctRows, items] = await Promise.all([
     db.select().from(accounts).where(eq(accounts.hidden, false)),
@@ -591,9 +601,9 @@ export async function getAccountsData(today = iso(new Date())) {
   // Exclude local cash (expense funding only) from portfolio net worth UI.
   // Other synthetic accounts (e.g. Kalshi under Betting) are included.
   const accountList = acctRows.filter((a) => a.plaidAccountId !== CASH_PLAID_ACCOUNT_ID).map((a) => {
-    // Signed balance: credit balances count against net worth
-    const raw = a.currentBalance ?? 0;
-    const signed = a.assetCategory === "cc" ? -raw : raw;
+    // Match account cards: credit uses current; banking/assets use available (fallback current).
+    // Credit balances count against net worth.
+    const signed = signedPortfolioBalance(a.assetCategory, a.currentBalance, a.availableBalance);
     return {
       id: a.id,
       itemId: a.itemId,
@@ -638,8 +648,7 @@ export async function getAccountsData(today = iso(new Date())) {
   for (const s of snaps) {
     const cat = catByAccount.get(s.accountId);
     if (!cat) continue;
-    const raw = s.currentBalance ?? 0;
-    const signed = cat === "cc" ? -raw : raw;
+    const signed = signedPortfolioBalance(cat, s.currentBalance, s.availableBalance);
     const day = trendMap.get(s.date) ?? new Map<number, number>();
     day.set(s.accountId, signed);
     trendMap.set(s.date, day);
