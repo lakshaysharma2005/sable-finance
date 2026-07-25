@@ -1,7 +1,6 @@
+import { BRAND_LOGOS } from "@/lib/brand-logos";
 import { initialOf, tint } from "@/lib/format";
 import { mono } from "@/lib/ui";
-
-const VENMO_LOGO = "/icons/venmo.png?v=2";
 
 function isVenmoAccount(accountName?: string | null): boolean {
   return !!accountName && /venmo/i.test(accountName);
@@ -21,7 +20,7 @@ export function TxAvatar({
   accountName?: string | null;
   size?: number;
 }) {
-  const resolvedLogo = isVenmoAccount(accountName) ? VENMO_LOGO : logoUrl;
+  const resolvedLogo = isVenmoAccount(accountName) ? BRAND_LOGOS.venmo : logoUrl;
 
   if (resolvedLogo) {
     return (

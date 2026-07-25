@@ -6,6 +6,7 @@ import { usePlaidConnect } from "@/components/PlaidLinkButton";
 import { Sheet } from "@/components/Sheet";
 import { MINUS, money } from "@/lib/format";
 import type { AccountsData } from "@/lib/queries";
+import { BRAND_LOGOS } from "@/lib/brand-logos";
 import { ACCENT, card, chipBase, chipOff, chipOn, CREDIT_CARD_ASPECT, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
@@ -13,12 +14,7 @@ type Acct = AccountsData["accounts"][number];
 
 const ALL_KEYS = ["cc", "depo", "crypto", "invest", "betting", "others"];
 
-const CONNECTION_LOGOS: Record<string, string> = {
-  kalshi: "/icons/kalshi.png?v=2",
-  venmo: "/icons/venmo.png?v=2",
-  chase: "/icons/chase.png?v=2",
-  bofa: "/icons/bofa.png?v=1",
-};
+const CONNECTION_LOGOS = BRAND_LOGOS;
 
 function accountHaystack(a: Acct): string {
   return [a.institutionName, a.name, a.officialName].filter(Boolean).join(" ");
@@ -59,17 +55,45 @@ function connectionLogo(a: Acct): string | null {
 }
 
 function isSquareBrandLogo(logo: string): boolean {
-  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase || logo === CONNECTION_LOGOS.bofa;
+  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase;
+}
+
+function isWideBrandLogo(logo: string): boolean {
+  return logo === CONNECTION_LOGOS.bofa;
+}
+
+function brandSlotStyle(size: "thumb" | "detail"): React.CSSProperties {
+  const width = size === "thumb" ? 82 : 100;
+  return {
+    width,
+    aspectRatio: CREDIT_CARD_ASPECT,
+    flex: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    ...(size === "detail" ? { marginBottom: 20 } : {}),
+  };
 }
 
 function squareBrandSlotStyle(size: "thumb" | "detail"): React.CSSProperties {
   return {
-    width: size === "thumb" ? 82 : 100,
-    aspectRatio: CREDIT_CARD_ASPECT,
-    flex: "none",
+    ...brandSlotStyle(size),
     display: "grid",
     placeItems: "center",
-    ...(size === "detail" ? { marginBottom: 20 } : {}),
+  };
+}
+
+function wideBrandLogoImgStyle(size: "thumb" | "detail"): React.CSSProperties {
+  const slotW = size === "thumb" ? 82 : 100;
+  const scale = 0.88;
+  const width = Math.round(slotW * scale);
+  const height = Math.round((slotW / CREDIT_CARD_ASPECT) * scale);
+  return {
+    width,
+    height,
+    objectFit: "contain",
+    objectPosition: "center",
+    display: "block",
   };
 }
 
@@ -102,6 +126,14 @@ function connectionLogoStyle(logo: string, size: "thumb" | "detail"): React.CSSP
 }
 
 function ConnectionLogo({ logo, size }: { logo: string; size: "thumb" | "detail" }) {
+  if (isWideBrandLogo(logo)) {
+    return (
+      <div style={brandSlotStyle(size)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logo} alt="" style={wideBrandLogoImgStyle(size)} />
+      </div>
+    );
+  }
   if (isSquareBrandLogo(logo)) {
     return (
       <div style={squareBrandSlotStyle(size)}>
@@ -165,6 +197,19 @@ function fmtSignedBal(n: number): string {
   return (n < 0 ? MINUS : "") + money(Math.abs(n), 2);
 }
 
+/** Composition bar + legend: green assets first, red liabilities last; larger within each group. */
+function sortCompositionSegments<T extends { key: string; color: string; amt: number }>(segments: T[]): T[] {
+  return [...segments].sort((a, b) => {
+    const aRed = a.key === "cc" ? 1 : 0;
+    const bRed = b.key === "cc" ? 1 : 0;
+    if (aRed !== bRed) return aRed - bRed;
+    const aGreen = a.color === ACCENT ? 0 : 1;
+    const bGreen = b.color === ACCENT ? 0 : 1;
+    if (aGreen !== bGreen) return aGreen - bGreen;
+    return Math.abs(b.amt) - Math.abs(a.amt);
+  });
+}
+
 export default function AccountsPage() {
   const { data, reload } = useData<AccountsData>("/api/accounts");
   const [selCats, setSelCats] = useState<string[]>(ALL_KEYS);
@@ -196,19 +241,12 @@ export default function AccountsPage() {
     const cats = data.assetCats.filter((c) => selCats.includes(c.key));
     return {
       total: cats.reduce((s, c) => s + c.amt, 0),
-      // Assets (green) first, then liabilities (red); larger abs within each group.
-      nonzero: cats
-        .filter((c) => c.amt !== 0)
-        .sort((a, b) => {
-          const aPos = a.amt >= 0 ? 0 : 1;
-          const bPos = b.amt >= 0 ? 0 : 1;
-          if (aPos !== bPos) return aPos - bPos;
-          return Math.abs(b.amt) - Math.abs(a.amt);
-        }),
+      // Green assets first, red liabilities last; larger abs within each group.
+      nonzero: sortCompositionSegments(cats.filter((c) => c.amt !== 0)),
     };
   }, [data, selCats]);
 
-  const connectedCats = data?.assetCats.filter((c) => c.connected) ?? [];
+  const connectedCats = sortCompositionSegments(data?.assetCats.filter((c) => c.connected) ?? []);
   const notConnected = data?.assetCats.filter((c) => !c.connected) ?? [];
 
   return (
