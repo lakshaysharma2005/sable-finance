@@ -98,15 +98,46 @@ export default function StatsPage() {
         </div>
         <div
           style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            gap: 9,
+            position: "relative",
+            overflow: "visible",
             height: 178,
             paddingTop: 34,
             marginTop: 8,
           }}
         >
+          {data && data.vals[sel] > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: `${((sel + 0.5) / data.vals.length) * 100}%`,
+                transform: "translateX(-50%)",
+                whiteSpace: "nowrap",
+                background: ACCENT,
+                color: "#0D0D0F",
+                ...mono(10, 600),
+                padding: "5px 9px",
+                borderRadius: 8,
+                boxShadow: "0 4px 12px rgba(127,224,138,0.25)",
+                pointerEvents: "none",
+                zIndex: 1,
+              }}
+            >
+              {data.labels[sel]} ·{" "}
+              {data.vals[sel] >= 10000
+                ? "$" + (data.vals[sel] / 1000).toFixed(1) + "k"
+                : money(Math.round(data.vals[sel]), 0)}
+            </div>
+          )}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 9,
+              height: "100%",
+            }}
+          >
           {data &&
             (() => {
               const maxv = Math.max(...data.vals, 1);
@@ -127,34 +158,14 @@ export default function StatsPage() {
                       gap: 9,
                       height: "100%",
                       justifyContent: "flex-end",
-                      position: "relative",
                       background: "transparent",
                       border: "none",
                       padding: 0,
                       cursor: "pointer",
                       WebkitTapHighlightColor: "transparent",
+                      appearance: "none",
                     }}
                   >
-                    {current && v > 0 && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: "50%",
-                          transform: "translateX(-50%)",
-                          whiteSpace: "nowrap",
-                          background: ACCENT,
-                          color: "#0D0D0F",
-                          ...mono(10, 600),
-                          padding: "5px 9px",
-                          borderRadius: 8,
-                          boxShadow: "0 4px 12px rgba(127,224,138,0.25)",
-                          pointerEvents: "none",
-                        }}
-                      >
-                        {data.labels[i]} · {v >= 10000 ? "$" + (v / 1000).toFixed(1) + "k" : money(Math.round(v), 0)}
-                      </div>
-                    )}
                     <div
                       style={{
                         width: "100%",
@@ -172,6 +183,7 @@ export default function StatsPage() {
                 );
               });
             })()}
+          </div>
         </div>
       </div>
 
