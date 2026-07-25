@@ -317,12 +317,7 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {groups.map((g) => {
-          const monthTotal = (g.items ?? []).reduce((s, it) => {
-            if (name === SPLITS_CATEGORY) return s + it.amount;
-            return it.amount > 0 ? s + it.amount : s;
-          }, 0);
-          return (
+        {groups.map((g) => (
           <div key={g.monthKey} style={{ marginBottom: 20 }}>
             <div
               style={{
@@ -335,7 +330,7 @@ export default function CategoryPage() {
               }}
             >
               <div style={serif(16, 400, { color: TEXT })}>{g.label}</div>
-              <div style={mono(13, 500, { color: TER })}>{money(monthTotal)}</div>
+              <div style={mono(13, 500, { color: TER })}>{money(g.total)}</div>
             </div>
             <div data-rows="1" style={{ ...card, borderRadius: 18, overflow: "hidden" }}>
               {(g.items ?? []).map((it) => {
@@ -379,8 +374,7 @@ export default function CategoryPage() {
               })}
             </div>
           </div>
-          );
-        })}
+        ))}
       </div>
 
       <TransactionDetailSheets

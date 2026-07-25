@@ -191,11 +191,7 @@ function spendTotal(txs: TxItem[], splits: SplitInRange[]): number {
   let total = 0;
   for (const tx of txs) {
     if (isExcluded(tx.category)) continue;
-    if (tx.category === SPLITS_CATEGORY) {
-      total += tx.amount;
-    } else if (tx.amount > 0) {
-      total += tx.amount;
-    }
+    total += tx.amount;
   }
   for (const s of splits) {
     total += s.amount;
@@ -220,7 +216,7 @@ function buildCategoryTotals(
         catColors.set(SPLITS_CATEGORY, resolveCategoryColor(SPLITS_CATEGORY, categoryLookups.colors));
         catEmojis.set(SPLITS_CATEGORY, resolveCategoryEmoji(SPLITS_CATEGORY, categoryLookups.emojis));
       }
-    } else if (tx.amount > 0) {
+    } else {
       byCat.set(tx.category, (byCat.get(tx.category) ?? 0) + tx.amount);
       if (!catColors.has(tx.category)) catColors.set(tx.category, tx.color);
       if (!catEmojis.has(tx.category)) catEmojis.set(tx.category, tx.emoji);
@@ -679,6 +675,7 @@ export interface MonthGroup {
   monthKey: string; // YYYY-MM
   label: string; // "July"
   items: TxItem[];
+  total: number; // net spend for the month (expenses minus refunds)
 }
 
 function monthLabel(monthKey: string): string {
@@ -700,6 +697,7 @@ function groupByMonth(txs: TxItem[]): MonthGroup[] {
       monthKey,
       label: monthLabel(monthKey),
       items,
+      total: items.reduce((s, tx) => s + tx.amount, 0),
     }));
 }
 
@@ -724,15 +722,9 @@ export async function getCategoryData(category: string, today = iso(new Date()))
 
   const monthSpent = catTx
     .filter((tx) => tx.date >= monthStart)
-    .reduce((s, tx) => {
-      if (tx.category === SPLITS_CATEGORY) return s + tx.amount;
-      return tx.amount > 0 ? s + tx.amount : s;
-    }, 0);
+    .reduce((s, tx) => s + tx.amount, 0);
 
-  const yearTotal = catTx.reduce((s, tx) => {
-    if (tx.category === SPLITS_CATEGORY) return s + tx.amount;
-    return tx.amount > 0 ? s + tx.amount : s;
-  }, 0);
+  const yearTotal = catTx.reduce((s, tx) => s + tx.amount, 0);
   const monthsElapsed = t.getUTCMonth() + 1;
   const yearAvg = monthsElapsed > 0 ? yearTotal / monthsElapsed : 0;
 
