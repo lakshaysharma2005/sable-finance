@@ -58,6 +58,13 @@ function iso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Purchase/authorization day — Plaid recommends this over post date for UI.
+const displayDateSql = sql`COALESCE(${transactions.authorizedDate}, ${transactions.date})`;
+
+function toDisplayDate(authorizedDate: string | null, date: string): string {
+  return authorizedDate ?? date;
+}
+
 async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRange[]> {
   const rows = await db
     .select({
@@ -65,6 +72,7 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
       transactionId: transactionSplits.transactionId,
       amount: transactionSplits.amount,
       date: transactions.date,
+      authorizedDate: transactions.authorizedDate,
       name: transactions.name,
       merchantName: transactions.merchantName,
       logoUrl: transactions.logoUrl,
@@ -81,8 +89,8 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
       and(
         eq(transactions.removed, false),
         eq(accounts.hidden, false),
-        gte(transactions.date, from),
-        lte(transactions.date, to),
+        gte(displayDateSql, from),
+        lte(displayDateSql, to),
       ),
     );
 
@@ -90,7 +98,7 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
     id: r.id,
     transactionId: r.transactionId,
     amount: r.amount,
-    date: r.date,
+    date: toDisplayDate(r.authorizedDate, r.date),
     name: r.merchantName ?? r.name,
     merchantName: r.merchantName,
     logoUrl: r.logoUrl,
@@ -107,6 +115,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
     .select({
       id: transactions.id,
       date: transactions.date,
+      authorizedDate: transactions.authorizedDate,
       name: transactions.name,
       merchantName: transactions.merchantName,
       logoUrl: transactions.logoUrl,
@@ -128,11 +137,11 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       and(
         eq(transactions.removed, false),
         eq(accounts.hidden, false),
-        gte(transactions.date, from),
-        lte(transactions.date, to),
+        gte(displayDateSql, from),
+        lte(displayDateSql, to),
       ),
     )
-    .orderBy(sql`${transactions.date} DESC, ${transactions.id} DESC`);
+    .orderBy(sql`${displayDateSql} DESC, ${transactions.id} DESC`);
 
   const filtered = rows.filter((r) => !accountIds || accountIds.includes(r.accountId));
   const txIds = filtered.map((r) => r.id);
@@ -166,7 +175,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
     const effectiveAmount = isInflow ? baseAmount : Math.max(0, baseAmount - excludedAmount);
     return {
       id: r.id,
-      date: r.date,
+      date: toDisplayDate(r.authorizedDate, r.date),
       name: r.merchantName ?? r.name,
       merchantName: r.merchantName,
       logoUrl: r.logoUrl,
@@ -265,12 +274,13 @@ function splitPortionsToTxItems(splits: SplitInRange[], categoryLookups: { color
 
 export async function getTransactionById(id: number): Promise<TxItem | null> {
   const [row] = await db
-    .select({ date: transactions.date })
+    .select({ date: transactions.date, authorizedDate: transactions.authorizedDate })
     .from(transactions)
     .where(eq(transactions.id, id))
     .limit(1);
   if (!row) return null;
-  const txs = await fetchTx(row.date, row.date);
+  const day = toDisplayDate(row.authorizedDate, row.date);
+  const txs = await fetchTx(day, day);
   return txs.find((t) => t.id === id) ?? null;
 }
 

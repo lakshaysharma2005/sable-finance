@@ -10,9 +10,32 @@ import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 import { usePlaidConnect } from "@/components/PlaidLinkButton";
 
+const SYNC_THROTTLE_MS = 15 * 60 * 1000;
+const SYNC_KEY = "sable:lastSync";
+
 export default function DashboardPage() {
   const { data, loading, reload } = useData<DashboardData>("/api/dashboard");
   const { start: startLink } = usePlaidConnect(() => window.location.reload());
+
+  useEffect(() => {
+    let cancelled = false;
+    async function syncIfStale() {
+      const last = Number(sessionStorage.getItem(SYNC_KEY) || 0);
+      if (Date.now() - last < SYNC_THROTTLE_MS) return;
+      try {
+        const res = await fetch("/api/sync", { method: "POST" });
+        if (!res.ok || cancelled) return;
+        sessionStorage.setItem(SYNC_KEY, String(Date.now()));
+        await reload();
+      } catch {
+        // Best-effort background refresh
+      }
+    }
+    void syncIfStale();
+    return () => {
+      cancelled = true;
+    };
+  }, [reload]);
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
@@ -371,8 +394,11 @@ function ToReview({ data, reload }: { data: DashboardData; reload: () => void })
                     {it.category}
                   </div>
                 </div>
-                <div style={mono(15, 500, { color: it.amount < 0 ? ACCENT : TEXT, flex: "none" })}>
-                  {it.amount < 0 ? `+${money(-it.amount)}` : `${MINUS}${money(it.amount)}`}
+                <div style={{ textAlign: "right", flex: "none" }}>
+                  <div style={mono(15, 500, { color: it.amount < 0 ? ACCENT : TEXT })}>
+                    {it.amount < 0 ? `+${money(-it.amount)}` : `${MINUS}${money(it.amount)}`}
+                  </div>
+                  {it.pending && <div style={mono(9, 400, { color: TER, marginTop: 2 })}>Pending</div>}
                 </div>
               </div>
             ))}
