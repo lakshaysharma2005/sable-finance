@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AmountDisplay } from "@/components/AmountDisplay";
 import { AddCategorySheet } from "@/components/AddCategorySheet";
 import { AccountMiniCard } from "@/components/AccountMiniCard";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -110,9 +111,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               <span style={mono(18, 500, { color: "rgba(244,243,239,0.4)" })}>
                 {tx.amount < 0 ? "+" : MINUS}$
               </span>
-              <span style={mono(34, 500, { color: TEXT, letterSpacing: -2 })}>
-                {Math.abs(tx.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-              </span>
+              <AmountDisplay amount={Math.abs(tx.amount)} size={34} letterSpacing={-2} />
             </button>
             {tx.excludedAmount > 0 && (
               <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>

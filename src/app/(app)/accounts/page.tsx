@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AmountDisplay } from "@/components/AmountDisplay";
 import { DotsIcon } from "@/components/Icons";
 import { usePlaidConnect } from "@/components/PlaidLinkButton";
 import { Sheet } from "@/components/Sheet";
@@ -318,7 +319,13 @@ export default function AccountsPage() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
             <div style={{ ...microLabel, color: "rgba(244,243,239,0.45)" }}>Selected balance</div>
-            <div style={mono(34, 500, { color: TEXT, letterSpacing: -1, marginTop: 8 })}>{fmtSignedBal(selected.total)}</div>
+            <AmountDisplay
+              amount={Math.abs(selected.total)}
+              prefix={(selected.total < 0 ? MINUS : "") + "$"}
+              size={34}
+              letterSpacing={-1}
+              style={{ marginTop: 8 }}
+            />
             <div
               style={mono(10, 400, {
                 color: allActive && data ? ACCENT : "rgba(244,243,239,0.45)",

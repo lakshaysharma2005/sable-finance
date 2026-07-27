@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { AmountDisplay } from "@/components/AmountDisplay";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
@@ -69,12 +70,14 @@ export default function DashboardPage() {
       {/* hero card */}
       <div style={{ ...card, padding: 22 }}>
         <div style={{ ...microLabel, letterSpacing: 2, fontSize: 11, color: "rgba(244,243,239,0.5)" }}>Spent this month</div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 1, marginTop: 12 }}>
-          <span style={mono(46, 500, { color: TEXT, letterSpacing: -2 })}>
-            {data ? "$" + Math.floor(data.spent).toLocaleString("en-US") : "$—"}
-          </span>
-          <span style={mono(22, 500, { color: TER })}>.{data ? data.spent.toFixed(2).split(".")[1] : "—"}</span>
-        </div>
+        <AmountDisplay
+          amount={data?.spent}
+          prefix="$"
+          size={46}
+          centsSize={22}
+          letterSpacing={-2}
+          style={{ marginTop: 12 }}
+        />
         {data && data.prevSpent > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 14 }}>
             <span

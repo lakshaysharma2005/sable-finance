@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
+import { AmountDisplay } from "@/components/AmountDisplay";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { ChevronRightIcon, DotsIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
@@ -278,12 +279,9 @@ export default function CategoryPage() {
       {/* spent */}
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{ ...microLabel, color: (data.color ?? TER) + "aa", marginBottom: 8 }}>Spent</div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
           <span style={mono(22, 500, { color: TER })}>$</span>
-          <span style={mono(46, 500, { color: TEXT, letterSpacing: -2 })}>
-            {Math.floor(monthSpent).toLocaleString("en-US")}
-          </span>
-          <span style={mono(22, 500, { color: TER })}>.{monthSpent.toFixed(2).split(".")[1]}</span>
+          <AmountDisplay amount={monthSpent} size={46} centsSize={22} letterSpacing={-2} />
         </div>
         <div style={mono(13, 400, { color: TER, marginTop: 6 })}>spent in {data.monthName ?? "this month"}</div>
       </div>

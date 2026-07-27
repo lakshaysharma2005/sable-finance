@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AmountDisplay } from "@/components/AmountDisplay";
 import { CloseIcon } from "@/components/Icons";
 import type { CategoriesListData } from "@/lib/category-queries";
 import { EXCLUDED_CATEGORIES } from "@/lib/categories";
@@ -159,9 +160,7 @@ export default function AddExpensePage() {
             {isInflow ? "+" : MINUS}
           </button>
           <span style={mono(24, 500, { color: "rgba(244,243,239,0.4)", flex: "none", lineHeight: 1 })}>$</span>
-          <span style={mono(54, 500, { color: TEXT, letterSpacing: -2, lineHeight: 1, whiteSpace: "nowrap" })}>
-            {display}
-          </span>
+          <AmountDisplay raw={display} size={54} letterSpacing={-2} style={{ lineHeight: 1 }} />
         </div>
       </div>
 

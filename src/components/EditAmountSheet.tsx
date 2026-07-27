@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AmountDisplay } from "@/components/AmountDisplay";
 import { Sheet } from "@/components/Sheet";
 import { AMOUNT_KEYS, applyAmountKey, formatAmtDisplay } from "@/lib/amount-input";
 import { MINUS } from "@/lib/format";
@@ -62,7 +63,7 @@ export function EditAmountSheet({ tx, onClose, onSaved }: Props) {
       <div style={{ textAlign: "center", padding: "18px 20px 14px" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3 }}>
           <span style={mono(24, 500, { color: "rgba(244,243,239,0.4)" })}>{isInflow ? "+$" : `${MINUS}$`}</span>
-          <span style={mono(54, 500, { color: TEXT, letterSpacing: -2 })}>{display}</span>
+          <AmountDisplay raw={display} size={54} letterSpacing={-2} />
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { AmountDisplay } from "@/components/AmountDisplay";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -77,9 +78,13 @@ export default function StatsPage() {
             <div style={{ ...microLabel, fontSize: 11, color: "rgba(244,243,239,0.5)" }}>
               {period?.periodLabel ?? data?.periodLabel ?? ""}
             </div>
-            <div style={mono(30, 500, { color: TEXT, marginTop: 8, letterSpacing: -1 })}>
-              {period ? money(period.total, 2) : data ? money(data.total, 2) : "$—"}
-            </div>
+            <AmountDisplay
+              amount={period?.total ?? data?.total}
+              prefix="$"
+              size={30}
+              letterSpacing={-1}
+              style={{ marginTop: 8 }}
+            />
           </div>
           {period && period.deltaPct > 0 && (
             <span
