@@ -77,21 +77,19 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
     <>
       {showDetail && (
         <Sheet onClose={handleClose}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px 12px" }}>
-            <div>
-              <div style={mono(10, 600, { letterSpacing: 2, textTransform: "uppercase", color: ACCENT })}>Transaction</div>
-              <div style={mono(10, 400, { color: "rgba(244,243,239,0.38)", marginTop: 3 })}>
-                {new Date(tx.date + "T00:00:00").toLocaleDateString("en-US", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
+          <div style={{ textAlign: "center", padding: "0 20px 12px" }}>
+            <div style={mono(10, 600, { letterSpacing: 2, textTransform: "uppercase", color: ACCENT })}>Transaction</div>
+            <div style={mono(10, 400, { color: "rgba(244,243,239,0.38)", marginTop: 3 })}>
+              {new Date(tx.date + "T00:00:00").toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
             </div>
           </div>
           <div style={{ textAlign: "center", padding: "10px 20px 6px" }}>
             <div style={{ marginBottom: 16 }}>
-              <span style={serif(32, 400, { color: TEXT })}>{tx.name}</span>
+              <span style={serif(24, 400, { color: TEXT })}>{tx.name}</span>
             </div>
             <button
               type="button"
@@ -109,10 +107,10 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                 width: "100%",
               }}
             >
-              <span style={mono(22, 500, { color: "rgba(244,243,239,0.4)" })}>
+              <span style={mono(18, 500, { color: "rgba(244,243,239,0.4)" })}>
                 {tx.amount < 0 ? "+" : MINUS}$
               </span>
-              <span style={mono(46, 500, { color: TEXT, letterSpacing: -2 })}>
+              <span style={mono(34, 500, { color: TEXT, letterSpacing: -2 })}>
                 {Math.abs(tx.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </span>
             </button>
@@ -135,7 +133,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                   gap: 9,
                   background: tx.color + "22",
                   borderRadius: 999,
-                  padding: "11px 22px",
+                  padding: "7px 28px",
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -156,8 +154,8 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.06)",
                   borderRadius: 999,
-                  padding: 4,
-                  maxWidth: 320,
+                  padding: 2,
+                  width: "100%",
                   margin: "0 auto",
                 }}
               >
@@ -167,7 +165,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                   style={{
                     flex: 1,
                     textAlign: "center",
-                    padding: "13px 0",
+                    padding: "8px 0",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
