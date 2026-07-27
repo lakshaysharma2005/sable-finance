@@ -82,6 +82,10 @@ export async function upsertAccountsForItem(
           // Keep user renames; only refresh Plaid's raw name when no customName.
           name: existing.customName ? existing.name : acct.name,
           officialName: acct.official_name ?? existing.officialName,
+          type: acct.type,
+          subtype: acct.subtype ?? existing.subtype,
+          // Reclassify on sync so Robinhood Crypto moves under Crypto (not Stocks).
+          assetCategory: mapAccountTypeToAssetCategory(acct.type, acct.subtype, acct.name),
           currentBalance: acct.balances.current ?? null,
           availableBalance: acct.balances.available ?? null,
           creditLimit: acct.balances.limit ?? null,
@@ -101,7 +105,7 @@ export async function upsertAccountsForItem(
       mask: acct.mask ?? null,
       type: acct.type,
       subtype: acct.subtype ?? null,
-      assetCategory: mapAccountTypeToAssetCategory(acct.type),
+      assetCategory: mapAccountTypeToAssetCategory(acct.type, acct.subtype, acct.name),
       currentBalance: acct.balances.current ?? null,
       availableBalance: acct.balances.available ?? null,
       creditLimit: acct.balances.limit ?? null,

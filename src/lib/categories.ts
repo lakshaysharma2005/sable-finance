@@ -155,8 +155,22 @@ export const ASSET_CATEGORIES = [
 
 export type AssetCategoryKey = (typeof ASSET_CATEGORIES)[number]["key"];
 
-// Plaid account type -> asset category bucket.
-export function mapAccountTypeToAssetCategory(type: string): AssetCategoryKey {
+/**
+ * Plaid account type/subtype/name -> asset category bucket.
+ * Robinhood's crypto wallet is type=investment with subtype "crypto exchange"
+ * (or simply named "Crypto") — put it under Crypto, not Stocks.
+ */
+export function mapAccountTypeToAssetCategory(
+  type: string,
+  subtype?: string | null,
+  name?: string | null,
+): AssetCategoryKey {
+  const sub = (subtype ?? "").toLowerCase().trim();
+  const label = (name ?? "").toLowerCase().trim();
+  if (sub === "crypto exchange" || label === "crypto") {
+    return "crypto";
+  }
+
   switch (type) {
     case "credit":
       return "cc";

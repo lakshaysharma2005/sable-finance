@@ -48,16 +48,18 @@ function showSecondAccountStat(a: Acct): boolean {
   return true;
 }
 
-/** Primary amount label: credit + stocks show Balance; banking shows Available. */
+/** Primary amount label: credit + stocks + crypto show Balance; banking shows Available. */
 function primaryBalanceLabel(a: Acct): string {
-  if (a.assetCategory === "cc" || a.assetCategory === "invest") return "Balance";
+  if (a.assetCategory === "cc" || a.assetCategory === "invest" || a.assetCategory === "crypto") return "Balance";
   return "Available";
 }
 
 function primaryBalanceAmount(a: Acct): number {
   if (a.assetCategory === "cc") return a.currentBalance ?? 0;
-  // Investment: current = total portfolio value; available = cash only.
-  if (a.assetCategory === "invest") return a.currentBalance ?? a.availableBalance ?? 0;
+  // Investment / crypto: current = total portfolio value; available = cash only.
+  if (a.assetCategory === "invest" || a.assetCategory === "crypto") {
+    return a.currentBalance ?? a.availableBalance ?? 0;
+  }
   return a.availableBalance ?? a.currentBalance ?? 0;
 }
 
@@ -180,6 +182,9 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
   }
   if (a.assetCategory === "invest") {
     return { grad: "linear-gradient(135deg,#0f1a2a,#1a2a42)", accent: "#6B8AB0", typeLabel: "STOCKS" };
+  }
+  if (a.assetCategory === "crypto") {
+    return { grad: "linear-gradient(135deg,#2a1f14,#3d2e1a)", accent: "#C49A6B", typeLabel: "CRYPTO" };
   }
   if (a.subtype === "savings") {
     return { grad: "linear-gradient(135deg,#0f1f2e,#1a2e42)", accent: "#6B8AB0", typeLabel: "SAVINGS" };

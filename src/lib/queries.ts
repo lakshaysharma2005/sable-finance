@@ -1,7 +1,7 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db, accounts, transactions, transactionSplits, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
 import { CASH_PLAID_ACCOUNT_ID } from "@/lib/cash";
-import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES } from "@/lib/categories";
+import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES, mapAccountTypeToAssetCategory } from "@/lib/categories";
 import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
 
 // ---------- shared ----------
@@ -592,8 +592,8 @@ function signedPortfolioBalance(
   availableBalance: number | null,
 ): number {
   if (assetCategory === "cc") return -(currentBalance ?? 0);
-  // Investment accounts: `current` is total portfolio value; `available` is cash only (often null).
-  if (assetCategory === "invest") return currentBalance ?? availableBalance ?? 0;
+  // Investment / crypto accounts: `current` is total portfolio value; `available` is cash only (often null).
+  if (assetCategory === "invest" || assetCategory === "crypto") return currentBalance ?? availableBalance ?? 0;
   return availableBalance ?? currentBalance ?? 0;
 }
 
@@ -609,9 +609,16 @@ export async function getAccountsData(today = iso(new Date())) {
   // Exclude local cash (expense funding only) from portfolio net worth UI.
   // Other synthetic accounts (e.g. Kalshi under Betting) are included.
   const accountList = acctRows.filter((a) => a.plaidAccountId !== CASH_PLAID_ACCOUNT_ID).map((a) => {
+    // Prefer live type/subtype/name mapping so Robinhood Crypto lands under Crypto
+    // even if it was stored as Stocks before the mapper knew about it.
+    // Keep explicit synthetic categories (Betting / Kalshi).
+    const assetCategory =
+      a.assetCategory === "betting"
+        ? a.assetCategory
+        : mapAccountTypeToAssetCategory(a.type, a.subtype, a.name);
     // Match account cards: credit uses current; banking/assets use available (fallback current).
     // Credit balances count against net worth.
-    const signed = signedPortfolioBalance(a.assetCategory, a.currentBalance, a.availableBalance);
+    const signed = signedPortfolioBalance(assetCategory, a.currentBalance, a.availableBalance);
     return {
       id: a.id,
       itemId: a.itemId,
@@ -621,7 +628,7 @@ export async function getAccountsData(today = iso(new Date())) {
       mask: a.mask,
       type: a.type,
       subtype: a.subtype,
-      assetCategory: a.assetCategory,
+      assetCategory,
       currentBalance: a.currentBalance,
       availableBalance: a.availableBalance,
       creditLimit: a.creditLimit,
@@ -651,7 +658,7 @@ export async function getAccountsData(today = iso(new Date())) {
     .where(gte(balanceSnapshots.date, trendFrom))
     .orderBy(balanceSnapshots.date);
 
-  const catByAccount = new Map(acctRows.map((a) => [a.id, a.assetCategory]));
+  const catByAccount = new Map(accountList.map((a) => [a.id, a.assetCategory]));
   const trendMap = new Map<string, Map<number, number>>();
   for (const s of snaps) {
     const cat = catByAccount.get(s.accountId);
