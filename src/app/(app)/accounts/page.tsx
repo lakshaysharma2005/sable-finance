@@ -386,7 +386,9 @@ export default function AccountsPage() {
 
       {/* connected category sections */}
       {connectedCats.map((cat) => {
-        const catAccounts = data!.accounts.filter((a) => a.assetCategory === cat.key);
+        const catAccounts = data!.accounts
+          .filter((a) => a.assetCategory === cat.key)
+          .sort((a, b) => primaryBalanceAmount(b) - primaryBalanceAmount(a));
         const isOpen = open[cat.key] ?? true;
         return (
           <div key={cat.key} style={{ marginBottom: 14 }}>
