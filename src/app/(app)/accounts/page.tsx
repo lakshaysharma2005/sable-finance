@@ -482,6 +482,8 @@ export default function AccountsPage() {
 }
 
 // 3D isometric composition bar (extruded prism), ported from the prototype.
+// Adjacent categories that share a color (all assets are green) are merged into
+// one prism segment so tiny slices (e.g. Betting) aren't eaten by the stroke.
 function CompositionBar({ segments }: { segments: AccountsData["assetCats"] }) {
   const barW = 300;
   const dx = 18;
@@ -489,9 +491,18 @@ function CompositionBar({ segments }: { segments: AccountsData["assetCats"] }) {
   const frontH = 50;
   const sumAbs = segments.reduce((s, c) => s + Math.abs(c.amt), 0) || 1;
 
+  // Collapse runs of the same color so the bar is green assets | red liabilities,
+  // not a chain of hairline green wedges with gap-like strokes between them.
+  const merged: { color: string; amt: number }[] = [];
+  for (const c of segments) {
+    const last = merged[merged.length - 1];
+    if (last && last.color === c.color) last.amt += Math.abs(c.amt);
+    else merged.push({ color: c.color, amt: Math.abs(c.amt) });
+  }
+
   let cum = 0;
-  const polys = segments.map((c) => {
-    const w = (Math.abs(c.amt) / sumAbs) * barW;
+  const polys = merged.map((c) => {
+    const w = (c.amt / sumAbs) * barW;
     const x0 = dx + cum;
     const x1 = dx + cum + w;
     cum += w;
@@ -506,7 +517,7 @@ function CompositionBar({ segments }: { segments: AccountsData["assetCats"] }) {
       <div style={{ marginTop: 20 }}>
         {polys.length > 0 ? (
           <svg viewBox={`0 0 ${dx + barW} ${dy + frontH}`} style={{ display: "block", width: "100%", height: "auto", overflow: "visible" }}>
-            <polygon points={leftCap} fill={segments[0].color} stroke="#161618" strokeWidth="2" />
+            <polygon points={leftCap} fill={merged[0].color} stroke="#161618" strokeWidth="2" />
             {polys.map((p, i) => (
               <g key={i}>
                 <polygon points={p.top} fill={p.color} stroke="#161618" strokeWidth="2" />
