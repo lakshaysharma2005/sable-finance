@@ -102,41 +102,19 @@ export default function DashboardPage() {
       </div>
 
       {/* donut card */}
-      <div style={{ ...card, marginTop: 16, padding: "22px 22px 12px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={serif(18, 400, { color: TEXT })}>By category</div>
-          <div style={microLabel}>{now.toLocaleDateString("en-US", { month: "long" })}</div>
-        </div>
-        {data && data.cats.length > 0 ? (
-          <Donut cats={data.cats} />
-        ) : (
+      {data && data.cats.length > 0 ? (
+        <CategoryDonutCard cats={data.cats} monthLabel={now.toLocaleDateString("en-US", { month: "long" })} />
+      ) : (
+        <div style={{ ...card, marginTop: 16, padding: "22px 22px 12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={serif(18, 400, { color: TEXT })}>By category</div>
+            <div style={microLabel}>{now.toLocaleDateString("en-US", { month: "long" })}</div>
+          </div>
           <div style={{ padding: "34px 0", textAlign: "center", ...serif(14, 400, { color: "rgba(244,243,239,0.4)" }) }}>
             {loading ? "Loading…" : "No spending yet this month"}
           </div>
-        )}
-        <div data-rows="1">
-          {data?.cats.map((c) => (
-            <Link
-              key={c.name}
-              href={`/categories/${encodeURIComponent(c.name)}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 0",
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-                textDecoration: "none",
-                cursor: "pointer",
-              }}
-            >
-              <CategoryIcon emoji={c.emoji} color={c.color} size="sm" />
-              <span style={{ flex: 1, ...serif(15, 400, { color: TEXT }) }}>{c.name}</span>
-              <span style={mono(11, 400, { color: TER, marginRight: 12 })}>{c.pct}%</span>
-              <span style={mono(14, 500, { color: TEXT })}>{money(c.amount, 2)}</span>
-            </Link>
-          ))}
         </div>
-      </div>
+      )}
 
       {/* to review */}
       {data && <ToReview data={data} reload={reload} />}
@@ -162,6 +140,213 @@ export default function DashboardPage() {
           >
             Connect with Plaid
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const HIDDEN_CATS_KEY = "sable:donutHiddenCats";
+
+type CatRow = DashboardData["cats"][number];
+
+function loadHiddenCats(): Set<string> {
+  try {
+    const raw = localStorage.getItem(HIDDEN_CATS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((x): x is string => typeof x === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function persistHiddenCats(hidden: Set<string>) {
+  localStorage.setItem(HIDDEN_CATS_KEY, JSON.stringify([...hidden]));
+}
+
+function CategoryDonutCard({ cats, monthLabel }: { cats: CatRow[]; monthLabel: string }) {
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    setHidden(loadHiddenCats());
+  }, []);
+
+  const visibleCats = cats.filter((c) => !hidden.has(c.name));
+  // If every category would be hidden (stale localStorage / data change), fall back to all.
+  const chartCats = visibleCats.length > 0 ? visibleCats : cats;
+  const allHiddenIgnored = visibleCats.length === 0 && cats.length > 0;
+  const effectiveHidden = allHiddenIgnored ? new Set<string>() : hidden;
+
+  const visibleTotal = chartCats.reduce((sum, c) => sum + c.amount, 0);
+  const chartRows = chartCats.map((c) => ({
+    ...c,
+    pct: visibleTotal > 0 ? Math.round((c.amount / visibleTotal) * 100) : 0,
+  }));
+
+  const hiddenCount = cats.filter((c) => effectiveHidden.has(c.name)).length;
+
+  function toggleCat(name: string) {
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        // Keep at least one category on the chart
+        const remaining = cats.filter((c) => c.name !== name && !next.has(c.name));
+        if (remaining.length === 0) return prev;
+        next.add(name);
+      }
+      persistHiddenCats(next);
+      return next;
+    });
+  }
+
+  function showAll() {
+    const empty = new Set<string>();
+    persistHiddenCats(empty);
+    setHidden(empty);
+  }
+
+  return (
+    <div style={{ ...card, marginTop: 16, padding: "22px 22px 12px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <div style={serif(18, 400, { color: TEXT })}>By category</div>
+        {hiddenCount > 0 ? (
+          <button
+            type="button"
+            onClick={showAll}
+            style={{
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              cursor: "pointer",
+              ...mono(10, 500, { letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT }),
+            }}
+          >
+            Show all · {hiddenCount} hidden
+          </button>
+        ) : (
+          <div style={microLabel}>{monthLabel}</div>
+        )}
+      </div>
+      {hiddenCount > 0 && (
+        <div style={{ ...microLabel, marginTop: 6, color: "rgba(244,243,239,0.45)" }}>
+          {money(visibleTotal, 2)} without hidden · tap a category to toggle
+        </div>
+      )}
+      <Donut cats={chartRows} />
+      <div data-rows="1">
+        {cats.map((c) => {
+          const isOn = !effectiveHidden.has(c.name);
+          const pct = isOn && visibleTotal > 0 ? Math.round((c.amount / visibleTotal) * 100) : c.pct;
+          return (
+            <div
+              key={c.name}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "11px 0",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                opacity: isOn ? 1 : 0.38,
+                transition: "opacity .15s ease",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => toggleCat(c.name)}
+                aria-pressed={isOn}
+                aria-label={`${isOn ? "Hide" : "Show"} ${c.name} on chart`}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 0,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 7,
+                    flex: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: isOn ? `${c.color}22` : "rgba(255,255,255,0.04)",
+                    border: isOn ? `1px solid ${c.color}55` : "1px solid rgba(255,255,255,0.08)",
+                    position: "relative",
+                  }}
+                >
+                  <CategoryIcon emoji={c.emoji} color={isOn ? c.color : "rgba(244,243,239,0.35)"} size="sm" />
+                  {!isOn && (
+                    <span
+                      aria-hidden
+                      style={{
+                        position: "absolute",
+                        width: 14,
+                        height: 1.5,
+                        background: "rgba(244,243,239,0.55)",
+                        transform: "rotate(-45deg)",
+                        borderRadius: 1,
+                      }}
+                    />
+                  )}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    ...serif(15, 400, {
+                      color: TEXT,
+                      textDecoration: isOn ? "none" : "line-through",
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }),
+                  }}
+                >
+                  {c.name}
+                </span>
+                <span style={mono(11, 400, { color: TER, marginRight: 4 })}>{isOn ? `${pct}%` : "—"}</span>
+                <span style={mono(14, 500, { color: TEXT })}>{money(c.amount, 2)}</span>
+              </button>
+              <Link
+                href={`/categories/${encodeURIComponent(c.name)}`}
+                aria-label={`Open ${c.name}`}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 9,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flex: "none",
+                  textDecoration: "none",
+                  color: TER,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+      {hiddenCount === 0 && (
+        <div style={{ ...microLabel, textAlign: "center", padding: "4px 0 8px", color: "rgba(244,243,239,0.28)" }}>
+          Tap a category to hide it from the chart
         </div>
       )}
     </div>
@@ -206,7 +391,7 @@ function donutSegmentPath(cx: number, cy: number, innerR: number, outerR: number
   ].join(" ");
 }
 
-function Donut({ cats }: { cats: DashboardData["cats"] }) {
+function Donut({ cats }: { cats: CatRow[] }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const cx = 110;
   const cy = 110;
@@ -226,12 +411,15 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
       index: i,
     };
   });
-  const activeIdx = Math.min(selectedIdx, cats.length - 1);
+  const activeIdx = cats.length === 0 ? 0 : Math.min(selectedIdx, cats.length - 1);
   const activeCat = cats[activeIdx] ?? cats[0];
+  const chartKey = cats.map((c) => c.name).join("|");
 
   useEffect(() => {
     setSelectedIdx(0);
-  }, [cats]);
+  }, [chartKey]);
+
+  if (!activeCat) return null;
 
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 16px" }}>
