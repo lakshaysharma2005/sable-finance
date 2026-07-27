@@ -4,5 +4,5 @@ export const BRAND_LOGOS = {
   venmo: "/icons/venmo.png",
   chase: "/icons/chase.png",
   bofa: "/icons/bofa.png",
-  robinhood: "/icons/robinhood.svg",
+  robinhood: "/icons/robinhood.png",
 } as const;
