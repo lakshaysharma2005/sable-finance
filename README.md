@@ -6,7 +6,7 @@ Personal finance and expense tracking PWA for a single user. Next.js on Vercel, 
 
 - **Next.js 16** (App Router, TypeScript) — frontend + API routes in one app
 - **Neon Postgres** via **Drizzle ORM** (`src/db/schema.ts`, migrations in `drizzle/`)
-- **Plaid** — Link (web SDK), Transactions (`/transactions/sync`), Balance
+- **Plaid** — Link (web SDK), Transactions (`/transactions/sync`), Investments (brokerages / Stocks), Balance
 - **Auth** — single password, signed HTTP-only session cookie (`src/proxy.ts` gates everything)
 - **PWA** — manifest + service worker; add to home screen on iOS/Android
 
@@ -69,14 +69,14 @@ npx vercel deploy --prod             # redeploy so the app picks up DATABASE_URL
 2. **Complete the application profile and company profile** (Dashboard → Settings) — required before connecting to some Production institutions.
 3. **Allowed redirect URIs** (Dashboard → Developers → API): add `https://<your-app>/` — needed for OAuth banks (Chase, BofA, etc.).
 4. **Webhooks**: no dashboard setup needed — the webhook URL (`https://<your-app>/api/plaid/webhook`) is passed per-item via `link/token/create`. Deliveries are signature-verified in the handler.
-5. **Plan**: the Trial plan supports up to 10 Production Items, plenty for personal use. Confirm Transactions is enabled (Dashboard → Products).
+5. **Plan**: the Trial plan supports up to 10 Production Items, plenty for personal use. Confirm Transactions is enabled (Dashboard → Products). For Stocks / Robinhood, also enable **Investments** in the Dashboard and accept any product terms.
 
 ## How data flows
 
 1. **Connect** — Accounts screen (or FAB → Connect) opens Plaid Link; the server exchanges the `public_token`, encrypts the `access_token` (AES-256-GCM), stores the item + accounts.
 2. **Sync** — Plaid fires `SYNC_UPDATES_AVAILABLE` → `/api/plaid/webhook` (JWT-verified) → cursor-paginated `/transactions/sync` upserts into Postgres. Manual refresh: FAB → Refresh (`/api/sync`, also calls `/transactions/refresh`).
 3. **Categories** — Plaid `personal_finance_category` maps to the app palette (`src/lib/categories.ts`); per-transaction overrides and merchant rules are applied on top.
-4. **Balances** — refreshed on webhook/sync; a daily cron writes `balance_snapshots` for the Accounts trend chart and month-over-month deltas.
+4. **Balances** — refreshed on webhook/sync; a daily cron writes `balance_snapshots` for the Accounts trend chart and month-over-month deltas. Investment Items (Robinhood) refresh on `HOLDINGS` / `INVESTMENTS_TRANSACTIONS` webhooks; Stocks uses Plaid `current` balance (total portfolio value).
 
 ## Scripts
 

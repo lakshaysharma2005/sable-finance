@@ -55,7 +55,7 @@ Track which Plaid products/endpoints this app needs. Add or remove rows as scope
 | **Enrich** | Clean merchant names, categories, logos, and location for dashboard/stats UI |
 | **Accounts** | Account list, types, masks, institution metadata |
 | **Balance** | Current balances for dashboard and accounts screen |
-| | |
+| **Investments** | Connect brokerages (e.g. Robinhood) under Stocks; portfolio balance via account `current` |
 | | |
 
 ### General notes

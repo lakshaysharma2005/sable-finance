@@ -11,6 +11,11 @@ export type PlaidConnectOptions = {
    * share additional accounts on the existing Item (instead of creating a duplicate).
    */
   accountSelection?: boolean;
+  /**
+   * New Link product set. Default `transactions` (banks/cards).
+   * Use `investments` for Stocks (Robinhood and other brokerages).
+   */
+  products?: "transactions" | "investments";
 };
 
 function normalizeOptions(options: PlaidConnectOptions | number = {}): PlaidConnectOptions {
@@ -80,7 +85,7 @@ export function usePlaidConnect(onLinked: () => void, defaultOptions: PlaidConne
         body: JSON.stringify(
           opts.itemId
             ? { itemId: opts.itemId, ...(opts.accountSelection ? { accountSelection: true } : {}) }
-            : {},
+            : { ...(opts.products ? { products: opts.products } : {}) },
         ),
       });
       const data = await res.json();

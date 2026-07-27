@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, plaidItems } from "@/db";
 import { verifyPlaidWebhook } from "@/lib/plaid/webhook-verify";
-import { syncItemByPlaidId, refreshBalances } from "@/lib/plaid/sync";
+import { syncItemByPlaidId, refreshBalances, refreshBalancesForPlaidItem, snapshotBalances } from "@/lib/plaid/sync";
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -24,6 +24,14 @@ export async function POST(request: Request) {
         await syncItemByPlaidId(payload.item_id);
         await refreshBalances();
       }
+    } else if (
+      (payload.webhook_type === "HOLDINGS" || payload.webhook_type === "INVESTMENTS_TRANSACTIONS") &&
+      payload.webhook_code === "DEFAULT_UPDATE" &&
+      payload.item_id
+    ) {
+      // Overnight Investments update — refresh Robinhood / brokerage portfolio balances.
+      await refreshBalancesForPlaidItem(payload.item_id);
+      await snapshotBalances();
     } else if (payload.webhook_type === "ITEM") {
       if (payload.webhook_code === "ERROR" && payload.error?.error_code === "ITEM_LOGIN_REQUIRED" && payload.item_id) {
         await db

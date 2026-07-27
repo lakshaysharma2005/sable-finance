@@ -38,16 +38,39 @@ function isVenmoAccount(a: Acct): boolean {
   return key.includes("venmo");
 }
 
+function isRobinhoodAccount(a: Acct): boolean {
+  return /robinhood/i.test(accountHaystack(a));
+}
+
 function showSecondAccountStat(a: Acct): boolean {
   if (isVenmoAccount(a)) return false;
   if (a.assetCategory === "depo") return false;
   return true;
 }
 
+/** Primary amount label: credit + stocks show Balance; banking shows Available. */
+function primaryBalanceLabel(a: Acct): string {
+  if (a.assetCategory === "cc" || a.assetCategory === "invest") return "Balance";
+  return "Available";
+}
+
+function primaryBalanceAmount(a: Acct): number {
+  if (a.assetCategory === "cc") return a.currentBalance ?? 0;
+  // Investment: current = total portfolio value; available = cash only.
+  if (a.assetCategory === "invest") return a.currentBalance ?? a.availableBalance ?? 0;
+  return a.availableBalance ?? a.currentBalance ?? 0;
+}
+
+/** Categories that can open Plaid Link from the Accounts screen. */
+function canConnectCategory(key: string): boolean {
+  return key === "cc" || key === "depo" || key === "invest";
+}
+
 /** Institution/connection logo for branded accounts. */
 function connectionLogo(a: Acct): string | null {
   const key = (a.name || a.officialName || "").toLowerCase().trim();
   if (key.includes("kalshi")) return CONNECTION_LOGOS.kalshi;
+  if (isRobinhoodAccount(a)) return CONNECTION_LOGOS.robinhood;
   if (isVenmoAccount(a)) return CONNECTION_LOGOS.venmo;
   if (isChaseChecking(a)) return CONNECTION_LOGOS.chase;
   if (isBofaAdvPlusChecking(a)) return CONNECTION_LOGOS.bofa;
@@ -55,7 +78,7 @@ function connectionLogo(a: Acct): string | null {
 }
 
 function isSquareBrandLogo(logo: string): boolean {
-  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase;
+  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase || logo === CONNECTION_LOGOS.robinhood;
 }
 
 function isWideBrandLogo(logo: string): boolean {
@@ -155,6 +178,9 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
   if (a.assetCategory === "betting" || a.subtype === "betting") {
     return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: "#7FE08A", typeLabel: "BETTING" };
   }
+  if (a.assetCategory === "invest") {
+    return { grad: "linear-gradient(135deg,#0f1a2a,#1a2a42)", accent: "#6B8AB0", typeLabel: "STOCKS" };
+  }
   if (a.subtype === "savings") {
     return { grad: "linear-gradient(135deg,#0f1f2e,#1a2e42)", accent: "#6B8AB0", typeLabel: "SAVINGS" };
   }
@@ -223,7 +249,7 @@ export default function AccountsPage() {
   function startAddForCategory(catKey: string) {
     const catAccounts = data?.accounts.filter((a) => a.assetCategory === catKey) ?? [];
     if (catAccounts.length === 0) {
-      startLink();
+      startLink(catKey === "invest" ? { products: "investments" } : undefined);
       return;
     }
     // Prefer an Item that already needs re-auth; otherwise the earliest-linked Item in this category
@@ -232,6 +258,14 @@ export default function AccountsPage() {
     const oldest = [...catAccounts].sort((a, b) => a.id - b.id)[0];
     const itemId = needsRelink?.itemId ?? oldest.itemId;
     startLink({ itemId, accountSelection: true });
+  }
+
+  function startConnectCategory(catKey: string) {
+    if (catKey === "invest") {
+      startLink({ products: "investments" });
+      return;
+    }
+    startLink();
   }
 
   const allActive = selCats.length === ALL_KEYS.length;
@@ -414,7 +448,16 @@ export default function AccountsPage() {
           {notConnected.map((n) => (
             <div key={n.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px" }}>
               <span style={serif(13, 400, { color: "rgba(244,243,239,0.55)" })}>{n.label}</span>
-              <span style={mono(10, 400, { color: TER })}>{n.key === "cc" || n.key === "depo" ? "Connect ›" : "Coming later"}</span>
+              {canConnectCategory(n.key) ? (
+                <span
+                  onClick={() => startConnectCategory(n.key)}
+                  style={{ ...mono(10, 400, { color: TER }), cursor: "pointer" }}
+                >
+                  Connect ›
+                </span>
+              ) : (
+                <span style={mono(10, 400, { color: TER })}>Coming later</span>
+              )}
             </div>
           ))}
         </div>
@@ -623,10 +666,10 @@ function AccountRow({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
             <div>
               <div style={{ ...microLabel, fontSize: 8, color: "rgba(244,243,239,0.38)" }}>
-                {isCredit ? "Balance" : "Available"}
+                {primaryBalanceLabel(account)}
               </div>
               <div style={mono(13, 500, { color: TEXT, marginTop: 5 })}>
-                {money(Math.abs(isCredit ? (account.currentBalance ?? 0) : (account.availableBalance ?? account.currentBalance ?? 0)))}
+                {money(Math.abs(primaryBalanceAmount(account)))}
               </div>
             </div>
             {showSecondStat && (
@@ -841,9 +884,9 @@ function AccountDetailSheet({
             }}
           >
             <div style={{ textAlign: "center" }}>
-              <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{isCredit ? "Balance" : "Available"}</div>
+              <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{primaryBalanceLabel(account)}</div>
               <div style={mono(17, 500, { color: TEXT, marginTop: 6 })}>
-                {money(Math.abs(isCredit ? (account.currentBalance ?? 0) : (account.availableBalance ?? account.currentBalance ?? 0)))}
+                {money(Math.abs(primaryBalanceAmount(account)))}
               </div>
             </div>
             {showSecondStat && (

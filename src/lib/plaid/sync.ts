@@ -8,7 +8,19 @@ import { plaidClient } from "./client";
 
 const MUTATION_ERROR = "TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION";
 
+/** Plaid errors when an Item was linked for Investments only (no Transactions product). */
+const NO_TRANSACTIONS_PRODUCT = new Set([
+  "PRODUCT_NOT_ENABLED",
+  "PRODUCT_NOT_READY",
+  "INVALID_PRODUCT",
+  "PRODUCTS_NOT_SUPPORTED",
+]);
+
 type ItemRow = typeof plaidItems.$inferSelect;
+
+function plaidErrorCode(err: unknown): string | undefined {
+  return (err as { response?: { data?: { error_code?: string } } })?.response?.data?.error_code;
+}
 
 /** Fingerprint for matching the same real-world account across duplicate Plaid Items. */
 export function accountFingerprint(institutionId: string | null | undefined, type: string, mask: string | null | undefined) {
@@ -279,10 +291,19 @@ export async function syncItem(item: ItemRow): Promise<{ added: number; modified
   try {
     updates = await fetchAllUpdates(accessToken, item.syncCursor);
   } catch (err: unknown) {
-    const code = (err as { response?: { data?: { error_code?: string } } })?.response?.data?.error_code;
+    const code = plaidErrorCode(err);
     if (code === MUTATION_ERROR) {
       // Restart pagination from the last committed cursor
       updates = await fetchAllUpdates(accessToken, item.syncCursor);
+    } else if (code && NO_TRANSACTIONS_PRODUCT.has(code)) {
+      // Investments-only Items (e.g. Robinhood) have no Transactions product —
+      // still refresh account balances so Stocks shows the portfolio value.
+      await syncAccountsForItem(item);
+      await db
+        .update(plaidItems)
+        .set({ lastSyncedAt: new Date(), status: "ok" })
+        .where(eq(plaidItems.id, item.id));
+      return { added: 0, modified: 0, removed: 0 };
     } else {
       throw err;
     }
@@ -338,7 +359,25 @@ export async function syncAllItems() {
   return results;
 }
 
+async function applyBalanceRows(
+  plaidAccounts: { account_id: string; balances: { current?: number | null; available?: number | null; limit?: number | null } }[],
+) {
+  for (const acct of plaidAccounts) {
+    await db
+      .update(accounts)
+      .set({
+        currentBalance: acct.balances.current ?? null,
+        availableBalance: acct.balances.available ?? null,
+        creditLimit: acct.balances.limit ?? null,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.plaidAccountId, acct.account_id));
+  }
+}
+
 // Pull fresh balances for all items and update the accounts table.
+// Prefer /accounts/balance/get; fall back to /accounts/get for Investments-only
+// Items (Robinhood etc.) where live Balance may be unavailable.
 export async function refreshBalances() {
   const items = await db.select().from(plaidItems);
   for (const item of items) {
@@ -346,20 +385,29 @@ export async function refreshBalances() {
     const accessToken = decryptToken(item.accessTokenEncrypted);
     try {
       const { data } = await plaidClient.accountsBalanceGet({ access_token: accessToken });
-      for (const acct of data.accounts) {
-        await db
-          .update(accounts)
-          .set({
-            currentBalance: acct.balances.current ?? null,
-            availableBalance: acct.balances.available ?? null,
-            creditLimit: acct.balances.limit ?? null,
-            updatedAt: new Date(),
-          })
-          .where(eq(accounts.plaidAccountId, acct.account_id));
-      }
+      await applyBalanceRows(data.accounts);
     } catch {
-      // Balance refresh is best-effort; sync errors are surfaced elsewhere
+      try {
+        const { data } = await plaidClient.accountsGet({ access_token: accessToken });
+        await applyBalanceRows(data.accounts);
+      } catch {
+        // Balance refresh is best-effort; sync errors are surfaced elsewhere
+      }
     }
+  }
+}
+
+/** Refresh balances for one Item after Investments HOLDINGS webhook. */
+export async function refreshBalancesForPlaidItem(plaidItemId: string) {
+  const [item] = await db.select().from(plaidItems).where(eq(plaidItems.plaidItemId, plaidItemId));
+  if (!item || isLocalPlaidId(item.plaidItemId)) return;
+  const accessToken = decryptToken(item.accessTokenEncrypted);
+  try {
+    const { data } = await plaidClient.accountsGet({ access_token: accessToken });
+    await applyBalanceRows(data.accounts);
+    await db.update(plaidItems).set({ lastSyncedAt: new Date(), status: "ok" }).where(eq(plaidItems.id, item.id));
+  } catch (err) {
+    console.error("[plaid] investments balance refresh failed", err);
   }
 }
 
