@@ -9,6 +9,15 @@ export const RED = "#D98A7F";
 export const BORDER = "1px solid rgba(255,255,255,0.07)";
 export const TER = "rgba(244,243,239,0.32)";
 
+/**
+ * Accounts portfolio polarity — composition bar / category dots use only these two.
+ * Assets (banking, stocks, crypto, …) are green; liabilities (credit cards) are red.
+ */
+export enum PortfolioColor {
+  Asset = "#7FE08A",
+  Liability = "#D98A7F",
+}
+
 /** ISO/IEC 7810 ID-1 physical credit card ratio (width ÷ height). */
 export const CREDIT_CARD_ASPECT = 1.588;
 

@@ -7,7 +7,7 @@ import { Sheet } from "@/components/Sheet";
 import { MINUS, money } from "@/lib/format";
 import type { AccountsData } from "@/lib/queries";
 import { BRAND_LOGOS } from "@/lib/brand-logos";
-import { ACCENT, card, chipBase, chipOff, chipOn, CREDIT_CARD_ASPECT, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
+import { ACCENT, card, chipBase, chipOff, chipOn, CREDIT_CARD_ASPECT, microLabel, mono, PortfolioColor, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
 type Acct = AccountsData["accounts"][number];
@@ -175,24 +175,24 @@ function ConnectionLogo({ logo, size }: { logo: string; size: "thumb" | "detail"
 
 function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string } {
   if (a.assetCategory === "cc") {
-    return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: "#D98A7F", typeLabel: "CREDIT" };
+    return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: PortfolioColor.Liability, typeLabel: "CREDIT" };
   }
   if (a.assetCategory === "betting" || a.subtype === "betting") {
-    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: "#7FE08A", typeLabel: "BETTING" };
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "BETTING" };
   }
   if (a.assetCategory === "invest") {
-    return { grad: "linear-gradient(135deg,#0f1a2a,#1a2a42)", accent: "#6B8AB0", typeLabel: "STOCKS" };
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "STOCKS" };
   }
   if (a.assetCategory === "crypto") {
-    return { grad: "linear-gradient(135deg,#2a1f14,#3d2e1a)", accent: "#C49A6B", typeLabel: "CRYPTO" };
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "CRYPTO" };
   }
   if (a.subtype === "savings") {
-    return { grad: "linear-gradient(135deg,#0f1f2e,#1a2e42)", accent: "#6B8AB0", typeLabel: "SAVINGS" };
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "SAVINGS" };
   }
   if (a.subtype === "checking") {
-    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: "#7FE08A", typeLabel: "CHECKING" };
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "CHECKING" };
   }
-  return { grad: "linear-gradient(135deg,#1c1c22,#26262e)", accent: "#8A8594", typeLabel: (a.subtype ?? a.type).toUpperCase() };
+  return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: (a.subtype ?? a.type).toUpperCase() };
 }
 
 function AccountThumb({ account }: { account: Acct }) {
@@ -231,12 +231,9 @@ function fmtSignedBal(n: number): string {
 /** Composition bar + legend: green assets first, red liabilities last; larger within each group. */
 function sortCompositionSegments<T extends { key: string; color: string; amt: number }>(segments: T[]): T[] {
   return [...segments].sort((a, b) => {
-    const aRed = a.key === "cc" ? 1 : 0;
-    const bRed = b.key === "cc" ? 1 : 0;
+    const aRed = a.color === PortfolioColor.Liability ? 1 : 0;
+    const bRed = b.color === PortfolioColor.Liability ? 1 : 0;
     if (aRed !== bRed) return aRed - bRed;
-    const aGreen = a.color === ACCENT ? 0 : 1;
-    const bGreen = b.color === ACCENT ? 0 : 1;
-    if (aGreen !== bGreen) return aGreen - bGreen;
     return Math.abs(b.amt) - Math.abs(a.amt);
   });
 }
@@ -400,7 +397,7 @@ export default function AccountsPage() {
               >
                 <span style={mono(9, 400, { color: "rgba(244,243,239,0.4)" })}>{isOpen ? "▼" : "▶"}</span>
                 <span style={serif(16, 400, { color: TEXT })}>{cat.label}</span>
-                <span style={mono(12, 500, { color: cat.key === "cc" ? cat.color : ACCENT, marginLeft: 2 })}>
+                <span style={mono(12, 500, { color: cat.color, marginLeft: 2 })}>
                   {money(Math.abs(cat.amt))}
                 </span>
               </button>
@@ -684,13 +681,13 @@ function AccountRow({
                 </div>
                 {isCredit ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
-                    <span style={mono(13, 500, { color: "#C49A6B" })}>{utilization !== null ? `${utilization}%` : "—"}</span>
+                    <span style={mono(13, 500, { color: PortfolioColor.Liability })}>{utilization !== null ? `${utilization}%` : "—"}</span>
                     {utilization !== null && (
-                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#C49A6B", flex: "none" }} />
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: PortfolioColor.Liability, flex: "none" }} />
                     )}
                   </div>
                 ) : (
-                  <div style={mono(13, 500, { color: change !== null && change >= 0 ? ACCENT : change !== null ? "#D98A7F" : TER, marginTop: 5 })}>
+                  <div style={mono(13, 500, { color: change !== null && change >= 0 ? PortfolioColor.Asset : change !== null ? PortfolioColor.Liability : TER, marginTop: 5 })}>
                     {change !== null ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% ${change >= 0 ? "▲" : "▼"}` : "—"}
                   </div>
                 )}
@@ -899,7 +896,13 @@ function AccountDetailSheet({
                 <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{isCredit ? "Utilized" : "Change"}</div>
                 <div
                   style={mono(17, 500, {
-                    color: isCredit ? "#C49A6B" : change !== null && change >= 0 ? ACCENT : change !== null ? "#D98A7F" : TER,
+                    color: isCredit
+                      ? PortfolioColor.Liability
+                      : change !== null && change >= 0
+                        ? PortfolioColor.Asset
+                        : change !== null
+                          ? PortfolioColor.Liability
+                          : TER,
                     marginTop: 6,
                   })}
                 >

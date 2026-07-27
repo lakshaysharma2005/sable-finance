@@ -143,14 +143,17 @@ export function buildDefaultCategories(): CategoryMeta[] {
   }));
 }
 
-// Asset category labels + colors for the Accounts screen (from the prototype).
+import { PortfolioColor } from "@/lib/ui";
+
+// Asset category labels + colors for the Accounts screen.
+// Only PortfolioColor.Asset (green) or PortfolioColor.Liability (red).
 export const ASSET_CATEGORIES = [
-  { key: "cc", label: "Credit cards", color: "#D98A7F" },
-  { key: "depo", label: "Banking", color: "#7FE08A" },
-  { key: "crypto", label: "Crypto", color: "#C49A6B" },
-  { key: "invest", label: "Stocks", color: "#6B8AB0" },
-  { key: "betting", label: "Betting", color: "#7FE08A" },
-  { key: "others", label: "Others", color: "#8A8594" },
+  { key: "cc", label: "Credit cards", color: PortfolioColor.Liability },
+  { key: "depo", label: "Banking", color: PortfolioColor.Asset },
+  { key: "crypto", label: "Crypto", color: PortfolioColor.Asset },
+  { key: "invest", label: "Stocks", color: PortfolioColor.Asset },
+  { key: "betting", label: "Betting", color: PortfolioColor.Asset },
+  { key: "others", label: "Others", color: PortfolioColor.Asset },
 ] as const;
 
 export type AssetCategoryKey = (typeof ASSET_CATEGORIES)[number]["key"];
