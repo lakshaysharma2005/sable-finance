@@ -892,7 +892,7 @@ function AccountDetailSheet({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: showSecondStat ? "1fr 1fr" : "1fr",
+              gridTemplateColumns: isCredit ? "1fr 1fr 1fr" : showSecondStat ? "1fr 1fr" : "1fr",
               background: "rgba(255,255,255,0.04)",
               borderRadius: 16,
               padding: "18px 12px",
@@ -904,6 +904,14 @@ function AccountDetailSheet({
                 {money(Math.abs(primaryBalanceAmount(account)))}
               </div>
             </div>
+            {isCredit && (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>Limit</div>
+                <div style={mono(17, 500, { color: TEXT, marginTop: 6 })}>
+                  {account.creditLimit != null ? money(account.creditLimit) : "—"}
+                </div>
+              </div>
+            )}
             {showSecondStat && (
               <div style={{ textAlign: "center" }}>
                 <div style={{ ...microLabel, fontSize: 9, color: "rgba(244,243,239,0.4)" }}>{isCredit ? "Utilized" : "Change"}</div>
