@@ -465,30 +465,28 @@ input::placeholder{color:rgba(244,243,239,0.3)}
             <div style="display:flex;justify-content:center;padding:12px 0">
               <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2)"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:0 20px 12px">
-              <div>
-                <div style="font:600 10px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:#7FE08A">Transaction</div>
-                <div style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.38);margin-top:3px">{{ detailDay }}</div>
-              </div>
-              <div onClick="{{ closeDetail }}" style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <div style="position:relative;text-align:center;padding:0 20px 12px">
+              <div style="font:600 10px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:#7FE08A">Transaction</div>
+              <div style="font:10px 'JetBrains Mono';color:rgba(244,243,239,0.38);margin-top:3px">{{ detailDay }}</div>
+              <div onClick="{{ closeDetail }}" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(244,243,239,0.5)"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
               </div>
             </div>
             <div style="text-align:center;padding:10px 20px 6px">
               <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:16px">
-                <span style="font:400 32px 'Spectral';color:#F4F3EF">{{ detailName }}</span>
+                <span style="font:400 24px 'Spectral';color:#F4F3EF">{{ detailName }}</span>
                 <span style="width:19px;height:19px;border-radius:50%;border:1.5px solid rgba(244,243,239,0.3);display:inline-flex;align-items:center;justify-content:center;font:11px 'JetBrains Mono';color:rgba(244,243,239,0.4);flex:none">i</span>
               </div>
               <div style="display:flex;align-items:baseline;justify-content:center;gap:2px;margin-bottom:16px">
-                <span style="font:500 22px 'JetBrains Mono';color:rgba(244,243,239,0.4)">{{ detailAmtSign }}$</span>
-                <span style="font:500 46px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ detailAmtNum }}</span>
+                <span style="font:500 18px 'JetBrains Mono';color:rgba(244,243,239,0.4)">{{ detailAmtSign }}$</span>
+                <span style="font:500 34px 'JetBrains Mono';color:#F4F3EF;letter-spacing:-2px">{{ detailAmtNum }}</span>
               </div>
               <div style="font:400 15px 'Spectral';color:rgba(244,243,239,0.25)">Add a note</div>
             </div>
             <div style="padding:22px 20px 16px">
               <div style="font:600 10px 'JetBrains Mono';letter-spacing:2px;text-transform:uppercase;color:rgba(244,243,239,0.32);text-align:center;margin-bottom:12px">Category</div>
               <div style="display:flex;justify-content:center">
-                <button onClick="{{ openCatPicker }}" style="display:inline-flex;align-items:center;gap:9px;background:{{ detailCatBg }};border-radius:999px;padding:11px 22px;border:none;cursor:pointer">
+                <button onClick="{{ openCatPicker }}" style="display:inline-flex;align-items:center;gap:9px;background:{{ detailCatBg }};border-radius:999px;padding:7px 28px;border:none;cursor:pointer">
                   <span style="width:9px;height:9px;border-radius:50%;background:{{ detailColor }};flex:none"></span>
                   <span style="font:700 12px 'JetBrains Mono';letter-spacing:1px;color:{{ detailColor }}">{{ detailCat }}</span>
                 </button>
@@ -506,10 +504,10 @@ input::placeholder{color:rgba(244,243,239,0.3)}
               </div>
             </div>
             <div style="padding:0 20px 28px">
-              <div style="display:flex;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:999px;padding:4px;width:320px;margin:0 auto">
-                <div style="flex:1;text-align:center;padding:13px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;color:rgba(244,243,239,0.6);cursor:pointer">Split</div>
+              <div style="display:flex;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:999px;padding:2px;width:100%;margin:0 auto;box-sizing:border-box">
+                <div style="flex:1;text-align:center;padding:8px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;color:rgba(244,243,239,0.6);cursor:pointer">Split</div>
                 <div onClick="{{ onRecurringSegmentClick }}" style="{{ recurSegStyle }}">{{ recurSegLabel }}</div>
-                <div style="flex:1;text-align:center;padding:13px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;color:rgba(244,243,239,0.6);cursor:pointer;border-left:1px solid rgba(255,255,255,0.08)">Tag</div>
+                <div style="flex:1;text-align:center;padding:8px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;color:rgba(244,243,239,0.6);cursor:pointer;border-left:1px solid rgba(255,255,255,0.08)">Tag</div>
               </div>
             </div>
           </div>
@@ -1668,7 +1666,7 @@ class Component extends DCLogic {
         recurConfirmSheet: false,
       }));
     };
-    const recurSegStyle = "flex:1;text-align:center;padding:13px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;cursor:pointer;border-left:1px solid rgba(255,255,255,0.08);" +
+    const recurSegStyle = "flex:1;text-align:center;padding:8px 0;font:600 13px 'JetBrains Mono';letter-spacing:.3px;cursor:pointer;border-left:1px solid rgba(255,255,255,0.08);" +
       (isTxRecurring ? 'color:#7FE08A;' : 'color:rgba(244,243,239,0.6);');
     const recurSegLabel = isTxRecurring ? 'Recurring \u2713' : 'Recurring';
 
