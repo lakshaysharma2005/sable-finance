@@ -592,6 +592,8 @@ function signedPortfolioBalance(
   availableBalance: number | null,
 ): number {
   if (assetCategory === "cc") return -(currentBalance ?? 0);
+  // Investment accounts: `current` is total portfolio value; `available` is cash only (often null).
+  if (assetCategory === "invest") return currentBalance ?? availableBalance ?? 0;
   return availableBalance ?? currentBalance ?? 0;
 }
 
