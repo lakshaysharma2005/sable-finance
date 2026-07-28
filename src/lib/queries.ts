@@ -32,6 +32,7 @@ export interface TxItem {
   accountMask: string | null;
   accountColor: string;
   note: string | null;
+  excludedFromSpending: boolean;
   /** Synthetic row from transaction_splits on the Splits category page */
   isSplitPortion?: boolean;
   parentTxId?: number;
@@ -53,6 +54,14 @@ interface SplitInRange {
 }
 
 const isExcluded = (cat: string) => (EXCLUDED_CATEGORIES as readonly string[]).includes(cat);
+
+export function isExcludedFromSpending(tx: TxItem): boolean {
+  return tx.excludedFromSpending || isExcluded(tx.category);
+}
+
+function excludedTxIds(txs: TxItem[]): Set<number> {
+  return new Set(txs.filter(isExcludedFromSpending).map((t) => t.id));
+}
 
 function iso(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -125,6 +134,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       category: transactions.category,
       categoryOverride: transactions.categoryOverride,
       note: transactions.note,
+      excludedFromSpending: transactions.excludedFromSpending,
       accountId: accounts.id,
       accountName: accounts.name,
       customName: accounts.customName,
@@ -192,17 +202,20 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       accountMask: r.accountMask,
       accountColor: r.accountColor,
       note: r.note,
+      excludedFromSpending: r.excludedFromSpending,
     };
   });
 }
 
 function spendTotal(txs: TxItem[], splits: SplitInRange[]): number {
+  const skipIds = excludedTxIds(txs);
   let total = 0;
   for (const tx of txs) {
-    if (isExcluded(tx.category)) continue;
+    if (isExcludedFromSpending(tx)) continue;
     total += tx.amount;
   }
   for (const s of splits) {
+    if (skipIds.has(s.transactionId)) continue;
     total += s.amount;
   }
   return total;
@@ -213,12 +226,13 @@ function buildCategoryTotals(
   splits: SplitInRange[],
   categoryLookups: { colors: Record<string, string>; emojis: Record<string, string | null> },
 ) {
+  const skipIds = excludedTxIds(txs);
   const byCat = new Map<string, number>();
   const catColors = new Map<string, string>();
   const catEmojis = new Map<string, string | null>();
 
   for (const tx of txs) {
-    if (isExcluded(tx.category)) continue;
+    if (isExcludedFromSpending(tx)) continue;
     if (tx.category === SPLITS_CATEGORY) {
       byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + tx.amount);
       if (!catColors.has(SPLITS_CATEGORY)) {
@@ -232,7 +246,7 @@ function buildCategoryTotals(
     }
   }
 
-  const splitsSum = splits.reduce((s, sp) => s + sp.amount, 0);
+  const splitsSum = splits.filter((s) => !skipIds.has(s.transactionId)).reduce((s, sp) => s + sp.amount, 0);
   if (splitsSum !== 0) {
     byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + splitsSum);
     if (!catColors.has(SPLITS_CATEGORY)) {
@@ -266,6 +280,7 @@ function splitPortionsToTxItems(splits: SplitInRange[], categoryLookups: { color
     accountMask: s.accountMask,
     accountColor: s.accountColor,
     note: null,
+    excludedFromSpending: false,
     isSplitPortion: true,
     parentTxId: s.transactionId,
     splitRowId: s.id,
@@ -316,12 +331,18 @@ function groupByDay(txs: TxItem[], today: string): DayGroup[] {
       date,
       label: dayLabel(date, today),
       // UI convention: outflow negative. Plaid: outflow positive -> negate sum.
-      net: -items.reduce((s, t) => s + t.amount, 0),
+      net: -items.reduce((s, t) => s + (isExcludedFromSpending(t) ? 0 : t.amount), 0),
       items,
     }));
 }
 
 // ---------- Dashboard ----------
+
+export function sortSpendingCategories<T extends { name: string; amount: number }>(cats: T[]): T[] {
+  return [...cats]
+    .filter((c) => c.amount > 0)
+    .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+}
 
 export async function getDashboardData(today = iso(new Date())) {
   const t = new Date(today + "T00:00:00Z");
@@ -342,15 +363,15 @@ export async function getDashboardData(today = iso(new Date())) {
   const deltaPct = prevSpent > 0 ? ((prevSpent - spent) / prevSpent) * 100 : 0;
 
   const { byCat, catColors, catEmojis } = buildCategoryTotals(monthTx, monthSplits, categoryLookups);
-  const cats = [...byCat.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, amount]) => ({
+  const cats = sortSpendingCategories(
+    [...byCat.entries()].map(([name, amount]) => ({
       name,
       amount,
       pct: spent > 0 ? Math.round((amount / spent) * 100) : 0,
       color: catColors.get(name) ?? resolveCategoryColor(name, categoryLookups.colors),
       emoji: catEmojis.get(name) ?? null,
-    }));
+    })),
+  );
 
   // Recent transactions (last 14 days)
   const recentFrom = iso(new Date(t.getTime() - 13 * 86400000));
@@ -431,7 +452,7 @@ function bucketBreakdown(
       emoji: catEmojis.get(name) ?? null,
     }));
 
-  const excluded = txs.filter((tx) => isExcluded(tx.category)).slice(0, 20);
+  const excluded = txs.filter((tx) => isExcludedFromSpending(tx)).slice(0, 20);
 
   return { top, excluded };
 }
@@ -716,7 +737,7 @@ function groupByMonth(txs: TxItem[]): MonthGroup[] {
       monthKey,
       label: monthLabel(monthKey),
       items,
-      total: items.reduce((s, tx) => s + tx.amount, 0),
+      total: items.reduce((s, tx) => s + (isExcludedFromSpending(tx) ? 0 : tx.amount), 0),
     }));
 }
 
@@ -732,18 +753,23 @@ export async function getCategoryData(category: string, today = iso(new Date()))
     getCategoryLookups(),
   ]);
 
+  const skipIds = excludedTxIds(allTx);
+  const activeSplits = yearSplits.filter((s) => !skipIds.has(s.transactionId));
+
   let catTx = allTx.filter((tx) => tx.category === category);
 
   if (category === SPLITS_CATEGORY) {
-    const splitPortions = splitPortionsToTxItems(yearSplits, categoryLookups);
+    const splitPortions = splitPortionsToTxItems(activeSplits, categoryLookups);
     catTx = [...catTx, ...splitPortions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   }
 
+  const countable = (tx: TxItem) => (isExcludedFromSpending(tx) ? 0 : tx.amount);
+
   const monthSpent = catTx
     .filter((tx) => tx.date >= monthStart)
-    .reduce((s, tx) => s + tx.amount, 0);
+    .reduce((s, tx) => s + countable(tx), 0);
 
-  const yearTotal = catTx.reduce((s, tx) => s + tx.amount, 0);
+  const yearTotal = catTx.reduce((s, tx) => s + countable(tx), 0);
   const monthsElapsed = t.getUTCMonth() + 1;
   const yearAvg = monthsElapsed > 0 ? yearTotal / monthsElapsed : 0;
 

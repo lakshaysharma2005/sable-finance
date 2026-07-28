@@ -269,6 +269,7 @@ export default function SearchPage() {
                     padding: "13px 14px",
                     borderTop: "1px solid rgba(255,255,255,0.06)",
                     cursor: "pointer",
+                    opacity: it.excludedFromSpending ? 0.48 : 1,
                   }}
                 >
                   <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} accountName={it.accountName} />

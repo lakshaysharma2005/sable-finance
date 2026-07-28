@@ -346,6 +346,7 @@ export default function CategoryPage() {
                       padding: "13px 14px",
                       borderTop: "1px solid rgba(255,255,255,0.06)",
                       cursor: "pointer",
+                      opacity: it.excludedFromSpending ? 0.48 : 1,
                     }}
                   >
                     <span style={{ ...mono(11, 500, { color: (data.color ?? TER) + "cc" }), flex: "none", width: 42 }}>

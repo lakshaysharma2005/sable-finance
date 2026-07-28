@@ -1,6 +1,6 @@
 // Minimal service worker: cache the app shell, network-first for everything
 // else (finance data must never be stale).
-const CACHE = "sable-v1";
+const CACHE = "sable-v2";
 const SHELL = ["/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -19,8 +19,22 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.pathname.startsWith("/api/")) return;
 
-  // Static assets: cache-first
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  // Icons: network-first so updated marks aren't stuck behind an old SW cache.
+  if (url.pathname.startsWith("/icons/")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request)),
+    );
+    return;
+  }
+
+  // Next hashed bundles: cache-first
+  if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       caches.match(event.request).then(
         (hit) =>

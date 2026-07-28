@@ -9,6 +9,7 @@ import { TransactionsFilterSheet, type TxSort } from "@/components/TransactionsF
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
 import type { DayGroup, TransactionsData, TxItem } from "@/lib/queries";
+import { isExcludedFromSpending } from "@/lib/queries";
 import { ACCENT, card, chipBase, chipOff, chipOn, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
@@ -36,7 +37,7 @@ function groupByDay(txs: TxItem[], today: string): DayGroup[] {
     .map(([date, items]) => ({
       date,
       label: dayLabel(date, today),
-      net: -items.reduce((s, t) => s + t.amount, 0),
+      net: -items.reduce((s, t) => s + (isExcludedFromSpending(t) ? 0 : t.amount), 0),
       items,
     }));
 }
@@ -90,7 +91,7 @@ export default function TransactionsPage() {
     }
     return {
       txCount: filteredItems.length,
-      txSpent: filteredItems.reduce((s, t) => s + t.amount, 0),
+      txSpent: filteredItems.reduce((s, t) => s + (isExcludedFromSpending(t) ? 0 : t.amount), 0),
     };
   }, [data, filteredItems, selCategory]);
 
@@ -215,6 +216,7 @@ export default function TransactionsPage() {
                   padding: "13px 14px",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                   cursor: "pointer",
+                  opacity: it.excludedFromSpending ? 0.48 : 1,
                 }}
               >
                 <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} accountName={it.accountName} />

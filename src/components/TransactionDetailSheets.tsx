@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { AddCategorySheet } from "@/components/AddCategorySheet";
 import { AccountMiniCard } from "@/components/AccountMiniCard";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { EditAmountSheet } from "@/components/EditAmountSheet";
+import { DotsIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
 import { SplitTransactionSheet } from "@/components/SplitTransactionSheet";
 import type { CategoriesListData } from "@/lib/category-queries";
@@ -28,8 +29,40 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
   const [amountEditOpen, setAmountEditOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
+  const [excludeSaving, setExcludeSaving] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { data: categoriesData, reload: reloadCategories } = useData<CategoriesListData>("/api/categories");
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen]);
+
+  async function toggleExclude() {
+    if (!tx || excludeSaving) return;
+    setMenuOpen(false);
+    setExcludeSaving(true);
+    const next = !tx.excludedFromSpending;
+    try {
+      await fetch(`/api/transactions/${tx.id}/exclude`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ excluded: next }),
+      });
+      onTxUpdate({ ...tx, excludedFromSpending: next });
+      onCategoryChanged?.();
+    } finally {
+      setExcludeSaving(false);
+    }
+  }
 
   async function changeCategory(category: string) {
     if (!tx) return;
@@ -66,6 +99,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
     setSplitOpen(false);
     setAmountEditOpen(false);
     setCatChanged(null);
+    setMenuOpen(false);
     onClose();
   }
 
@@ -78,14 +112,99 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
     <>
       {showDetail && (
         <Sheet onClose={handleClose}>
-          <div style={{ textAlign: "center", padding: "0 20px 12px" }}>
-            <div style={mono(10, 600, { letterSpacing: 2, textTransform: "uppercase", color: ACCENT })}>Transaction</div>
-            <div style={mono(10, 400, { color: "rgba(244,243,239,0.38)", marginTop: 3 })}>
-              {new Date(tx.date + "T00:00:00").toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              })}
+          <div style={{ display: "flex", alignItems: "flex-start", padding: "0 16px 12px" }}>
+            <div style={{ width: 36, flex: "none" }} />
+            <div style={{ flex: 1, textAlign: "center", paddingTop: 2 }}>
+              <div style={mono(10, 600, { letterSpacing: 2, textTransform: "uppercase", color: ACCENT })}>Transaction</div>
+              <div style={mono(10, 400, { color: "rgba(244,243,239,0.38)", marginTop: 3 })}>
+                {new Date(tx.date + "T00:00:00").toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </div>
+            </div>
+            <div ref={menuRef} style={{ position: "relative", width: 36, flex: "none" }}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Transaction options"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 12,
+                  background: menuOpen ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.06)",
+                  border: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <DotsIcon />
+              </button>
+              {menuOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 42,
+                    right: 0,
+                    background: "#202022",
+                    border: "1px solid rgba(255,255,255,0.09)",
+                    borderRadius: 14,
+                    padding: 6,
+                    minWidth: 196,
+                    boxShadow: "0 12px 28px rgba(0,0,0,0.5)",
+                    zIndex: 5,
+                  }}
+                >
+                  {canSplit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setSplitOpen(true);
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        background: "none",
+                        border: "none",
+                        padding: "11px 12px",
+                        borderRadius: 9,
+                        ...serif(14, 400, { color: TEXT }),
+                        cursor: "pointer",
+                      }}
+                    >
+                      Split
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={toggleExclude}
+                    disabled={excludeSaving}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      background: "none",
+                      border: "none",
+                      padding: "11px 12px",
+                      borderRadius: 9,
+                      ...serif(14, 400, {
+                        color: tx.excludedFromSpending ? ACCENT : TEXT,
+                        opacity: excludeSaving ? 0.5 : 1,
+                      }),
+                      cursor: excludeSaving ? "wait" : "pointer",
+                    }}
+                  >
+                    {excludeSaving
+                      ? "Saving…"
+                      : tx.excludedFromSpending
+                        ? "Include in spending"
+                        : "Exclude from spending"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <div style={{ textAlign: "center", padding: "10px 20px 6px" }}>
@@ -100,7 +219,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                 alignItems: "baseline",
                 justifyContent: "center",
                 gap: 2,
-                marginBottom: tx.excludedAmount > 0 ? 6 : 16,
+                marginBottom: tx.excludedAmount > 0 || tx.excludedFromSpending ? 6 : 16,
                 background: "none",
                 border: "none",
                 padding: 0,
@@ -114,8 +233,13 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               <AmountDisplay amount={Math.abs(tx.amount)} size={34} letterSpacing={-2} />
             </button>
             {tx.excludedAmount > 0 && (
-              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>
+              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: tx.excludedFromSpending ? 4 : 16 }}>
                 Originally ${tx.originalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </div>
+            )}
+            {tx.excludedFromSpending && (
+              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>
+                Excluded from spending
               </div>
             )}
           </div>
@@ -142,40 +266,9 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               </button>
             </div>
           </div>
-          <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "center" }}>
+          <div style={{ padding: "0 20px 28px", display: "flex", justifyContent: "center" }}>
             <AccountMiniCard name={tx.accountName} mask={tx.accountMask} color={tx.accountColor} />
           </div>
-          {canSplit && (
-            <div style={{ padding: "0 20px 28px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: 999,
-                  padding: 2,
-                  width: "100%",
-                  margin: "0 auto",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSplitOpen(true)}
-                  style={{
-                    flex: 1,
-                    textAlign: "center",
-                    padding: "8px 0",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    ...mono(13, 600, { letterSpacing: 0.3, color: "rgba(244,243,239,0.6)" }),
-                  }}
-                >
-                  Split
-                </button>
-              </div>
-            </div>
-          )}
         </Sheet>
       )}
 

@@ -1,8 +1,8 @@
 /** Bundled institution marks for accounts UI and transaction avatars. */
 export const BRAND_LOGOS = {
-  kalshi: "/icons/kalshi.png",
-  venmo: "/icons/venmo.png",
-  chase: "/icons/chase.png",
-  bofa: "/icons/bofa.png",
-  robinhood: "/icons/robinhood.png",
+  kalshi: "/icons/kalshi.png?v=2",
+  venmo: "/icons/venmo.png?v=2",
+  chase: "/icons/chase.png?v=2",
+  bofa: "/icons/bofa.png?v=2",
+  robinhood: "/icons/robinhood.png?v=2",
 } as const;

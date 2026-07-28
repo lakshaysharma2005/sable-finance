@@ -3,10 +3,11 @@
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TxAvatar } from "@/components/TxAvatar";
 import { MINUS, money } from "@/lib/format";
 import type { DashboardData } from "@/lib/queries";
+import { sortSpendingCategories } from "@/lib/queries";
 import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 import { usePlaidConnect } from "@/components/PlaidLinkButton";
@@ -42,6 +43,11 @@ export default function DashboardPage() {
   const dateLabel = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const sortedCats = useMemo(
+    () => (data?.cats ? sortSpendingCategories(data.cats) : []),
+    [data?.cats],
+  );
 
   return (
     <div style={{ animation: "fadeUp .3s ease both" }}>
@@ -110,15 +116,15 @@ export default function DashboardPage() {
           <div style={serif(18, 400, { color: TEXT })}>By category</div>
           <div style={microLabel}>{now.toLocaleDateString("en-US", { month: "long" })}</div>
         </div>
-        {data && data.cats.length > 0 ? (
-          <Donut cats={data.cats} />
+        {sortedCats.length > 0 ? (
+          <Donut cats={sortedCats} />
         ) : (
           <div style={{ padding: "34px 0", textAlign: "center", ...serif(14, 400, { color: "rgba(244,243,239,0.4)" }) }}>
             {loading ? "Loading…" : "No spending yet this month"}
           </div>
         )}
         <div data-rows="1">
-          {data?.cats.map((c) => (
+          {sortedCats.map((c) => (
             <Link
               key={c.name}
               href={`/categories/${encodeURIComponent(c.name)}`}
@@ -211,13 +217,14 @@ function donutSegmentPath(cx: number, cy: number, innerR: number, outerR: number
 
 function Donut({ cats }: { cats: DashboardData["cats"] }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const sortedCats = useMemo(() => sortSpendingCategories(cats), [cats]);
   const cx = 110;
   const cy = 110;
   const innerR = 67;
   const outerR = 93;
-  const total = cats.reduce((sum, c) => sum + c.amount, 0);
+  const total = sortedCats.reduce((sum, c) => sum + c.amount, 0);
   let cursor = 0;
-  const segments = cats.map((c, i) => {
+  const segments = sortedCats.map((c, i) => {
     const sweep = total > 0 ? (c.amount / total) * 360 : 0;
     const start = cursor;
     cursor += sweep;
@@ -229,12 +236,12 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
       index: i,
     };
   });
-  const activeIdx = Math.min(selectedIdx, cats.length - 1);
-  const activeCat = cats[activeIdx] ?? cats[0];
+  const activeIdx = Math.min(selectedIdx, sortedCats.length - 1);
+  const activeCat = sortedCats[activeIdx] ?? sortedCats[0];
 
   useEffect(() => {
     setSelectedIdx(0);
-  }, [cats]);
+  }, [sortedCats]);
 
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 16px" }}>
@@ -242,7 +249,7 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
         <svg width="220" height="220" viewBox="0 0 220 220">
           {segments.map((s) => (
             <path
-              key={s.index}
+              key={s.cat.name}
               d={s.path}
               fill={s.color}
               fillRule="evenodd"
@@ -252,13 +259,13 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
               onClick={() => setSelectedIdx(s.index)}
             />
           ))}
-          {cats.length > 1 &&
+          {sortedCats.length > 1 &&
             segments.map((s) => {
               const inner = donutPoint(cx, cy, innerR, s.start);
               const outer = donutPoint(cx, cy, outerR, s.start);
               return (
                 <line
-                  key={`divider-${s.index}`}
+                  key={`divider-${s.cat.name}`}
                   x1={inner.x}
                   y1={inner.y}
                   x2={outer.x}
@@ -278,12 +285,29 @@ function Donut({ cats }: { cats: DashboardData["cats"] }) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
+            gap: 5,
             pointerEvents: "none",
+            padding: "0 12px",
           }}
         >
-          <div style={mono(32, 500, { color: activeCat.color, letterSpacing: -1 })}>{activeCat.pct}%</div>
-          {activeCat.emoji && <div style={{ fontSize: 22, lineHeight: 1, marginTop: 4 }}>{activeCat.emoji}</div>}
-          <div style={{ ...microLabel, color: "rgba(244,243,239,0.5)", marginTop: 3 }}>{activeCat.name}</div>
+          <div style={mono(33, 500, { color: activeCat.color, letterSpacing: -0.75, lineHeight: 1 })}>
+            {activeCat.pct}%
+          </div>
+          <div
+            style={mono(10, 500, {
+              letterSpacing: 1.8,
+              textTransform: "uppercase",
+              color: "rgba(244,243,239,0.38)",
+              lineHeight: 1.2,
+              maxWidth: 118,
+              textAlign: "center",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            })}
+          >
+            {activeCat.name}
+          </div>
         </div>
       </div>
     </div>
@@ -378,6 +402,7 @@ function ToReview({ data, reload }: { data: DashboardData; reload: () => void })
                   gap: 12,
                   padding: "13px 14px",
                   borderTop: "1px solid rgba(255,255,255,0.06)",
+                  opacity: it.excludedFromSpending ? 0.48 : 1,
                 }}
               >
                 <TxAvatar name={it.name} color={it.color} logoUrl={it.logoUrl} accountName={it.accountName} />

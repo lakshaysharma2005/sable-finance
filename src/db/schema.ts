@@ -79,6 +79,7 @@ export const transactions = pgTable(
     // Manual user override; wins over `category` when set
     categoryOverride: text("category_override"),
     note: text("note"),
+    excludedFromSpending: boolean("excluded_from_spending").notNull().default(false),
     removed: boolean("removed").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
