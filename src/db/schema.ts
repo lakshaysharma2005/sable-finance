@@ -63,6 +63,8 @@ export const transactions = pgTable(
       .references(() => accounts.id, { onDelete: "cascade" }),
     date: date("date").notNull(),
     authorizedDate: date("authorized_date"),
+    // Manual user override; wins over authorized_date / date for display & grouping
+    dateOverride: date("date_override"),
     name: text("name").notNull(),
     merchantName: text("merchant_name"),
     logoUrl: text("logo_url"),
