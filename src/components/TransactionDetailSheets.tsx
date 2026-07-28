@@ -6,6 +6,7 @@ import { AddCategorySheet } from "@/components/AddCategorySheet";
 import { AccountMiniCard } from "@/components/AccountMiniCard";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { EditAmountSheet } from "@/components/EditAmountSheet";
+import { EditDateSheet } from "@/components/EditDateSheet";
 import { DotsIcon } from "@/components/Icons";
 import { Sheet } from "@/components/Sheet";
 import { SplitTransactionSheet } from "@/components/SplitTransactionSheet";
@@ -27,6 +28,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
   const [catPickerOpen, setCatPickerOpen] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const [amountEditOpen, setAmountEditOpen] = useState(false);
+  const [dateEditOpen, setDateEditOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
   const [excludeSaving, setExcludeSaving] = useState(false);
@@ -98,6 +100,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
     setCatPickerOpen(false);
     setSplitOpen(false);
     setAmountEditOpen(false);
+    setDateEditOpen(false);
     setCatChanged(null);
     setMenuOpen(false);
     onClose();
@@ -106,7 +109,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
   if (!tx) return null;
 
   const canSplit = tx.originalAmount > 0;
-  const showDetail = !catPickerOpen && !catChanged && !splitOpen && !amountEditOpen;
+  const showDetail = !catPickerOpen && !catChanged && !splitOpen && !amountEditOpen && !dateEditOpen;
 
   return (
     <>
@@ -116,13 +119,25 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
             <div style={{ width: 36, flex: "none" }} />
             <div style={{ flex: 1, textAlign: "center", paddingTop: 2 }}>
               <div style={mono(10, 600, { letterSpacing: 2, textTransform: "uppercase", color: ACCENT })}>Transaction</div>
-              <div style={mono(10, 400, { color: "rgba(244,243,239,0.38)", marginTop: 3 })}>
+              <button
+                type="button"
+                onClick={() => setDateEditOpen(true)}
+                aria-label="Change transaction date"
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "4px 8px",
+                  marginTop: 1,
+                  cursor: "pointer",
+                  ...mono(10, 400, { color: "rgba(244,243,239,0.38)" }),
+                }}
+              >
                 {new Date(tx.date + "T00:00:00").toLocaleDateString("en-US", {
                   weekday: "short",
                   month: "short",
                   day: "numeric",
                 })}
-              </div>
+              </button>
             </div>
             <div ref={menuRef} style={{ position: "relative", width: 36, flex: "none" }}>
               <button
@@ -276,6 +291,17 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
         <EditAmountSheet
           tx={tx}
           onClose={() => setAmountEditOpen(false)}
+          onSaved={(updated) => {
+            onTxUpdate(updated);
+            onCategoryChanged?.();
+          }}
+        />
+      )}
+
+      {dateEditOpen && (
+        <EditDateSheet
+          tx={tx}
+          onClose={() => setDateEditOpen(false)}
           onSaved={(updated) => {
             onTxUpdate(updated);
             onCategoryChanged?.();
