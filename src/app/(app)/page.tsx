@@ -10,14 +10,14 @@ import type { DashboardData } from "@/lib/queries";
 import { sortSpendingCategories } from "@/lib/queries";
 import { ACCENT, card, microLabel, mono, serif, TER, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
-import { usePlaidConnect } from "@/components/PlaidLinkButton";
+import { usePlaidConnectContext } from "@/components/PlaidConnectProvider";
 
 const SYNC_THROTTLE_MS = 15 * 60 * 1000;
 const SYNC_KEY = "sable:lastSync";
 
 export default function DashboardPage() {
   const { data, loading, reload } = useData<DashboardData>("/api/dashboard");
-  const { start: startLink } = usePlaidConnect(() => window.location.reload());
+  const { start: startLink } = usePlaidConnectContext();
 
   useEffect(() => {
     let cancelled = false;
@@ -445,7 +445,8 @@ function ToReview({ data, reload }: { data: DashboardData; reload: () => void })
                   background: "transparent",
                   color: "rgba(244,243,239,0.5)",
                   ...mono(10, 600, { letterSpacing: 1 }),
-                  padding: "7px 13px",
+                  padding: "12px 16px",
+                  minHeight: 44,
                   borderRadius: 9,
                   cursor: "pointer",
                 }}

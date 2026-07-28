@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { DotsIcon } from "@/components/Icons";
+import { usePlaidConnectContext } from "@/components/PlaidConnectProvider";
 import { usePlaidConnect } from "@/components/PlaidLinkButton";
 import { Sheet } from "@/components/Sheet";
 import { MINUS, money } from "@/lib/format";
@@ -246,7 +247,7 @@ export default function AccountsPage() {
   const [open, setOpen] = useState<Record<string, boolean>>({ cc: true, depo: true });
   const [detailAcct, setDetailAcct] = useState<Acct | null>(null);
 
-  const { start: startLink } = usePlaidConnect(() => window.location.reload());
+  const { start: startLink } = usePlaidConnectContext();
 
   /** Prefer adding accounts onto an existing Item (update mode) so re-selecting Chase doesn't clone cards. */
   function startAddForCategory(catKey: string) {

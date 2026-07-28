@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ACCENT, BG, mono, serif, TEXT } from "@/lib/ui";
 import { BankIcon, CardIcon, HomeIcon, PlusIcon, ProfileIcon, RefreshIcon, StatsIcon } from "./Icons";
-import { usePlaidConnect } from "./PlaidLinkButton";
+import { usePlaidConnectContext } from "./PlaidConnectProvider";
 
 const ACTIVE = "#0D0D0F";
 const INACTIVE = "rgba(244,243,239,0.45)";
@@ -17,7 +17,7 @@ function Tab({ href, active, children }: { href: string; active: boolean; childr
       href={href}
       style={{
         width: 54,
-        height: 36,
+        height: 44,
         borderRadius: 13,
         display: "flex",
         alignItems: "center",
@@ -37,11 +37,7 @@ export function BottomNav() {
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const { start: startLink } = usePlaidConnect(() => {
-    setSheetOpen(false);
-    router.refresh();
-    window.location.reload();
-  });
+  const { start: startLink } = usePlaidConnectContext();
 
   async function refresh() {
     setSyncing(true);

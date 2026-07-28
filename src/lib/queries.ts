@@ -350,6 +350,20 @@ export function sortSpendingCategories<T extends { name: string; amount: number 
     .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
 }
 
+/** Integer percents that sum to 100 (largest-remainder), avoiding per-row rounding drift. */
+export function distributeRoundedPercents(amounts: number[], total: number): number[] {
+  if (total <= 0 || amounts.length === 0) return amounts.map(() => 0);
+  const raw = amounts.map((amount) => (amount / total) * 100);
+  const floors = raw.map((pct) => Math.floor(pct));
+  const result = [...floors];
+  let remainder = 100 - result.reduce((sum, pct) => sum + pct, 0);
+  const order = raw
+    .map((pct, index) => ({ index, frac: pct - floors[index] }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let i = 0; i < remainder; i++) result[order[i % order.length].index]++;
+  return result;
+}
+
 export async function getDashboardData(today = iso(new Date())) {
   const t = new Date(today + "T00:00:00Z");
   const monthStart = iso(new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 1)));
@@ -369,15 +383,19 @@ export async function getDashboardData(today = iso(new Date())) {
   const deltaPct = prevSpent > 0 ? ((prevSpent - spent) / prevSpent) * 100 : 0;
 
   const { byCat, catColors, catEmojis } = buildCategoryTotals(monthTx, monthSplits, categoryLookups);
-  const cats = sortSpendingCategories(
-    [...byCat.entries()].map(([name, amount]) => ({
-      name,
-      amount,
-      pct: spent > 0 ? Math.round((amount / spent) * 100) : 0,
-      color: catColors.get(name) ?? resolveCategoryColor(name, categoryLookups.colors),
-      emoji: catEmojis.get(name) ?? null,
-    })),
+  const sortedEntries = sortSpendingCategories([...byCat.entries()].map(([name, amount]) => ({ name, amount })));
+  const catTotal = sortedEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const pcts = distributeRoundedPercents(
+    sortedEntries.map((entry) => entry.amount),
+    catTotal,
   );
+  const cats = sortedEntries.map((entry, index) => ({
+    name: entry.name,
+    amount: entry.amount,
+    pct: pcts[index],
+    color: catColors.get(entry.name) ?? resolveCategoryColor(entry.name, categoryLookups.colors),
+    emoji: catEmojis.get(entry.name) ?? null,
+  }));
 
   // Recent transactions (last 14 days)
   const recentFrom = iso(new Date(t.getTime() - 13 * 86400000));
