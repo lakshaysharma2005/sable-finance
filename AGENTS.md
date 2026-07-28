@@ -1,74 +1,144 @@
 # Sable Finance
 
-Personal finance and expense tracking app for a single user. It connects to bank accounts via **Plaid** to pull transactions, balances, and account data — no manual entry required for linked accounts. Not a commercial product; built for one person's own use, with no multi-tenant or auth-for-others concerns.
+Personal finance and expense tracking app for a single user. Connects to bank accounts via **Plaid** to pull transactions, balances, and account data — no manual entry required for linked accounts. Not a commercial product; built for one person's own use, with no multi-tenant or auth-for-others concerns.
 
 ## Current state
 
-`Sable Finance.dc.html` is a **high-fidelity design prototype**, not a working app. It's a single HTML file (Design Component format) with mock data hardcoded in JS — nothing persists, no real backend, no Plaid integration yet. Treat it as the source of truth for UI/UX and required data shapes, not as code to productionize directly. `Sable Finance (standalone).html` is a bundled/offline-viewable export of the same thing.
+This is a **working app**, not a prototype. A Next.js PWA (`src/`) is deployed on **Vercel** with a **Neon Postgres** backend, real Plaid Production integration, and persistent data.
 
-`ios-frame.jsx` and `support.js` are prototype scaffolding (device bezel + runtime) — not app code.
+The original design prototype lives in [`design/Sable Finance.dc.html`](design/Sable%20Finance.dc.html) (`design/support.js` is device-frame scaffolding). Use it as the UI/UX reference and for data-shape inspiration — the live app in `src/` is the source of truth for implementation.
 
-## Screens implemented in the prototype
+For setup, env vars, deploy steps, and data-flow detail, see [`README.md`](README.md).
 
-1. **Dashboard** — greeting header, hero "spent this month" card with trend, donut chart by category, filter pills, transactions list grouped by date, bottom nav.
-2. **Stats** — Week/Month/Year toggle, bar chart with highlighted current period, Top Spending list.
-3. **Transactions** — full transaction history, multi-select account filter chips at top, grouped by date.
-4. **Accounts** — "Selected balance" hero (togglable between composition bar and trend line chart), filter pills per account category (Credit cards, Banking, Crypto, Stocks, Betting, Others), expandable Credit cards/Banking sections, merged "Not connected yet" list for unlinked categories.
+## Stack
 
-(There may be additional screens/interactions added since — check the live file for the current full set before assuming this list is exhaustive.)
+| Layer | Choice |
+|---|---|
+| Frontend | Next.js 16 App Router, React 19, TypeScript — mobile-first PWA |
+| API | Next.js route handlers under `src/app/api/` |
+| Database | Neon Postgres via Drizzle ORM (`src/db/schema.ts`, migrations in `drizzle/`) |
+| Auth | Single password + signed HTTP-only session cookie; `src/proxy.ts` gates all routes |
+| Bank data | Plaid Production (`plaid` npm package + `react-plaid-link` on the client) |
+| Hosting | Vercel (`vercel.json` registers daily cron at `/api/cron/daily`) |
+
+## Repo layout
+
+```
+src/
+  app/
+    (app)/          # Authenticated screens (dashboard, stats, transactions, accounts, search, …)
+    api/            # REST endpoints consumed by the client
+    login/          # Password login
+  components/       # Shared UI (sheets, nav, Plaid Link button, transaction rows, …)
+  db/               # Drizzle schema + db client
+  lib/              # Business logic — prefer adding here over bloating route handlers
+    plaid/          # Plaid client, sync, webhook verification
+    kalshi/         # Kalshi betting balance sync (non-Plaid)
+    categories.ts   # PFC → app category mapping, palette, account asset categories
+    queries.ts      # Shared DB query helpers for API routes
+    crypto.ts       # AES-256-GCM encryption for Plaid access tokens
+design/             # Original HTML prototype (reference only)
+drizzle/            # SQL migrations
+public/             # PWA manifest, service worker, institution icons
+scripts/            # hash-password, icon generation, Vercel env helpers
+```
+
+## Verification commands
+
+```bash
+npm install
+npm run dev          # local dev server
+npm run build        # production build — run after non-trivial changes
+npm run lint
+npm run db:generate  # after editing src/db/schema.ts
+npm run db:migrate   # apply migrations to DATABASE_URL
+```
+
+Locally, Plaid webhooks cannot reach `localhost`. Use the in-app **Refresh data** action (FAB → Refresh, hits `/api/sync`) to pull transactions during development.
+
+## Screens and features
+
+Implemented in the live app (see `src/app/(app)/`):
+
+1. **Dashboard** (`page.tsx`) — greeting, spent-this-month hero with trend, donut chart by category, filter pills, transactions grouped by date, "To Review" stack.
+2. **Stats** (`stats/page.tsx`) — Week/Month/Year toggle, bar chart, top spending list.
+3. **Transactions** (`transactions/page.tsx`) — full history, account filter chips, grouped by date.
+4. **Accounts** (`accounts/page.tsx`) — selected-balance hero (composition bar or trend chart), category filter pills (Credit cards, Banking, Crypto, Stocks, Betting, Others), connect/re-link via Plaid Link.
+5. **Search** (`search/page.tsx`) — transaction search.
+6. **Add expense** (`add-expense/page.tsx`) — manual cash expenses (local Cash account, not Plaid).
+7. **Category detail** (`categories/[name]/page.tsx`) — per-category spending drill-down.
+
+Transaction editing: category override (with optional merchant rule), amount override, exclude from spending, split amounts, notes. User-created categories via the FAB sheet.
 
 ## Design system
 
-- Dark mode: near-black background (#0D0D0F), card surfaces #161618.
-- Single accent color: green (#7FE08A), used sparingly (active nav tab, primary CTA, positive deltas, largest chart segment).
+Match the prototype and existing `src/` styles:
+
+- Dark mode: near-black background (`#0D0D0F`), card surfaces `#161618`.
+- Single accent: green (`#7FE08A`) — active nav tab, primary CTA, positive deltas, largest chart segment.
 - Typography: Spectral (serif, headings/body) + JetBrains Mono (numbers, labels, uppercase micro-copy).
-- Generous rounded corners (16–32px), soft borders/shadows, no gradients-on-everything.
-- Mobile-first, phone-frame sized (~402px wide reference frame).
+- Generous rounded corners (16–32px), soft borders/shadows.
+- Mobile-first, ~402px reference frame (`src/app/globals.css`, `src/lib/ui.ts`).
 
-## Target architecture (per user decisions so far)
+## Data model (high level)
 
-- **Frontend**: Mobile-first responsive **PWA**, not a native iOS app — no App Store distribution needed for personal use; add-to-homescreen is sufficient. Reuse the existing HTML/CSS/JS UI rather than rewriting in Swift.
-- **Backend/DB**: **Postgres** (e.g. via Supabase or Neon). Relational — transaction and account data needs real joins and aggregation; avoid NoSQL.
-- **Bank connectivity / data**: Plaid — see [Plaid](#plaid) below for which products to use.
-- **Security**: Plaid access tokens must be encrypted at rest. Auth is single-user but credentials/tokens still need to be stored securely, not in plaintext.
+Schema in `src/db/schema.ts`:
+
+- **plaid_items** — one row per Plaid Item; `access_token` stored encrypted (`ENCRYPTION_KEY`).
+- **accounts** — linked accounts with `assetCategory` (`cc` | `depo` | `crypto` | `invest` | `betting` | `others`), balances, optional `customName` / `hidden`.
+- **transactions** — synced from Plaid; `category` from PFC mapping at sync time; user overrides (`categoryOverride`, `amountOverride`, `excludedFromSpending`).
+- **transaction_splits**, **category_rules**, **user_categories** — splits, merchant rules, custom categories.
+- **balance_snapshots** — daily balance history for Accounts trend chart and MoM deltas.
+- **reviewed_days** — dashboard "To Review" dismissals.
+
+Local (non-Plaid) accounts use sentinel IDs prefixed with `local_` — see `src/lib/cash.ts` (Cash) and `src/lib/kalshi/ids.ts` (Kalshi).
+
+Plaid amount convention is preserved: **positive = money out, negative = money in**.
+
+## How data flows
+
+1. **Connect** — Plaid Link → `/api/plaid/exchange-token` encrypts and stores the access token, upserts accounts.
+2. **Sync** — `SYNC_UPDATES_AVAILABLE` webhook → `/api/plaid/webhook` (JWT-verified) → cursor-paginated `/transactions/sync` in `src/lib/plaid/sync.ts`. Manual refresh via `/api/sync` (also calls `/transactions/refresh`).
+3. **Categories** — Plaid `personal_finance_category` maps to app categories in `src/lib/categories.ts`; overrides and merchant rules applied on top.
+4. **Balances** — refreshed on sync/webhook; daily cron snapshots balances and runs fallback sync.
+5. **Investments** — Robinhood etc. via Plaid Investments product; `HOLDINGS` / `INVESTMENTS_TRANSACTIONS` webhooks trigger refresh; Stocks balance uses Plaid `current` (portfolio value).
+6. **Kalshi** — optional betting balance via Kalshi Trade API (`KALSHI_API_KEY_ID`, `KALSHI_PRIVATE_KEY`); synced as a local account under Betting.
 
 ## Plaid
 
-Plaid is the source of bank account and transaction data. This file lists **which** Plaid products to use; integration details (endpoints, sync, webhooks, etc.) are left for a later planning pass.
+Plaid is the source of bank account and transaction data. For API how-to and documentation lookup, follow [`.cursor/rules/plaid-api.mdc`](.cursor/rules/plaid-api.mdc) — it points to [plaid.com/docs/llms.txt](https://plaid.com/docs/llms.txt).
 
-For API how-to and documentation lookup, agents should follow [`.cursor/rules/plaid-api.mdc`](.cursor/rules/plaid-api.mdc) — it points to [plaid.com/docs/llms.txt](https://plaid.com/docs/llms.txt), the index of all Plaid documentation pages.
+The [Plaid CLI](https://plaid.com/docs/resources/cli/) is the preferred way for agents to inspect real Plaid data during development (`--json` for structured output). Use it for exploration and verification, not as the app's runtime data path.
 
-The [Plaid CLI](https://plaid.com/docs/resources/cli/) is the preferred way for agents to inspect real Plaid data during development — no client libraries or request/response boilerplate needed. It supports `--json` for structured, machine-readable output. Look up setup and commands in the docs index above (listed under Resources → Plaid CLI). Do not use it as the app's runtime data path — it's for agent exploration and verification, not production integration.
+### Products in use
 
-### MCP servers
-
-[Dashboard MCP](https://plaid.com/docs/resources/mcp/) (Production Item debugging, Link analytics) can be added later if needed. Not configured now.
-
-### Features to use
-
-Track which Plaid products/endpoints this app needs. Add or remove rows as scope changes.
-
-| Feature | Use in Sable Finance |
-|---------|----------------------|
-| **Link** (web SDK) | Connect and re-link bank accounts |
-| **Transactions** | Sync transaction history from linked accounts |
-| **Enrich** | Clean merchant names, categories, logos, and location for dashboard/stats UI |
-| **Accounts** | Account list, types, masks, institution metadata |
-| **Balance** | Current balances for dashboard and accounts screen |
-| **Investments** | Connect brokerages (e.g. Robinhood) under Stocks; portfolio balance via account `current` |
-| | |
+| Feature | Status | Use in Sable Finance |
+|---|---|---|
+| **Link** (web SDK) | Implemented | Connect and re-link bank accounts |
+| **Transactions** | Implemented | Cursor-based `/transactions/sync` |
+| **Accounts** | Implemented | Account list, types, masks, institution metadata |
+| **Balance** | Implemented | Current balances; daily snapshots for trend chart |
+| **Investments** | Implemented | Brokerages (e.g. Robinhood) under Stocks |
+| **Enrich** | Not integrated | Could add merchant logos/clean names later; sync currently uses Plaid's built-in merchant fields |
 
 ### General notes
 
-- Use the **latest** Plaid server client library (backend) and **Link web SDK** (frontend) — check Plaid docs for current package names and versions before adding dependencies; do not pin to outdated examples or sample repos.
-- Plaid Link replaces any custom "connect bank account" UI — no manual connection screen needed.
+- Use the **latest** Plaid server library (`plaid` npm) and **Link web SDK** (`react-plaid-link`) — check Plaid docs before pinning versions.
 - Store `access_token` encrypted in Postgres; never expose it to the client.
-- Use Plaid **Production** from the start — connect real bank accounts and operate on live data; no Sandbox phase.
-- Some products need **manual Dashboard setup** (enablement, Enrich terms, webhooks, etc.) — not exposed to MCP or configurable by AI. Include these as human steps in planning; see each product's integration overview and [Launch Center](https://dashboard.plaid.com/) once Production access is granted.
+- App runs on Plaid **Production** with real bank accounts.
+- Some setup requires the Plaid Dashboard (redirect URIs, product enablement, company profile) — see README for the manual checklist. Webhook URL is passed per-item via `link/token/create`; no separate dashboard webhook config needed.
 
-## Working notes / things not yet decided
+## Agent conventions
 
-- No backend, schema, or API exists yet — next step is building it, using the prototype's data shapes (per-screen mock data in `Sable Finance.dc.html`'s JS) as the spec for what each endpoint needs to return.
-- Recurring-transaction detection, categorization, and sync logic shown in the prototype are illustrative only — not real computed logic.
-- Hosting target (local-only vs. deployed) not yet finalized.
-- Reference project available: sample Plaid-powered personal finance manager repo. Use during planning for implementation ideas and data flow patterns, but do not copy architecture blindly.
+- **Minimize scope** — match existing patterns in the file you're editing. Business logic belongs in `src/lib/`, not route handlers.
+- **Schema changes** — edit `src/db/schema.ts`, then `npm run db:generate` and commit the new migration in `drizzle/`.
+- **Categories** — built-in names/colors in `src/lib/categories.ts`; user-created ones in `user_categories` table.
+- **Secrets** — never commit `.env.local` or paste credentials into chat. Required env vars are documented in README.
+- **Auth** — `src/proxy.ts` is the session gate. Public paths: `/login`, `/api/auth/login`, `/api/plaid/webhook`, `/api/cron/daily`, static PWA assets.
+- **Plaid docs** — always start from `llms.txt` per the cursor rule; do not rely on outdated sample repos.
+
+## Open / not yet built
+
+- Plaid **Enrich** product (separate from built-in merchant fields on transactions).
+- Recurring-transaction detection (prototype showed illustrative UI only).
+- Multi-user auth or any commercial/multi-tenant concerns (explicitly out of scope).

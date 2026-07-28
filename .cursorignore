@@ -1,0 +1,11 @@
+# Native iOS app — web/PWA is the active target.
+# Agents should not read or edit any iOS-related files.
+
+ios/
+**/*.swift
+**/*.xcodeproj
+**/*.xcodeproj/**
+**/*.pbxproj
+**/*.xcworkspace
+**/*.xcworkspace/**
+design/ios-frame.jsx
