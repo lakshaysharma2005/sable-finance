@@ -85,16 +85,6 @@ export default function TransactionsPage() {
     return items;
   }, [data, selCategory]);
 
-  const { txCount, txSpent } = useMemo(() => {
-    if (!selCategory && data) {
-      return { txCount: data.txCount, txSpent: data.txSpent };
-    }
-    return {
-      txCount: filteredItems.length,
-      txSpent: filteredItems.reduce((s, t) => s + (isExcludedFromSpending(t) ? 0 : t.amount), 0),
-    };
-  }, [data, filteredItems, selCategory]);
-
   const today = new Date().toISOString().slice(0, 10);
 
   const groups = useMemo(() => {
@@ -178,28 +168,9 @@ export default function TransactionsPage() {
         })}
       </div>
 
-      {/* summary */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          marginTop: 18,
-          padding: "0 2px",
-        }}
-      >
-        <span style={mono(11, 400, { letterSpacing: 1, textTransform: "uppercase", color: "rgba(244,243,239,0.5)" })}>
-          {txCount} transactions
-        </span>
-        <span style={mono(13, 500, { color: TEXT })}>
-          {MINUS}
-          {money(txSpent)} spent
-        </span>
-      </div>
-
       {/* list */}
       {groups.map((g) => (
-        <div key={g.label} style={{ marginTop: 16 }}>
+        <div key={g.label} style={{ marginTop: 22 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, padding: "0 2px" }}>
             <span style={microLabel}>{g.label}</span>
             {g.date && <span style={mono(10, 400, { color: TER })}>{g.net < 0 ? MINUS : "+"}${money(Math.abs(g.net)).slice(1)}</span>}
