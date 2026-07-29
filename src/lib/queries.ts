@@ -3,7 +3,6 @@ import { db, accounts, transactions, transactionSplits, plaidItems, balanceSnaps
 import { CASH_PLAID_ACCOUNT_ID } from "@/lib/cash";
 import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES, mapAccountTypeToAssetCategory } from "@/lib/categories";
 import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
-import { fetchLinkedPaybackTxIds, fetchSettledBySplitIds, loadSplitsForTransaction, outstandingOf, type SplitPaybackItem } from "@/lib/splits";
 
 // ---------- shared ----------
 
@@ -12,10 +11,6 @@ export const SPLITS_CATEGORY = "Splits";
 export interface TxSplit {
   id: number;
   amount: number;
-  name: string | null;
-  settledAmount: number;
-  outstanding: number;
-  paybacks?: SplitPaybackItem[];
 }
 
 export interface TxItem {
@@ -26,7 +21,7 @@ export interface TxItem {
   logoUrl: string | null;
   amount: number; // effective (your share) for display and category totals
   originalAmount: number; // raw Plaid amount
-  excludedAmount: number; // sum of split portions (original owed)
+  excludedAmount: number; // sum of split portions
   splits: TxSplit[];
   pending: boolean;
   category: string;
@@ -38,24 +33,16 @@ export interface TxItem {
   accountColor: string;
   note: string | null;
   excludedFromSpending: boolean;
-  /** Inflow linked as settlement for a named split leg */
-  linkedAsPayback?: boolean;
   /** Synthetic row from transaction_splits on the Splits category page */
   isSplitPortion?: boolean;
   parentTxId?: number;
   splitRowId?: number;
-  splitName?: string | null;
-  settledAmount?: number;
-  outstanding?: number;
 }
 
 interface SplitInRange {
   id: number;
   transactionId: number;
   amount: number;
-  outstanding: number;
-  settledAmount: number;
-  splitName: string | null;
   date: string;
   name: string;
   merchantName: string | null;
@@ -69,7 +56,7 @@ interface SplitInRange {
 const isExcluded = (cat: string) => (EXCLUDED_CATEGORIES as readonly string[]).includes(cat);
 
 export function isExcludedFromSpending(tx: TxItem): boolean {
-  return tx.excludedFromSpending || !!tx.linkedAsPayback || isExcluded(tx.category);
+  return tx.excludedFromSpending || isExcluded(tx.category);
 }
 
 function excludedTxIds(txs: TxItem[]): Set<number> {
@@ -93,7 +80,6 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
       id: transactionSplits.id,
       transactionId: transactionSplits.transactionId,
       amount: transactionSplits.amount,
-      splitName: transactionSplits.name,
       date: transactions.date,
       authorizedDate: transactions.authorizedDate,
       dateOverride: transactions.dateOverride,
@@ -118,27 +104,19 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
       ),
     );
 
-  const settledBySplit = await fetchSettledBySplitIds(rows.map((r) => r.id));
-
-  return rows.map((r) => {
-    const settledAmount = settledBySplit.get(r.id) ?? 0;
-    return {
-      id: r.id,
-      transactionId: r.transactionId,
-      amount: r.amount,
-      settledAmount,
-      outstanding: outstandingOf(r.amount, settledAmount),
-      splitName: r.splitName,
-      date: toDisplayDate(r.dateOverride, r.authorizedDate, r.date),
-      name: r.merchantName ?? r.name,
-      merchantName: r.merchantName,
-      logoUrl: r.logoUrl,
-      accountId: r.accountId,
-      accountName: r.customName ?? r.accountName,
-      accountMask: r.accountMask,
-      accountColor: r.accountColor,
-    };
-  });
+  return rows.map((r) => ({
+    id: r.id,
+    transactionId: r.transactionId,
+    amount: r.amount,
+    date: toDisplayDate(r.dateOverride, r.authorizedDate, r.date),
+    name: r.merchantName ?? r.name,
+    merchantName: r.merchantName,
+    logoUrl: r.logoUrl,
+    accountId: r.accountId,
+    accountName: r.customName ?? r.accountName,
+    accountMask: r.accountMask,
+    accountColor: r.accountColor,
+  }));
 }
 
 async function fetchTx(from: string, to: string, accountIds?: number[]): Promise<TxItem[]> {
@@ -187,26 +165,15 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
             id: transactionSplits.id,
             transactionId: transactionSplits.transactionId,
             amount: transactionSplits.amount,
-            name: transactionSplits.name,
           })
           .from(transactionSplits)
           .where(inArray(transactionSplits.transactionId, txIds))
       : [];
 
-  const settledBySplit = await fetchSettledBySplitIds(splitRows.map((s) => s.id));
-  const linkedPaybackIds = await fetchLinkedPaybackTxIds(txIds);
-
   const splitsByTx = new Map<number, TxSplit[]>();
   for (const s of splitRows) {
-    const settledAmount = settledBySplit.get(s.id) ?? 0;
     const list = splitsByTx.get(s.transactionId) ?? [];
-    list.push({
-      id: s.id,
-      amount: s.amount,
-      name: s.name,
-      settledAmount,
-      outstanding: outstandingOf(s.amount, settledAmount),
-    });
+    list.push({ id: s.id, amount: s.amount });
     splitsByTx.set(s.transactionId, list);
   }
 
@@ -238,7 +205,6 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       accountColor: r.accountColor,
       note: r.note,
       excludedFromSpending: r.excludedFromSpending,
-      linkedAsPayback: linkedPaybackIds.has(r.id),
     };
   });
 }
@@ -252,7 +218,7 @@ function spendTotal(txs: TxItem[], splits: SplitInRange[]): number {
   }
   for (const s of splits) {
     if (skipIds.has(s.transactionId)) continue;
-    total += s.outstanding;
+    total += s.amount;
   }
   return total;
 }
@@ -282,7 +248,7 @@ function buildCategoryTotals(
     }
   }
 
-  const splitsSum = splits.filter((s) => !skipIds.has(s.transactionId)).reduce((s, sp) => s + sp.outstanding, 0);
+  const splitsSum = splits.filter((s) => !skipIds.has(s.transactionId)).reduce((s, sp) => s + sp.amount, 0);
   if (splitsSum !== 0) {
     byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + splitsSum);
     if (!catColors.has(SPLITS_CATEGORY)) {
@@ -297,35 +263,30 @@ function buildCategoryTotals(
 function splitPortionsToTxItems(splits: SplitInRange[], categoryLookups: { colors: Record<string, string>; emojis: Record<string, string | null> }): TxItem[] {
   const splitsColor = resolveCategoryColor(SPLITS_CATEGORY, categoryLookups.colors);
   const splitsEmoji = resolveCategoryEmoji(SPLITS_CATEGORY, categoryLookups.emojis);
-  return splits
-    .filter((s) => s.outstanding > 0)
-    .map((s) => ({
-      id: s.transactionId,
-      date: s.date,
-      name: s.splitName?.trim() || s.name,
-      merchantName: s.merchantName,
-      logoUrl: s.logoUrl,
-      amount: s.outstanding,
-      originalAmount: s.amount,
-      excludedAmount: 0,
-      splits: [],
-      pending: false,
-      category: SPLITS_CATEGORY,
-      emoji: splitsEmoji,
-      color: splitsColor,
-      accountId: s.accountId,
-      accountName: s.accountName,
-      accountMask: s.accountMask,
-      accountColor: s.accountColor,
-      note: null,
-      excludedFromSpending: false,
-      isSplitPortion: true,
-      parentTxId: s.transactionId,
-      splitRowId: s.id,
-      splitName: s.splitName,
-      settledAmount: s.settledAmount,
-      outstanding: s.outstanding,
-    }));
+  return splits.map((s) => ({
+    id: s.transactionId,
+    date: s.date,
+    name: s.name,
+    merchantName: s.merchantName,
+    logoUrl: s.logoUrl,
+    amount: s.amount,
+    originalAmount: s.amount,
+    excludedAmount: 0,
+    splits: [],
+    pending: false,
+    category: SPLITS_CATEGORY,
+    emoji: splitsEmoji,
+    color: splitsColor,
+    accountId: s.accountId,
+    accountName: s.accountName,
+    accountMask: s.accountMask,
+    accountColor: s.accountColor,
+    note: null,
+    excludedFromSpending: false,
+    isSplitPortion: true,
+    parentTxId: s.transactionId,
+    splitRowId: s.id,
+  }));
 }
 
 export async function getTransactionById(id: number): Promise<TxItem | null> {
@@ -341,21 +302,7 @@ export async function getTransactionById(id: number): Promise<TxItem | null> {
   if (!row) return null;
   const day = toDisplayDate(row.dateOverride, row.authorizedDate, row.date);
   const txs = await fetchTx(day, day);
-  const tx = txs.find((t) => t.id === id);
-  if (!tx) return null;
-
-  if (tx.splits.length > 0) {
-    const detailed = await loadSplitsForTransaction(id);
-    tx.splits = detailed.map((s) => ({
-      id: s.id,
-      amount: s.amount,
-      name: s.name,
-      settledAmount: s.settledAmount,
-      outstanding: s.outstanding,
-      paybacks: s.paybacks,
-    }));
-  }
-  return tx;
+  return txs.find((t) => t.id === id) ?? null;
 }
 
 export interface DayGroup {

@@ -25,19 +25,16 @@ export default function CategoryPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TxItem | null>(null);
-  const [selectedSplitId, setSelectedSplitId] = useState<number | null>(null);
   const [draft, setDraft] = useState(name);
 
   async function openTransaction(it: TxItem) {
-    if (it.isSplitPortion && it.parentTxId && it.splitRowId) {
+    if (it.isSplitPortion && it.parentTxId) {
       const res = await fetch(`/api/transactions/${it.parentTxId}`);
       if (res.ok) {
-        setSelectedSplitId(it.splitRowId);
         setSelectedTx(await res.json());
         return;
       }
     }
-    setSelectedSplitId(null);
     setSelectedTx(it);
   }
   const [draftEmoji, setDraftEmoji] = useState("📁");
@@ -367,19 +364,6 @@ export default function CategoryPage() {
                       >
                         {it.name}
                       </div>
-                      {it.isSplitPortion && it.merchantName && it.splitName && (
-                        <div
-                          style={{
-                            ...mono(10, 400, { color: "rgba(244,243,239,0.35)" }),
-                            marginTop: 2,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {it.merchantName}
-                        </div>
-                      )}
                     </div>
                     <div style={mono(14, 500, { color: it.amount < 0 ? "#7FE08A" : TEXT, flex: "none" })}>
                       {it.amount < 0 ? `+${money(-it.amount)}` : `${MINUS}${money(it.amount)}`}
@@ -394,11 +378,7 @@ export default function CategoryPage() {
 
       <TransactionDetailSheets
         tx={selectedTx}
-        initialSplitId={selectedSplitId}
-        onClose={() => {
-          setSelectedTx(null);
-          setSelectedSplitId(null);
-        }}
+        onClose={() => setSelectedTx(null)}
         onTxUpdate={setSelectedTx}
         onCategoryChanged={reload}
       />

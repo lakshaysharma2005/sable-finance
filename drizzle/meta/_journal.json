@@ -43,13 +43,6 @@
       "when": 1785265249915,
       "tag": "0005_groovy_madame_web",
       "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1785350167367,
-      "tag": "0006_clammy_mandarin",
-      "breakpoints": true
     }
   ]
 }

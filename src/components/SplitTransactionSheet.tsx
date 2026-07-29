@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Sheet } from "@/components/Sheet";
 import { CATEGORY_COLORS } from "@/lib/categories";
-import type { TxItem, TxSplit } from "@/lib/queries";
+import type { TxItem } from "@/lib/queries";
 import { SPLITS_CATEGORY } from "@/lib/queries";
-import { mono, serif, TEXT } from "@/lib/ui";
-type SplitRow = { key: string; id?: number; name: string; amount: string };
+import { ACCENT, mono, serif, TEXT } from "@/lib/ui";
+
+type SplitRow = { key: string; amount: string };
 
 type Props = {
   tx: TxItem;
@@ -33,26 +34,13 @@ function normalizeInput(value: string): string {
 }
 
 let rowKey = 0;
-function newRow(partial?: Partial<SplitRow>): SplitRow {
-  return {
-    key: `split-${++rowKey}`,
-    id: partial?.id,
-    name: partial?.name ?? "",
-    amount: partial?.amount ?? "",
-  };
-}
-
-function fromExisting(s: TxSplit): SplitRow {
-  return newRow({
-    id: s.id,
-    name: s.name ?? "",
-    amount: s.amount.toFixed(2),
-  });
+function newRow(amount = ""): SplitRow {
+  return { key: `split-${++rowKey}`, amount };
 }
 
 export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
   const [rows, setRows] = useState<SplitRow[]>(() =>
-    tx.splits.length > 0 ? tx.splits.map(fromExisting) : [newRow()],
+    tx.splits.length > 0 ? tx.splits.map((s) => newRow(s.amount.toFixed(2))) : [newRow()],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,22 +51,10 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
   const splitTotal = useMemo(() => rows.reduce((sum, r) => sum + parseAmount(r.amount), 0), [rows]);
   const originalTotal = tx.amount + tx.excludedAmount;
   const remaining = Math.max(0, originalTotal - splitTotal);
-  const namedRows = rows.filter((r) => parseAmount(r.amount) > 0);
-  const allNamed = namedRows.every((r) => r.name.trim().length > 0);
-  const canSave = splitTotal > 0 && splitTotal <= originalTotal && allNamed && !saving;
+  const canSave = splitTotal > 0 && splitTotal <= originalTotal && !saving;
 
-  function updateRow(key: string, patch: Partial<Pick<SplitRow, "name" | "amount">>) {
-    setRows((prev) =>
-      prev.map((r) =>
-        r.key === key
-          ? {
-              ...r,
-              ...(patch.name !== undefined ? { name: patch.name } : {}),
-              ...(patch.amount !== undefined ? { amount: normalizeInput(patch.amount) } : {}),
-            }
-          : r,
-      ),
-    );
+  function updateRow(key: string, amount: string) {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, amount: normalizeInput(amount) } : r)));
   }
 
   function removeRow(key: string) {
@@ -95,11 +71,7 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
     setError(null);
     try {
       const splits = rows
-        .map((r) => ({
-          id: r.id,
-          amount: parseAmount(r.amount),
-          name: r.name.trim(),
-        }))
+        .map((r) => ({ amount: parseAmount(r.amount) }))
         .filter((s) => s.amount > 0);
 
       const res = await fetch(`/api/transactions/${tx.id}/splits`, {
@@ -173,77 +145,59 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
             key={row.key}
             style={{
               display: "flex",
-              flexDirection: "column",
+              alignItems: "center",
               gap: 10,
-              padding: "14px 0",
+              padding: "16px 0",
               borderBottom: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <input
-                type="text"
-                placeholder="Name (e.g. Alice)"
-                value={row.name}
-                onChange={(e) => updateRow(row.key, { name: e.target.value })}
-                style={{
-                  flex: 1,
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  ...serif(16, 400, { color: row.name ? TEXT : "rgba(244,243,239,0.3)" }),
-                  minWidth: 0,
-                }}
-              />
-              {rows.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeRow(row.key)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: "4px 6px",
-                    cursor: "pointer",
-                    ...mono(14, 500, { color: "rgba(244,243,239,0.4)" }),
-                    flex: "none",
-                  }}
-                >
-                  ✕
-                </button>
-              )}
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={row.amount}
+              onChange={(e) => updateRow(row.key, e.target.value)}
+              style={{
+                flex: 1,
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                ...mono(16, 500, { color: row.amount ? TEXT : "rgba(244,243,239,0.3)" }),
+                minWidth: 0,
+              }}
+            />
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: splitsColor + "22",
+                borderRadius: 999,
+                padding: "8px 16px",
+                flex: "none",
+              }}
+            >
+              <CategoryIcon emoji={splitsEmoji} color={splitsColor} size="sm" />
+              <span style={mono(10, 700, { letterSpacing: 1, color: splitsColor, textTransform: "uppercase" })}>
+                {SPLITS_CATEGORY}
+              </span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={row.amount}
-                onChange={(e) => updateRow(row.key, { amount: e.target.value })}
+            {rows.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeRow(row.key)}
                 style={{
-                  flex: 1,
-                  background: "transparent",
+                  background: "none",
                   border: "none",
-                  outline: "none",
-                  ...mono(16, 500, { color: row.amount ? TEXT : "rgba(244,243,239,0.3)" }),
-                  minWidth: 0,
-                }}
-              />
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: splitsColor + "22",
-                  borderRadius: 999,
-                  padding: "8px 16px",
+                  padding: "4px 6px",
+                  cursor: "pointer",
+                  ...mono(14, 500, { color: "rgba(244,243,239,0.4)" }),
                   flex: "none",
                 }}
               >
-                <CategoryIcon emoji={splitsEmoji} color={splitsColor} size="sm" />
-                <span style={mono(10, 700, { letterSpacing: 1, color: splitsColor, textTransform: "uppercase" })}>
-                  {SPLITS_CATEGORY}
-                </span>
-              </div>
-            </div>
+                ✕
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -266,12 +220,6 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
       {error && (
         <div style={{ textAlign: "center", padding: "0 20px 8px", ...mono(12, 500, { color: "#D98A7F" }) }}>
           {error}
-        </div>
-      )}
-
-      {!allNamed && namedRows.length > 0 && (
-        <div style={{ textAlign: "center", padding: "0 20px 8px", ...mono(12, 500, { color: "rgba(244,243,239,0.4)" }) }}>
-          Name each split to save
         </div>
       )}
 
