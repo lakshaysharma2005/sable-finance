@@ -226,41 +226,31 @@ export default function StatsPage() {
         </div>
 
         {tab === "top" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {(period?.top ?? data?.top ?? []).length === 0 && (
               <div style={{ textAlign: "center", ...serif(14, 400, { color: "rgba(244,243,239,0.4)" }) }}>
                 No spending in this period
               </div>
             )}
-            {(period?.top ?? data?.top ?? []).map((t) => {
-              const max = (period?.top ?? data?.top ?? [])[0]?.amount ?? 1;
-              return (
-                <Link
-                  key={t.name}
-                  href={`/categories/${encodeURIComponent(t.name)}`}
-                  style={{ display: "block", textDecoration: "none", cursor: "pointer" }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                    <span style={{ ...serif(15, 400, { color: TEXT }), display: "flex", alignItems: "center", gap: 8 }}>
-                      <CategoryIcon emoji={t.emoji} color={t.color} size="sm" />
-                      {t.name}
-                    </span>
-                    <span style={mono(14, 500, { color: TEXT })}>{money(Math.round(t.amount), 0)}</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 6, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                    <div
-                      style={{
-                        height: "100%",
-                        borderRadius: 6,
-                        width: `${Math.round((t.amount / max) * 100)}%`,
-                        background: t.color,
-                        transition: "width .3s",
-                      }}
-                    />
-                  </div>
-                </Link>
-              );
-            })}
+            {(period?.top ?? data?.top ?? []).map((t) => (
+              <Link
+                key={t.name}
+                href={`/categories/${encodeURIComponent(t.name)}`}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ ...serif(15, 400, { color: TEXT }), display: "flex", alignItems: "center", gap: 8 }}>
+                  <CategoryIcon emoji={t.emoji} color={t.color} size="sm" />
+                  {t.name}
+                </span>
+                <span style={mono(14, 500, { color: TEXT })}>{money(Math.round(t.amount), 0)}</span>
+              </Link>
+            ))}
           </div>
         ) : (
           <div data-rows="1" style={{ ...card, borderRadius: 18, overflow: "hidden" }}>
