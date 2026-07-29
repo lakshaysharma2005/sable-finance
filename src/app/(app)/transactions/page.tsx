@@ -233,7 +233,7 @@ export default function TransactionsPage() {
                   </div>
                   <div style={{ ...microLabel, letterSpacing: 0.5, color: "rgba(244,243,239,0.5)", marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
                     <CategoryIcon emoji={it.emoji} color={it.color} size="sm" />
-                    {it.category} · ••{it.accountMask ?? "????"}
+                    {it.category}
                   </div>
                 </div>
                 <div style={{ textAlign: "right", flex: "none" }}>
