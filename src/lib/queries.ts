@@ -1,10 +1,8 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db, accounts, transactions, transactionSplits, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
-import type { AssetCategory } from "@/db/schema";
 import { CASH_PLAID_ACCOUNT_ID } from "@/lib/cash";
 import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES, mapAccountTypeToAssetCategory } from "@/lib/categories";
 import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
-import { type CreditCardAccount, resolveTxDisplayName } from "@/lib/transaction-display";
 
 // ---------- shared ----------
 
@@ -76,47 +74,7 @@ function toDisplayDate(dateOverride: string | null, authorizedDate: string | nul
   return dateOverride ?? authorizedDate ?? date;
 }
 
-async function loadCreditCardAccounts(): Promise<CreditCardAccount[]> {
-  const rows = await db
-    .select({
-      id: accounts.id,
-      name: accounts.name,
-      customName: accounts.customName,
-    })
-    .from(accounts)
-    .where(and(eq(accounts.assetCategory, "cc"), eq(accounts.hidden, false)));
-
-  return rows.map((a) => ({
-    id: a.id,
-    displayName: a.customName ?? a.name,
-  }));
-}
-
-function txDisplayName(
-  r: {
-    name: string;
-    merchantName: string | null;
-    pfcPrimary: string | null;
-    pfcDetailed: string | null;
-    assetCategory: AssetCategory;
-    accountName: string;
-    customName: string | null;
-  },
-  creditCardAccounts: CreditCardAccount[],
-): string {
-  return resolveTxDisplayName({
-    name: r.name,
-    merchantName: r.merchantName,
-    pfcPrimary: r.pfcPrimary,
-    pfcDetailed: r.pfcDetailed,
-    assetCategory: r.assetCategory,
-    accountDisplayName: r.customName ?? r.accountName,
-    creditCardAccounts,
-  });
-}
-
 async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRange[]> {
-  const creditCardAccounts = await loadCreditCardAccounts();
   const rows = await db
     .select({
       id: transactionSplits.id,
@@ -128,14 +86,11 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
       name: transactions.name,
       merchantName: transactions.merchantName,
       logoUrl: transactions.logoUrl,
-      pfcPrimary: transactions.pfcPrimary,
-      pfcDetailed: transactions.pfcDetailed,
       accountId: accounts.id,
       accountName: accounts.name,
       customName: accounts.customName,
       accountMask: accounts.mask,
       accountColor: accounts.color,
-      assetCategory: accounts.assetCategory,
     })
     .from(transactionSplits)
     .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
@@ -154,7 +109,7 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
     transactionId: r.transactionId,
     amount: r.amount,
     date: toDisplayDate(r.dateOverride, r.authorizedDate, r.date),
-    name: txDisplayName(r, creditCardAccounts),
+    name: r.merchantName ?? r.name,
     merchantName: r.merchantName,
     logoUrl: r.logoUrl,
     accountId: r.accountId,
@@ -165,10 +120,7 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
 }
 
 async function fetchTx(from: string, to: string, accountIds?: number[]): Promise<TxItem[]> {
-  const [categoryLookups, creditCardAccounts] = await Promise.all([
-    getCategoryLookups(),
-    loadCreditCardAccounts(),
-  ]);
+  const categoryLookups = await getCategoryLookups();
   const rows = await db
     .select({
       id: transactions.id,
@@ -185,14 +137,11 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
       categoryOverride: transactions.categoryOverride,
       note: transactions.note,
       excludedFromSpending: transactions.excludedFromSpending,
-      pfcPrimary: transactions.pfcPrimary,
-      pfcDetailed: transactions.pfcDetailed,
       accountId: accounts.id,
       accountName: accounts.name,
       customName: accounts.customName,
       accountMask: accounts.mask,
       accountColor: accounts.color,
-      assetCategory: accounts.assetCategory,
     })
     .from(transactions)
     .innerJoin(accounts, eq(transactions.accountId, accounts.id))
@@ -239,7 +188,7 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
     return {
       id: r.id,
       date: toDisplayDate(r.dateOverride, r.authorizedDate, r.date),
-      name: txDisplayName(r, creditCardAccounts),
+      name: r.merchantName ?? r.name,
       merchantName: r.merchantName,
       logoUrl: r.logoUrl,
       amount: effectiveAmount,
