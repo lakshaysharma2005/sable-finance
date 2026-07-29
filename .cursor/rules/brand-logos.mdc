@@ -17,7 +17,8 @@ File: `src/components/TxAvatar.tsx`
 
 Resolution order:
 
-1. Hard-coded brand override (Venmo by **account name**; Zelle / Empower by **transaction name**)
+1. Hard-coded brand override (Venmo by **account name**; Zelle / Empower /
+   Chase credit-card autopay by **transaction name**)
 2. Else Plaid `logoUrl` on the transaction
 3. Else letter initial on a tinted square
 

@@ -14,6 +14,11 @@ function isEmpowerTransaction(name: string): boolean {
   return /empower/i.test(name);
 }
 
+/** Chase credit-card autopay payments, e.g. "CHASE CREDIT CRD AUTOPAY". */
+function isChaseCreditAutopay(name: string): boolean {
+  return /chase\s+credit\s+crd(?:\s+autopay)?/i.test(name);
+}
+
 // Merchant avatar: Plaid logo when available, otherwise letter initial on a tinted square.
 export function TxAvatar({
   name,
@@ -34,7 +39,9 @@ export function TxAvatar({
       ? BRAND_LOGOS.zelle
       : isEmpowerTransaction(name)
         ? BRAND_LOGOS.empower
-        : logoUrl;
+        : isChaseCreditAutopay(name)
+          ? BRAND_LOGOS.chase
+          : logoUrl;
 
   if (resolvedLogo) {
     return (

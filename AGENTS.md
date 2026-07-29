@@ -138,7 +138,7 @@ Bundled marks for transaction avatars and the Accounts screen. Full how-to:
 |---|---|
 | `public/icons/<slug>.png` | Asset files (prefer official Play/App Store icons) |
 | `src/lib/brand-logos.ts` | `BRAND_LOGOS` path registry (`?v=` cache-bust on replace) |
-| `src/components/TxAvatar.tsx` | Transaction avatar overrides (Venmo by account; Zelle/Empower by name; else Plaid `logoUrl`; else initial) |
+| `src/components/TxAvatar.tsx` | Transaction avatar overrides (Venmo by account; Zelle/Empower/Chase CC autopay by name; else Plaid `logoUrl`; else initial) |
 | `src/app/(app)/accounts/page.tsx` | `connectionLogo()` + square/wide display helpers for account cards |
 
 When asked to add/update a logo: drop the file under `public/icons/`, register it in
