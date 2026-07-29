@@ -34,12 +34,13 @@ src/
   lib/              # Business logic — prefer adding here over bloating route handlers
     plaid/          # Plaid client, sync, webhook verification
     kalshi/         # Kalshi betting balance sync (non-Plaid)
+    brand-logos.ts  # Bundled institution/merchant icon paths (BRAND_LOGOS)
     categories.ts   # PFC → app category mapping, palette, account asset categories
     queries.ts      # Shared DB query helpers for API routes
     crypto.ts       # AES-256-GCM encryption for Plaid access tokens
 design/             # Original HTML prototype (reference only)
 drizzle/            # SQL migrations
-public/             # PWA manifest, service worker, institution icons
+public/             # PWA manifest, service worker, brand logos under icons/
 scripts/            # hash-password, icon generation, Vercel env helpers
 ```
 
@@ -128,11 +129,30 @@ The [Plaid CLI](https://plaid.com/docs/resources/cli/) is the preferred way for 
 - App runs on Plaid **Production** with real bank accounts.
 - Some setup requires the Plaid Dashboard (redirect URIs, product enablement, company profile) — see README for the manual checklist. Webhook URL is passed per-item via `link/token/create`; no separate dashboard webhook config needed.
 
+## Brand logos
+
+Bundled marks for transaction avatars and the Accounts screen. Full how-to:
+[`.cursor/rules/brand-logos.mdc`](.cursor/rules/brand-logos.mdc).
+
+| Piece | Role |
+|---|---|
+| `public/icons/<slug>.png` | Asset files (prefer official Play/App Store icons) |
+| `src/lib/brand-logos.ts` | `BRAND_LOGOS` path registry (`?v=` cache-bust on replace) |
+| `src/components/TxAvatar.tsx` | Transaction avatar overrides (Venmo by account; Zelle/Empower by name; else Plaid `logoUrl`; else initial) |
+| `src/app/(app)/accounts/page.tsx` | `connectionLogo()` + square/wide display helpers for account cards |
+
+When asked to add/update a logo: drop the file under `public/icons/`, register it in
+`BRAND_LOGOS`, then wire the matcher in `TxAvatar` and/or Accounts — do not recreate
+logos when a link or image is provided.
+
+Current brand keys: `kalshi`, `venmo`, `zelle`, `empower`, `chase`, `bofa`, `robinhood`.
+
 ## Agent conventions
 
 - **Minimize scope** — match existing patterns in the file you're editing. Business logic belongs in `src/lib/`, not route handlers.
 - **Schema changes** — edit `src/db/schema.ts`, then `npm run db:generate` and commit the new migration in `drizzle/`.
 - **Categories** — built-in names/colors in `src/lib/categories.ts`; user-created ones in `user_categories` table.
+- **Brand logos** — follow [`.cursor/rules/brand-logos.mdc`](.cursor/rules/brand-logos.mdc); assets in `public/icons/`, registry in `brand-logos.ts`, wiring in `TxAvatar` / Accounts.
 - **Secrets** — never commit `.env.local` or paste credentials into chat. Required env vars are documented in README.
 - **Auth** — `src/proxy.ts` is the session gate. Public paths: `/login`, `/api/auth/login`, `/api/plaid/webhook`, `/api/cron/daily`, static PWA assets.
 - **Plaid docs** — always start from `llms.txt` per the cursor rule; do not rely on outdated sample repos.

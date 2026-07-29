@@ -1,0 +1,47 @@
+---
+description: How bundled brand logos work for transaction avatars and Accounts
+alwaysApply: true
+---
+
+# Brand logos
+
+Bundled institution/merchant marks live under `public/icons/` and are registered in
+`src/lib/brand-logos.ts` as `BRAND_LOGOS` (paths like `/icons/foo.png?v=N`).
+
+Bump the `?v=` query when replacing an existing asset so clients and the service
+worker pick up the new file (`public/sw.js` caches `/icons/`).
+
+## Transaction avatars (`TxAvatar`)
+
+File: `src/components/TxAvatar.tsx`
+
+Resolution order:
+
+1. Hard-coded brand override (Venmo by **account name**; Zelle / Empower by **transaction name**)
+2. Else Plaid `logoUrl` on the transaction
+3. Else letter initial on a tinted square
+
+All list UIs (Dashboard, Transactions, Search, Stats, Category detail) go through
+`TxAvatar` — change overrides there once.
+
+## Accounts screen
+
+File: `src/app/(app)/accounts/page.tsx`
+
+`connectionLogo()` maps accounts → `BRAND_LOGOS` via institution/name matchers
+(Kalshi, Robinhood, Venmo, Chase checking, BofA Adv Plus). Display helpers:
+
+- `isSquareBrandLogo` — Venmo, Chase, Robinhood
+- `isWideBrandLogo` — BofA
+- else default `connectionLogoStyle` (e.g. Kalshi wordmark)
+
+## Adding or updating a logo
+
+1. Save the official asset as `public/icons/<slug>.png` (prefer square Play Store /
+   App Store icon PNGs; convert WebP → PNG if needed). Do **not** recreate logos
+   from scratch when the user provides a link or image.
+2. Add or update the entry in `src/lib/brand-logos.ts`.
+3. **Transactions:** add a matcher + branch in `TxAvatar` (mirror Zelle/Empower).
+4. **Accounts:** add a matcher in `connectionLogo()` and, if needed, square/wide
+   display classification.
+5. `/icons/` is already public via `src/proxy.ts` — no auth change needed.
