@@ -6,6 +6,10 @@ function isVenmoAccount(accountName?: string | null): boolean {
   return !!accountName && /venmo/i.test(accountName);
 }
 
+function isZelleTransaction(name: string): boolean {
+  return /zelle/i.test(name);
+}
+
 // Merchant avatar: Plaid logo when available, otherwise letter initial on a tinted square.
 export function TxAvatar({
   name,
@@ -20,7 +24,11 @@ export function TxAvatar({
   accountName?: string | null;
   size?: number;
 }) {
-  const resolvedLogo = isVenmoAccount(accountName) ? BRAND_LOGOS.venmo : logoUrl;
+  const resolvedLogo = isVenmoAccount(accountName)
+    ? BRAND_LOGOS.venmo
+    : isZelleTransaction(name)
+      ? BRAND_LOGOS.zelle
+      : logoUrl;
 
   if (resolvedLogo) {
     return (
