@@ -2,8 +2,6 @@
 
 Personal finance and expense tracking PWA for a single user. Next.js on Vercel, Neon Postgres, Plaid Production for bank data. The UI is a port of the design prototype in [`design/Sable Finance.dc.html`](design/Sable%20Finance.dc.html).
 
-The app is **single-password per deploy** — one password unlocks one database. There are no separate user accounts. If two people each want their own bank data, each person runs **their own instance** (own `.env`, own Neon DB, own deploy).
-
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript) — frontend + API routes in one app
@@ -12,78 +10,7 @@ The app is **single-password per deploy** — one password unlocks one database.
 - **Auth** — single password, signed HTTP-only session cookie (`src/proxy.ts` gates everything)
 - **PWA** — manifest + service worker; add to home screen on iOS/Android
 
-## Invite a collaborator (own data + code access)
-
-### 1. Give them the code (GitHub)
-
-1. On GitHub: repo **Settings → Collaborators → Add people** (or invite via a private fork if you prefer).
-2. They accept the invite, then:
-
-```bash
-git clone <repo-url>
-cd <repo>
-npm install
-cp .env.example .env.local
-```
-
-They can browse and edit the codebase locally. Do **not** send them your production `.env.local` or Vercel secrets — that would give them your live bank data.
-
-### 2. They fill their own `.env.local`
-
-Each collaborator creates **fresh** values for their instance:
-
-| Variable | What they do |
-|---|---|
-| `PLAID_CLIENT_ID`, `PLAID_SECRET` | Create a free [Plaid](https://dashboard.plaid.com/) account (or join your Plaid team). Use **Production** keys after completing the dashboard profile. Prefer a **separate** Plaid app so Items/webhooks stay isolated. |
-| `PLAID_ENV` | `production` |
-| `DATABASE_URL` | Create their **own** Neon project ([neon.tech](https://neon.tech) or Vercel Marketplace Neon) — never reuse your production DB URL |
-| `APP_PASSWORD_HASH` | `node scripts/hash-password.mjs "password they choose"` |
-| `SESSION_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
-| `ENCRYPTION_KEY` | same command (must be unique to their instance) |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` while developing; their Vercel URL after deploy |
-| `CRON_SECRET` | any long random string |
-
-Optional Kalshi vars are commented in `.env.example`.
-
-Then:
-
-```bash
-npm run db:migrate
-npm run dev
-```
-
-Open `http://localhost:3000`, log in with **their** password, and connect **their** banks via Plaid Link (Accounts → Connect). On localhost, webhooks cannot reach the machine — use FAB → **Refresh** to pull transactions.
-
-### 3. Use it on their phone
-
-Phones need a public HTTPS URL (not `localhost`). They deploy **their own** Vercel project (do not link to your production project):
-
-```bash
-npx vercel login
-npx vercel        # link / create a new project under their account
-# Set every env var from .env.local in Vercel → Settings → Environment Variables
-# Set NEXT_PUBLIC_APP_URL to https://<their-project>.vercel.app
-npx vercel env pull .env.local   # if Neon was added via Vercel
-npm run db:migrate
-npx vercel deploy --prod
-```
-
-In the [Plaid Dashboard](https://dashboard.plaid.com/) for **their** keys: add Allowed redirect URI `https://<their-project>.vercel.app/` (OAuth banks).
-
-On the phone: open that URL → enter their password → optionally **Add to Home Screen**:
-
-- **iOS Safari:** Share → Add to Home Screen
-- **Android Chrome:** menu → Install app / Add to Home screen
-
-### What not to share
-
-| Share | Do not share |
-|---|---|
-| GitHub repo access | Your production `DATABASE_URL` |
-| This README / `.env.example` | Your `ENCRYPTION_KEY`, `SESSION_SECRET`, `APP_PASSWORD_HASH` |
-| High-level help getting Plaid/Neon set up | Your live Vercel project env / deploy hooks |
-
-## Setup (first time / owner)
+## Setup
 
 ### 1. Environment variables
 
@@ -99,8 +26,6 @@ Copy `.env.example` to `.env.local` and fill in:
 | `ENCRYPTION_KEY` | same command as above (encrypts Plaid access tokens at rest) |
 | `NEXT_PUBLIC_APP_URL` | the deployed URL, e.g. `https://sable-finance.vercel.app` |
 | `CRON_SECRET` | any random string; Vercel sends it with cron requests |
-
-Optional: `KALSHI_API_KEY_ID`, `KALSHI_PRIVATE_KEY`, and optionally `KALSHI_API_BASE_URL` for Kalshi betting balance sync.
 
 ### 2. Database (Neon)
 
@@ -126,9 +51,10 @@ npx vercel deploy --prod
 
 Set all env vars in Vercel (Project → Settings → Environment Variables). `vercel.json` registers the daily cron (`/api/cron/daily`) which snapshots balances and runs a fallback sync.
 
-## Vercel — Neon marketplace
+## Vercel — one manual step
 
-If you provision Neon through Vercel Marketplace, accept Neon’s terms in the Vercel dashboard when prompted (required before the integration can create a database), then:
+**Accept the Neon marketplace terms** (blocks database provisioning):
+open <https://vercel.com/lakshaysharma2005s-projects/~/integrations/accept-terms/neon?source=cli>, accept, then run:
 
 ```bash
 npx vercel integration add neon      # provisions the database + DATABASE_URL env var
