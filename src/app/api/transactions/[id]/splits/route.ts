@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { db, transactions, transactionSplits } from "@/db";
+import { db, transactions } from "@/db";
+import { upsertSplitsForTransaction, type SplitInput } from "@/lib/splits";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const txId = parseInt(id, 10);
   if (Number.isNaN(txId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  const body = (await request.json().catch(() => ({}))) as { splits?: { amount: number }[] };
+  const body = (await request.json().catch(() => ({}))) as {
+    splits?: { id?: number; amount: number; name?: string }[];
+  };
   const splits = body.splits;
   if (!Array.isArray(splits)) return NextResponse.json({ error: "splits array required" }, { status: 400 });
 
@@ -16,40 +19,32 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const baseAmount = tx.amountOverride ?? tx.amount;
   if (baseAmount <= 0) return NextResponse.json({ error: "only expenses can be split" }, { status: 400 });
 
-  for (const s of splits) {
-    if (typeof s.amount !== "number" || s.amount <= 0) {
-      return NextResponse.json({ error: "each split amount must be positive" }, { status: 400 });
-    }
-  }
+  const inputs: SplitInput[] = splits.map((s) => ({
+    id: typeof s.id === "number" ? s.id : undefined,
+    amount: s.amount,
+    name: typeof s.name === "string" ? s.name : "",
+  }));
 
-  const total = splits.reduce((sum, s) => sum + s.amount, 0);
-  if (total > baseAmount) {
-    return NextResponse.json({ error: "split total exceeds transaction amount" }, { status: 400 });
-  }
+  try {
+    const saved = await upsertSplitsForTransaction(txId, baseAmount, inputs);
+    const excludedAmount = saved.reduce((sum, s) => sum + s.amount, 0);
 
-  await db.delete(transactionSplits).where(eq(transactionSplits.transactionId, txId));
-
-  if (splits.length > 0) {
-    await db.insert(transactionSplits).values(
-      splits.map((s) => ({
-        transactionId: txId,
-        amount: Math.round(s.amount * 100) / 100,
+    return NextResponse.json({
+      ok: true,
+      splits: saved.map((s) => ({
+        id: s.id,
+        amount: s.amount,
+        name: s.name,
+        settledAmount: s.settledAmount,
+        outstanding: s.outstanding,
+        paybacks: s.paybacks,
       })),
-    );
+      excludedAmount,
+      effectiveAmount: Math.max(0, baseAmount - excludedAmount),
+      originalAmount: tx.amount,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "failed to save splits";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  const saved = await db
-    .select({ id: transactionSplits.id, amount: transactionSplits.amount })
-    .from(transactionSplits)
-    .where(eq(transactionSplits.transactionId, txId));
-
-  const excludedAmount = saved.reduce((sum, s) => sum + s.amount, 0);
-
-  return NextResponse.json({
-    ok: true,
-    splits: saved,
-    excludedAmount,
-    effectiveAmount: Math.max(0, baseAmount - excludedAmount),
-    originalAmount: tx.amount,
-  });
 }
