@@ -10,6 +10,10 @@ function isZelleTransaction(name: string): boolean {
   return /zelle/i.test(name);
 }
 
+function isEmpowerTransaction(name: string): boolean {
+  return /empower/i.test(name);
+}
+
 // Merchant avatar: Plaid logo when available, otherwise letter initial on a tinted square.
 export function TxAvatar({
   name,
@@ -28,7 +32,9 @@ export function TxAvatar({
     ? BRAND_LOGOS.venmo
     : isZelleTransaction(name)
       ? BRAND_LOGOS.zelle
-      : logoUrl;
+      : isEmpowerTransaction(name)
+        ? BRAND_LOGOS.empower
+        : logoUrl;
 
   if (resolvedLogo) {
     return (
