@@ -8,12 +8,14 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { EditAmountSheet } from "@/components/EditAmountSheet";
 import { EditDateSheet } from "@/components/EditDateSheet";
 import { DotsIcon } from "@/components/Icons";
+import { LinkPaybackSheet } from "@/components/LinkPaybackSheet";
 import { Sheet } from "@/components/Sheet";
+import { SplitIouSheet } from "@/components/SplitIouSheet";
 import { SplitTransactionSheet } from "@/components/SplitTransactionSheet";
 import type { CategoriesListData } from "@/lib/category-queries";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import { MINUS } from "@/lib/format";
-import type { TxItem } from "@/lib/queries";
+import type { TxItem, TxSplit } from "@/lib/queries";
 import { ACCENT, microLabel, mono, serif, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
 
@@ -22,9 +24,17 @@ type Props = {
   onClose: () => void;
   onTxUpdate: (tx: TxItem) => void;
   onCategoryChanged?: () => void;
+  /** When set, open directly on this split's IOU sheet (Splits category rows). */
+  initialSplitId?: number | null;
 };
 
-export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryChanged }: Props) {
+export function TransactionDetailSheets({
+  tx,
+  onClose,
+  onTxUpdate,
+  onCategoryChanged,
+  initialSplitId = null,
+}: Props) {
   const [catPickerOpen, setCatPickerOpen] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const [amountEditOpen, setAmountEditOpen] = useState(false);
@@ -33,9 +43,22 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
   const [catChanged, setCatChanged] = useState<{ tx: TxItem; category: string } | null>(null);
   const [excludeSaving, setExcludeSaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [iouSplit, setIouSplit] = useState<TxSplit | null>(null);
+  const [linkSplit, setLinkSplit] = useState<TxSplit | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const openedInitial = useRef<number | null>(null);
 
   const { data: categoriesData, reload: reloadCategories } = useData<CategoriesListData>("/api/categories");
+
+  useEffect(() => {
+    if (!tx || initialSplitId == null) return;
+    if (openedInitial.current === initialSplitId) return;
+    const match = tx.splits.find((s) => s.id === initialSplitId);
+    if (match) {
+      openedInitial.current = initialSplitId;
+      setIouSplit(match);
+    }
+  }, [tx, initialSplitId]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -103,13 +126,23 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
     setDateEditOpen(false);
     setCatChanged(null);
     setMenuOpen(false);
+    setIouSplit(null);
+    setLinkSplit(null);
+    openedInitial.current = null;
     onClose();
   }
 
   if (!tx) return null;
 
   const canSplit = tx.originalAmount > 0;
-  const showDetail = !catPickerOpen && !catChanged && !splitOpen && !amountEditOpen && !dateEditOpen;
+  const showDetail =
+    !catPickerOpen &&
+    !catChanged &&
+    !splitOpen &&
+    !amountEditOpen &&
+    !dateEditOpen &&
+    !iouSplit &&
+    !linkSplit;
 
   return (
     <>
@@ -234,7 +267,7 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
                 alignItems: "baseline",
                 justifyContent: "center",
                 gap: 2,
-                marginBottom: tx.excludedAmount > 0 || tx.excludedFromSpending ? 6 : 16,
+                marginBottom: tx.excludedAmount > 0 || tx.excludedFromSpending || tx.linkedAsPayback ? 6 : 16,
                 background: "none",
                 border: "none",
                 padding: 0,
@@ -248,13 +281,58 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               <AmountDisplay amount={Math.abs(tx.amount)} size={34} letterSpacing={-2} />
             </button>
             {tx.excludedAmount > 0 && (
-              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: tx.excludedFromSpending ? 4 : 16 }}>
+              <div
+                style={{
+                  ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }),
+                  marginBottom: tx.excludedFromSpending || tx.splits.length > 0 ? 4 : 16,
+                }}
+              >
                 Originally ${tx.originalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
             )}
             {tx.excludedFromSpending && (
-              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>
+              <div
+                style={{
+                  ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }),
+                  marginBottom: tx.splits.length > 0 ? 4 : 16,
+                }}
+              >
                 Excluded from spending
+              </div>
+            )}
+            {tx.linkedAsPayback && (
+              <div style={{ ...mono(11, 400, { color: "rgba(244,243,239,0.32)" }), marginBottom: 16 }}>
+                Linked as split payment
+              </div>
+            )}
+            {tx.splits.length > 0 && (
+              <div style={{ marginTop: 10, marginBottom: 8, display: "grid", gap: 6 }}>
+                {tx.splits.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setIouSplit(s)}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 10,
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      background: "rgba(199,61,244,0.08)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={serif(14, 400, { color: TEXT })}>{s.name?.trim() || "Split"}</span>
+                    <span style={mono(12, 500, { color: s.outstanding > 0 ? "#C73DF4" : ACCENT })}>
+                      {s.outstanding > 0
+                        ? `$${s.outstanding.toLocaleString("en-US", { minimumFractionDigits: 2 })} left`
+                        : "Settled"}
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -316,6 +394,47 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
           onSaved={(updated) => {
             onTxUpdate(updated);
             onCategoryChanged?.();
+          }}
+        />
+      )}
+
+      {iouSplit && (
+        <SplitIouSheet
+          tx={tx}
+          split={iouSplit}
+          onClose={() => {
+            setIouSplit(null);
+            if (initialSplitId != null) handleClose();
+          }}
+          onUpdated={(updated) => {
+            onTxUpdate(updated);
+            onCategoryChanged?.();
+            const next = updated.splits.find((s) => s.id === iouSplit.id);
+            if (next) setIouSplit(next);
+          }}
+          onLinkPayment={() => {
+            setLinkSplit(iouSplit);
+          }}
+        />
+      )}
+
+      {linkSplit && (
+        <LinkPaybackSheet
+          tx={tx}
+          split={linkSplit}
+          onClose={() => setLinkSplit(null)}
+          onLinked={(updated, splitDetail) => {
+            onTxUpdate(updated);
+            onCategoryChanged?.();
+            setIouSplit({
+              id: splitDetail.id,
+              amount: splitDetail.amount,
+              name: splitDetail.name,
+              settledAmount: splitDetail.settledAmount,
+              outstanding: splitDetail.outstanding,
+              paybacks: splitDetail.paybacks,
+            });
+            setLinkSplit(null);
           }}
         />
       )}

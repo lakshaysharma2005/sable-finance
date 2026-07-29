@@ -110,9 +110,32 @@ export const transactionSplits = pgTable(
       .notNull()
       .references(() => transactions.id, { onDelete: "cascade" }),
     amount: numeric("amount", { precision: 14, scale: 2, mode: "number" }).notNull(),
+    // Friend / label for this IOU leg (e.g. "Alice").
+    name: text("name"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("transaction_splits_tx_idx").on(t.transactionId)],
+);
+
+// Inflows (Venmo/Zelle/etc.) that settle a specific named split leg.
+export const splitPaybacks = pgTable(
+  "split_paybacks",
+  {
+    id: serial("id").primaryKey(),
+    splitId: integer("split_id")
+      .notNull()
+      .references(() => transactionSplits.id, { onDelete: "cascade" }),
+    transactionId: integer("transaction_id")
+      .notNull()
+      .references(() => transactions.id, { onDelete: "cascade" }),
+    // Dollars credited toward the IOU (positive).
+    amount: numeric("amount", { precision: 14, scale: 2, mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("split_paybacks_split_idx").on(t.splitId),
+    uniqueIndex("split_paybacks_tx_idx").on(t.transactionId),
+  ],
 );
 
 // "Apply to all / create rule" from the category-change sheet.
