@@ -6,6 +6,10 @@ function isVenmoAccount(accountName?: string | null): boolean {
   return !!accountName && /venmo/i.test(accountName);
 }
 
+function isCashAccount(accountName?: string | null): boolean {
+  return !!accountName && /^cash$/i.test(accountName.trim());
+}
+
 function isZelleTransaction(name: string): boolean {
   return /zelle/i.test(name);
 }
@@ -35,13 +39,15 @@ export function TxAvatar({
 }) {
   const resolvedLogo = isVenmoAccount(accountName)
     ? BRAND_LOGOS.venmo
-    : isZelleTransaction(name)
-      ? BRAND_LOGOS.zelle
-      : isEmpowerTransaction(name)
-        ? BRAND_LOGOS.empower
-        : isChaseCreditAutopay(name)
-          ? BRAND_LOGOS.chase
-          : logoUrl;
+    : isCashAccount(accountName)
+      ? BRAND_LOGOS.cash
+      : isZelleTransaction(name)
+        ? BRAND_LOGOS.zelle
+        : isEmpowerTransaction(name)
+          ? BRAND_LOGOS.empower
+          : isChaseCreditAutopay(name)
+            ? BRAND_LOGOS.chase
+            : logoUrl;
 
   if (resolvedLogo) {
     return (

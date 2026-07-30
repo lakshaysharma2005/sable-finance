@@ -150,6 +150,7 @@ import { PortfolioColor } from "@/lib/ui";
 export const ASSET_CATEGORIES = [
   { key: "cc", label: "Credit cards", color: PortfolioColor.Liability },
   { key: "depo", label: "Banking", color: PortfolioColor.Asset },
+  { key: "cash", label: "Cash", color: PortfolioColor.Asset },
   { key: "crypto", label: "Crypto", color: PortfolioColor.Asset },
   { key: "invest", label: "Stocks", color: PortfolioColor.Asset },
   { key: "betting", label: "Betting", color: PortfolioColor.Asset },
@@ -172,6 +173,9 @@ export function mapAccountTypeToAssetCategory(
   const label = (name ?? "").toLowerCase().trim();
   if (sub === "crypto exchange" || label === "crypto") {
     return "crypto";
+  }
+  if (sub === "cash" || label === "cash") {
+    return "cash";
   }
 
   switch (type) {

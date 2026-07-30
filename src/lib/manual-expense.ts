@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, accounts, plaidItems, transactions } from "@/db";
 import {
   CASH_PAY_FROM,
@@ -16,14 +16,35 @@ function isoToday(): string {
 }
 
 /** Ensures a local Cash account exists for manual cash expenses (not linked to Plaid). */
-export async function ensureCashAccount(): Promise<{ id: number; name: string }> {
+export async function ensureCashAccount(): Promise<{
+  id: number;
+  name: string;
+  currentBalance: number | null;
+  availableBalance: number | null;
+}> {
   const [existing] = await db
     .select()
     .from(accounts)
     .where(eq(accounts.plaidAccountId, CASH_PLAID_ACCOUNT_ID))
     .limit(1);
   if (existing) {
-    return { id: existing.id, name: existing.customName ?? existing.name };
+    if (existing.assetCategory !== "cash" || existing.hidden) {
+      await db
+        .update(accounts)
+        .set({
+          assetCategory: "cash",
+          hidden: false,
+          subtype: "cash",
+          updatedAt: new Date(),
+        })
+        .where(eq(accounts.id, existing.id));
+    }
+    return {
+      id: existing.id,
+      name: existing.customName ?? existing.name,
+      currentBalance: existing.currentBalance,
+      availableBalance: existing.availableBalance,
+    };
   }
 
   let itemId: number;
@@ -57,14 +78,37 @@ export async function ensureCashAccount(): Promise<{ id: number; name: string }>
       mask: null,
       type: "other",
       subtype: "cash",
-      assetCategory: "others",
+      assetCategory: "cash",
       currentBalance: null,
       availableBalance: null,
       color: "#C49A6B",
     })
     .returning();
 
-  return { id: row.id, name: row.customName ?? row.name };
+  return {
+    id: row.id,
+    name: row.customName ?? row.name,
+    currentBalance: row.currentBalance,
+    availableBalance: row.availableBalance,
+  };
+}
+
+/** Set Cash on-hand balance (available + current kept in sync). */
+export async function setCashBalance(balance: number): Promise<{ id: number }> {
+  if (!Number.isFinite(balance) || balance < 0) {
+    throw new Error("Balance must be a non-negative number");
+  }
+  const cash = await ensureCashAccount();
+  const rounded = Math.round(balance * 100) / 100;
+  await db
+    .update(accounts)
+    .set({
+      currentBalance: rounded,
+      availableBalance: rounded,
+      updatedAt: new Date(),
+    })
+    .where(eq(accounts.id, cash.id));
+  return { id: cash.id };
 }
 
 export async function createManualExpense(input: {
@@ -85,11 +129,13 @@ export async function createManualExpense(input: {
 
   let accountId: number;
   let accountName: string;
+  let paidFromCash = false;
 
   if (input.accountId === CASH_PAY_FROM) {
     const cash = await ensureCashAccount();
     accountId = cash.id;
     accountName = cash.name;
+    paidFromCash = true;
   } else {
     const [account] = await db
       .select()
@@ -101,6 +147,7 @@ export async function createManualExpense(input: {
     }
     accountId = account.id;
     accountName = account.customName ?? account.name;
+    paidFromCash = account.plaidAccountId === CASH_PLAID_ACCOUNT_ID;
   }
 
   const plaidTransactionId = `manual_${crypto.randomUUID()}`;
@@ -120,6 +167,19 @@ export async function createManualExpense(input: {
       updatedAt: new Date(),
     })
     .returning({ id: transactions.id });
+
+  // Cash wallet: spending reduces on-hand balance.
+  if (paidFromCash) {
+    const spend = Math.abs(amount);
+    await db
+      .update(accounts)
+      .set({
+        currentBalance: sql`greatest(coalesce(${accounts.currentBalance}, 0) - ${spend}, 0)`,
+        availableBalance: sql`greatest(coalesce(${accounts.availableBalance}, 0) - ${spend}, 0)`,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.id, accountId));
+  }
 
   return {
     id: row.id,

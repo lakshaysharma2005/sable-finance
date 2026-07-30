@@ -27,7 +27,7 @@ export const plaidItems = pgTable("plaid_items", {
 });
 
 // Asset categories used by the Accounts screen filter pills.
-export type AssetCategory = "cc" | "depo" | "crypto" | "invest" | "betting" | "others";
+export type AssetCategory = "cc" | "depo" | "cash" | "crypto" | "invest" | "betting" | "others";
 
 export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
