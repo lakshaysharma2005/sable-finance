@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db, accounts, plaidItems, transactions } from "@/db";
+import { db, accounts, balanceSnapshots, plaidItems, transactions } from "@/db";
 import {
   CASH_PAY_FROM,
   CASH_PLAID_ACCOUNT_ID,
@@ -23,6 +23,13 @@ export async function ensureCashAccount(): Promise<{ id: number; name: string }>
     .where(eq(accounts.plaidAccountId, CASH_PLAID_ACCOUNT_ID))
     .limit(1);
   if (existing) {
+    // Migrate legacy Cash rows that were stored under "others".
+    if (existing.assetCategory !== "cash" || existing.subtype !== "cash") {
+      await db
+        .update(accounts)
+        .set({ assetCategory: "cash", subtype: "cash", updatedAt: new Date() })
+        .where(eq(accounts.id, existing.id));
+    }
     return { id: existing.id, name: existing.customName ?? existing.name };
   }
 
@@ -57,7 +64,7 @@ export async function ensureCashAccount(): Promise<{ id: number; name: string }>
       mask: null,
       type: "other",
       subtype: "cash",
-      assetCategory: "others",
+      assetCategory: "cash",
       currentBalance: null,
       availableBalance: null,
       color: "#C49A6B",
@@ -65,6 +72,45 @@ export async function ensureCashAccount(): Promise<{ id: number; name: string }>
     .returning();
 
   return { id: row.id, name: row.customName ?? row.name };
+}
+
+/** Set the manually tracked cash-on-hand balance (creates the Cash account if needed). */
+export async function setCashBalance(amount: number): Promise<{ id: number; availableBalance: number }> {
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new Error("Balance must be a non-negative number");
+  }
+  const rounded = Math.round(amount * 100) / 100;
+  const cash = await ensureCashAccount();
+
+  await db
+    .update(accounts)
+    .set({
+      assetCategory: "cash",
+      subtype: "cash",
+      currentBalance: rounded,
+      availableBalance: rounded,
+      updatedAt: new Date(),
+    })
+    .where(eq(accounts.id, cash.id));
+
+  const today = isoToday();
+  await db
+    .insert(balanceSnapshots)
+    .values({
+      accountId: cash.id,
+      date: today,
+      currentBalance: rounded,
+      availableBalance: rounded,
+    })
+    .onConflictDoUpdate({
+      target: [balanceSnapshots.accountId, balanceSnapshots.date],
+      set: {
+        currentBalance: rounded,
+        availableBalance: rounded,
+      },
+    });
+
+  return { id: cash.id, availableBalance: rounded };
 }
 
 export async function createManualExpense(input: {

@@ -14,7 +14,7 @@ import { useData } from "@/lib/useData";
 
 type Acct = AccountsData["accounts"][number];
 
-const ALL_KEYS = ["cc", "depo", "crypto", "invest", "betting", "others"];
+const ALL_KEYS = ["cc", "depo", "cash", "crypto", "invest", "betting", "others"];
 
 const CONNECTION_LOGOS = BRAND_LOGOS;
 
@@ -44,15 +44,26 @@ function isRobinhoodAccount(a: Acct): boolean {
   return /robinhood/i.test(accountHaystack(a));
 }
 
+function isCashAccount(a: Acct): boolean {
+  return a.assetCategory === "cash" || a.subtype === "cash";
+}
+
 function showSecondAccountStat(a: Acct): boolean {
   if (isVenmoAccount(a)) return false;
-  if (a.assetCategory === "depo") return false;
+  if (a.assetCategory === "depo" || isCashAccount(a)) return false;
   return true;
 }
 
-/** Primary amount label: credit + stocks + crypto show Balance; banking shows Available. */
+/** Primary amount label: credit + stocks + crypto + cash show Balance; banking shows Available. */
 function primaryBalanceLabel(a: Acct): string {
-  if (a.assetCategory === "cc" || a.assetCategory === "invest" || a.assetCategory === "crypto") return "Balance";
+  if (
+    a.assetCategory === "cc" ||
+    a.assetCategory === "invest" ||
+    a.assetCategory === "crypto" ||
+    isCashAccount(a)
+  ) {
+    return "Balance";
+  }
   return "Available";
 }
 
@@ -70,9 +81,15 @@ function canConnectCategory(key: string): boolean {
   return key === "cc" || key === "depo" || key === "invest";
 }
 
+/** Categories that support an in-app Add action (not Plaid). */
+function canAddManualCategory(key: string): boolean {
+  return key === "cash";
+}
+
 /** Institution/connection logo for branded accounts. */
 function connectionLogo(a: Acct): string | null {
   const key = (a.name || a.officialName || "").toLowerCase().trim();
+  if (isCashAccount(a) || key === "cash") return CONNECTION_LOGOS.cash;
   if (key.includes("kalshi")) return CONNECTION_LOGOS.kalshi;
   if (isRobinhoodAccount(a)) return CONNECTION_LOGOS.robinhood;
   if (isVenmoAccount(a)) return CONNECTION_LOGOS.venmo;
@@ -82,7 +99,12 @@ function connectionLogo(a: Acct): string | null {
 }
 
 function isSquareBrandLogo(logo: string): boolean {
-  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase || logo === CONNECTION_LOGOS.robinhood;
+  return (
+    logo === CONNECTION_LOGOS.venmo ||
+    logo === CONNECTION_LOGOS.chase ||
+    logo === CONNECTION_LOGOS.robinhood ||
+    logo === CONNECTION_LOGOS.cash
+  );
 }
 
 function isWideBrandLogo(logo: string): boolean {
@@ -179,6 +201,9 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
   if (a.assetCategory === "cc") {
     return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: PortfolioColor.Liability, typeLabel: "CREDIT" };
   }
+  if (isCashAccount(a)) {
+    return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "CASH" };
+  }
   if (a.assetCategory === "betting" || a.subtype === "betting") {
     return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "BETTING" };
   }
@@ -244,13 +269,18 @@ export default function AccountsPage() {
   const { data, reload } = useData<AccountsData>("/api/accounts");
   const [selCats, setSelCats] = useState<string[]>(ALL_KEYS);
   const [view, setView] = useState<"bar" | "trend">("bar");
-  const [open, setOpen] = useState<Record<string, boolean>>({ cc: true, depo: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ cc: true, depo: true, cash: true });
   const [detailAcct, setDetailAcct] = useState<Acct | null>(null);
+  const [cashBalanceOpen, setCashBalanceOpen] = useState(false);
 
   const { start: startLink } = usePlaidConnectContext();
 
   /** Prefer adding accounts onto an existing Item (update mode) so re-selecting Chase doesn't clone cards. */
   function startAddForCategory(catKey: string) {
+    if (catKey === "cash") {
+      setCashBalanceOpen(true);
+      return;
+    }
     const catAccounts = data?.accounts.filter((a) => a.assetCategory === catKey) ?? [];
     if (catAccounts.length === 0) {
       startLink(catKey === "invest" ? { products: "investments" } : undefined);
@@ -265,6 +295,10 @@ export default function AccountsPage() {
   }
 
   function startConnectCategory(catKey: string) {
+    if (catKey === "cash") {
+      setCashBalanceOpen(true);
+      return;
+    }
     if (catKey === "invest") {
       startLink({ products: "investments" });
       return;
@@ -416,7 +450,7 @@ export default function AccountsPage() {
                   onClick={() => startAddForCategory(cat.key)}
                   style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}
                 >
-                  Add ›
+                  {cat.key === "cash" ? "Edit ›" : "Add ›"}
                 </span>
               )}
             </div>
@@ -460,12 +494,12 @@ export default function AccountsPage() {
           {notConnected.map((n) => (
             <div key={n.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px" }}>
               <span style={serif(13, 400, { color: "rgba(244,243,239,0.55)" })}>{n.label}</span>
-              {canConnectCategory(n.key) ? (
+              {canConnectCategory(n.key) || canAddManualCategory(n.key) ? (
                 <span
                   onClick={() => startConnectCategory(n.key)}
                   style={{ ...mono(10, 400, { color: TER }), cursor: "pointer" }}
                 >
-                  Connect ›
+                  {canAddManualCategory(n.key) ? "Add ›" : "Connect ›"}
                 </span>
               ) : (
                 <span style={mono(10, 400, { color: TER })}>Coming later</span>
@@ -481,8 +515,28 @@ export default function AccountsPage() {
           account={detailAcct}
           data={data!}
           onClose={() => setDetailAcct(null)}
-          onRenamed={() => {
+          onUpdated={() => {
             setDetailAcct(null);
+            reload();
+          }}
+          onEditCashBalance={() => {
+            setDetailAcct(null);
+            setCashBalanceOpen(true);
+          }}
+        />
+      )}
+
+      {cashBalanceOpen && (
+        <CashBalanceSheet
+          initialBalance={
+            (() => {
+              const cash = data?.accounts.find((a) => isCashAccount(a));
+              return cash ? primaryBalanceAmount(cash) : 0;
+            })()
+          }
+          onClose={() => setCashBalanceOpen(false)}
+          onSaved={() => {
+            setCashBalanceOpen(false);
             reload();
           }}
         />
@@ -725,12 +779,14 @@ function AccountDetailSheet({
   account,
   data,
   onClose,
-  onRenamed,
+  onUpdated,
+  onEditCashBalance,
 }: {
   account: Acct;
   data: AccountsData;
   onClose: () => void;
-  onRenamed: () => void;
+  onUpdated: () => void;
+  onEditCashBalance?: () => void;
 }) {
   const theme = cardTheme(account);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -738,6 +794,7 @@ function AccountDetailSheet({
   const [draft, setDraft] = useState(account.name);
 
   const isCredit = account.assetCategory === "cc";
+  const isCash = isCashAccount(account);
   const showSecondStat = showSecondAccountStat(account);
   const utilization =
     isCredit && account.creditLimit ? Math.round(((account.currentBalance ?? 0) / account.creditLimit) * 100) : null;
@@ -751,7 +808,7 @@ function AccountDetailSheet({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customName: draft }),
     });
-    onRenamed();
+    onUpdated();
   }
 
   return (
@@ -870,6 +927,26 @@ function AccountDetailSheet({
                   >
                     Rename account
                   </button>
+                  {isCash && onEditCashBalance && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onEditCashBalance();
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        background: "none",
+                        border: "none",
+                        padding: "11px 12px",
+                        borderRadius: 9,
+                        ...serif(14, 400, { color: TEXT }),
+                        cursor: "pointer",
+                      }}
+                    >
+                      Set balance
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -948,6 +1025,129 @@ function AccountDetailSheet({
           </div>
         </>
       )}
+    </Sheet>
+  );
+}
+
+function CashBalanceSheet({
+  initialBalance,
+  onClose,
+  onSaved,
+}: {
+  initialBalance: number;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [draft, setDraft] = useState(
+    initialBalance > 0 ? String(Math.round(initialBalance * 100) / 100) : "",
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    const amount = Number(draft.replace(/[$,\s]/g, ""));
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError("Enter a valid amount");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/accounts/cash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ balance: amount }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Failed to save");
+      }
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Sheet onClose={onClose} background="#161618" zIndex={36} style={{ padding: "0 20px 28px" }}>
+      <div
+        style={{
+          textAlign: "center",
+          ...mono(11, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: ACCENT }),
+          padding: "6px 0 18px",
+        }}
+      >
+        Cash balance
+      </div>
+      <div style={serif(14, 400, { color: "rgba(244,243,239,0.55)", marginBottom: 14, textAlign: "center" })}>
+        Enter how much cash you have on hand
+      </div>
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <span
+          style={{
+            position: "absolute",
+            left: 16,
+            top: "50%",
+            transform: "translateY(-50%)",
+            ...mono(18, 500, { color: "rgba(244,243,239,0.45)" }),
+          }}
+        >
+          $
+        </span>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="0.00"
+          inputMode="decimal"
+          autoFocus
+          style={{
+            width: "100%",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 14,
+            padding: "14px 16px 14px 34px",
+            color: TEXT,
+            ...mono(18, 500),
+            outline: "none",
+          }}
+        />
+      </div>
+      {error && (
+        <div style={{ ...serif(13, 400, { color: PortfolioColor.Liability }), marginBottom: 12, textAlign: "center" }}>
+          {error}
+        </div>
+      )}
+      <button
+        onClick={save}
+        disabled={saving}
+        style={{
+          width: "100%",
+          padding: 15,
+          borderRadius: 14,
+          border: "none",
+          background: ACCENT,
+          color: "#0D0D0F",
+          ...mono(12, 600, { letterSpacing: 1, textTransform: "uppercase" }),
+          cursor: saving ? "default" : "pointer",
+          opacity: saving ? 0.7 : 1,
+        }}
+      >
+        {saving ? "Saving…" : "Save"}
+      </button>
+      <button
+        onClick={onClose}
+        style={{
+          width: "100%",
+          background: "none",
+          border: "none",
+          padding: "14px 0 0",
+          ...serif(15, 400, { color: "rgba(244,243,239,0.45)" }),
+          cursor: "pointer",
+        }}
+      >
+        Cancel
+      </button>
     </Sheet>
   );
 }

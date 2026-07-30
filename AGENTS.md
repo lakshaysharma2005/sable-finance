@@ -64,7 +64,7 @@ Implemented in the live app (see `src/app/(app)/`):
 1. **Dashboard** (`page.tsx`) — greeting, spent-this-month hero with trend, donut chart by category, filter pills, transactions grouped by date, "To Review" stack.
 2. **Stats** (`stats/page.tsx`) — Week/Month/Year toggle, bar chart, top spending list.
 3. **Transactions** (`transactions/page.tsx`) — full history, account filter chips, grouped by date.
-4. **Accounts** (`accounts/page.tsx`) — selected-balance hero (composition bar or trend chart), category filter pills (Credit cards, Banking, Crypto, Stocks, Betting, Others), connect/re-link via Plaid Link.
+4. **Accounts** (`accounts/page.tsx`) — selected-balance hero (composition bar or trend chart), category filter pills (Credit cards, Banking, Cash, Crypto, Stocks, Betting, Others), connect/re-link via Plaid Link, manual cash balance.
 5. **Search** (`search/page.tsx`) — transaction search.
 6. **Add expense** (`add-expense/page.tsx`) — manual cash expenses (local Cash account, not Plaid).
 7. **Category detail** (`categories/[name]/page.tsx`) — per-category spending drill-down.
@@ -86,7 +86,7 @@ Match the prototype and existing `src/` styles:
 Schema in `src/db/schema.ts`:
 
 - **plaid_items** — one row per Plaid Item; `access_token` stored encrypted (`ENCRYPTION_KEY`).
-- **accounts** — linked accounts with `assetCategory` (`cc` | `depo` | `crypto` | `invest` | `betting` | `others`), balances, optional `customName` / `hidden`.
+- **accounts** — linked accounts with `assetCategory` (`cc` | `depo` | `cash` | `crypto` | `invest` | `betting` | `others`), balances, optional `customName` / `hidden`.
 - **transactions** — synced from Plaid; `category` from PFC mapping at sync time; user overrides (`categoryOverride`, `amountOverride`, `excludedFromSpending`).
 - **transaction_splits**, **category_rules**, **user_categories** — splits, merchant rules, custom categories.
 - **balance_snapshots** — daily balance history for Accounts trend chart and MoM deltas.
@@ -145,7 +145,7 @@ When asked to add/update a logo: drop the file under `public/icons/`, register i
 `BRAND_LOGOS`, then wire the matcher in `TxAvatar` and/or Accounts — do not recreate
 logos when a link or image is provided.
 
-Current brand keys: `kalshi`, `venmo`, `zelle`, `empower`, `chase`, `bofa`, `robinhood`.
+Current brand keys: `kalshi`, `venmo`, `zelle`, `empower`, `chase`, `bofa`, `robinhood`, `cash`.
 
 ## Agent conventions
 
