@@ -1,6 +1,5 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db, accounts, transactions, transactionSplits, plaidItems, balanceSnapshots, reviewedDays } from "@/db";
-import { CASH_PLAID_ACCOUNT_ID } from "@/lib/cash";
 import { ASSET_CATEGORIES, EXCLUDED_CATEGORIES, mapAccountTypeToAssetCategory } from "@/lib/categories";
 import { getCategoryLookups, resolveCategoryColor, resolveCategoryEmoji } from "@/lib/category-queries";
 
@@ -651,14 +650,12 @@ export async function getAccountsData(today = iso(new Date())) {
   const itemStatus = new Map(items.map((i) => [i.id, i.status]));
   const itemInstitution = new Map(items.map((i) => [i.id, i.institutionName]));
 
-  // Exclude local cash (expense funding only) from portfolio net worth UI.
-  // Other synthetic accounts (e.g. Kalshi under Betting) are included.
-  const accountList = acctRows.filter((a) => a.plaidAccountId !== CASH_PLAID_ACCOUNT_ID).map((a) => {
+  const accountList = acctRows.map((a) => {
     // Prefer live type/subtype/name mapping so Robinhood Crypto lands under Crypto
     // even if it was stored as Stocks before the mapper knew about it.
-    // Keep explicit synthetic categories (Betting / Kalshi).
+    // Keep explicit synthetic categories (Betting / Kalshi, Cash).
     const assetCategory =
-      a.assetCategory === "betting"
+      a.assetCategory === "betting" || a.assetCategory === "cash"
         ? a.assetCategory
         : mapAccountTypeToAssetCategory(a.type, a.subtype, a.name);
     // Match account cards: credit uses current; banking/assets use available (fallback current).

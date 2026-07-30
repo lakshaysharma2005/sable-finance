@@ -145,7 +145,7 @@ When asked to add/update a logo: drop the file under `public/icons/`, register i
 `BRAND_LOGOS`, then wire the matcher in `TxAvatar` and/or Accounts — do not recreate
 logos when a link or image is provided.
 
-Current brand keys: `kalshi`, `venmo`, `zelle`, `empower`, `chase`, `bofa`, `robinhood`.
+Current brand keys: `kalshi`, `venmo`, `zelle`, `empower`, `chase`, `bofa`, `robinhood`, `cash`.
 
 ## Agent conventions
 

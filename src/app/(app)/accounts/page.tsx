@@ -14,7 +14,7 @@ import { useData } from "@/lib/useData";
 
 type Acct = AccountsData["accounts"][number];
 
-const ALL_KEYS = ["cc", "depo", "crypto", "invest", "betting", "others"];
+const ALL_KEYS = ["cc", "depo", "cash", "crypto", "invest", "betting", "others"];
 
 const CONNECTION_LOGOS = BRAND_LOGOS;
 
@@ -40,13 +40,17 @@ function isVenmoAccount(a: Acct): boolean {
   return key.includes("venmo");
 }
 
+function isCashAccount(a: Acct): boolean {
+  return a.assetCategory === "cash" || a.subtype === "cash";
+}
+
 function isRobinhoodAccount(a: Acct): boolean {
   return /robinhood/i.test(accountHaystack(a));
 }
 
 function showSecondAccountStat(a: Acct): boolean {
   if (isVenmoAccount(a)) return false;
-  if (a.assetCategory === "depo") return false;
+  if (a.assetCategory === "depo" || a.assetCategory === "cash") return false;
   return true;
 }
 
@@ -73,6 +77,7 @@ function canConnectCategory(key: string): boolean {
 /** Institution/connection logo for branded accounts. */
 function connectionLogo(a: Acct): string | null {
   const key = (a.name || a.officialName || "").toLowerCase().trim();
+  if (isCashAccount(a) || key === "cash") return CONNECTION_LOGOS.cash;
   if (key.includes("kalshi")) return CONNECTION_LOGOS.kalshi;
   if (isRobinhoodAccount(a)) return CONNECTION_LOGOS.robinhood;
   if (isVenmoAccount(a)) return CONNECTION_LOGOS.venmo;
@@ -82,7 +87,12 @@ function connectionLogo(a: Acct): string | null {
 }
 
 function isSquareBrandLogo(logo: string): boolean {
-  return logo === CONNECTION_LOGOS.venmo || logo === CONNECTION_LOGOS.chase || logo === CONNECTION_LOGOS.robinhood;
+  return (
+    logo === CONNECTION_LOGOS.venmo ||
+    logo === CONNECTION_LOGOS.chase ||
+    logo === CONNECTION_LOGOS.robinhood ||
+    logo === CONNECTION_LOGOS.cash
+  );
 }
 
 function isWideBrandLogo(logo: string): boolean {
@@ -179,6 +189,9 @@ function cardTheme(a: Acct): { grad: string; accent: string; typeLabel: string }
   if (a.assetCategory === "cc") {
     return { grad: "linear-gradient(135deg,#2a1a14,#3d200f)", accent: PortfolioColor.Liability, typeLabel: "CREDIT" };
   }
+  if (a.assetCategory === "cash" || a.subtype === "cash") {
+    return { grad: "linear-gradient(135deg,#2a2218,#3d3020)", accent: "#C49A6B", typeLabel: "CASH" };
+  }
   if (a.assetCategory === "betting" || a.subtype === "betting") {
     return { grad: "linear-gradient(135deg,#0f2a1e,#1a3d2a)", accent: PortfolioColor.Asset, typeLabel: "BETTING" };
   }
@@ -244,7 +257,7 @@ export default function AccountsPage() {
   const { data, reload } = useData<AccountsData>("/api/accounts");
   const [selCats, setSelCats] = useState<string[]>(ALL_KEYS);
   const [view, setView] = useState<"bar" | "trend">("bar");
-  const [open, setOpen] = useState<Record<string, boolean>>({ cc: true, depo: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ cc: true, depo: true, cash: true });
   const [detailAcct, setDetailAcct] = useState<Acct | null>(null);
 
   const { start: startLink } = usePlaidConnectContext();
@@ -411,7 +424,7 @@ export default function AccountsPage() {
                   {money(Math.abs(cat.amt))}
                 </span>
               </button>
-              {cat.key !== "betting" && (
+              {cat.key !== "betting" && cat.key !== "cash" && (
                 <span
                   onClick={() => startAddForCategory(cat.key)}
                   style={{ ...mono(10, 400, { color: "rgba(244,243,239,0.28)" }), cursor: "pointer" }}
@@ -481,7 +494,7 @@ export default function AccountsPage() {
           account={detailAcct}
           data={data!}
           onClose={() => setDetailAcct(null)}
-          onRenamed={() => {
+          onUpdated={() => {
             setDetailAcct(null);
             reload();
           }}
@@ -725,17 +738,22 @@ function AccountDetailSheet({
   account,
   data,
   onClose,
-  onRenamed,
+  onUpdated,
 }: {
   account: Acct;
   data: AccountsData;
   onClose: () => void;
-  onRenamed: () => void;
+  onUpdated: () => void;
 }) {
   const theme = cardTheme(account);
+  const isCash = isCashAccount(account);
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [editingBalance, setEditingBalance] = useState(false);
   const [draft, setDraft] = useState(account.name);
+  const [balanceDraft, setBalanceDraft] = useState(
+    String(primaryBalanceAmount(account) || ""),
+  );
 
   const isCredit = account.assetCategory === "cc";
   const showSecondStat = showSecondAccountStat(account);
@@ -751,8 +769,51 @@ function AccountDetailSheet({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customName: draft }),
     });
-    onRenamed();
+    onUpdated();
   }
+
+  async function saveBalance() {
+    const balance = Number(balanceDraft);
+    if (!Number.isFinite(balance) || balance < 0) return;
+    await fetch(`/api/accounts/${account.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ balance }),
+    });
+    onUpdated();
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 14,
+    padding: "14px 16px",
+    color: TEXT,
+    ...serif(16),
+    outline: "none",
+    marginBottom: 16,
+  };
+
+  const saveBtnStyle: React.CSSProperties = {
+    width: "100%",
+    padding: 15,
+    borderRadius: 14,
+    border: "none",
+    background: ACCENT,
+    color: "#0D0D0F",
+    ...mono(12, 600, { letterSpacing: 1, textTransform: "uppercase" }),
+    cursor: "pointer",
+  };
+
+  const cancelBtnStyle: React.CSSProperties = {
+    width: "100%",
+    background: "none",
+    border: "none",
+    padding: "14px 0 0",
+    ...serif(15, 400, { color: "rgba(244,243,239,0.45)" }),
+    cursor: "pointer",
+  };
 
   return (
     <Sheet onClose={onClose} background="#161618" zIndex={35} style={{ padding: "0 20px 28px" }}>
@@ -772,44 +833,38 @@ function AccountDetailSheet({
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Account name"
             autoFocus
-            style={{
-              width: "100%",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 14,
-              padding: "14px 16px",
-              color: TEXT,
-              ...serif(16),
-              outline: "none",
-              marginBottom: 16,
-            }}
+            style={inputStyle}
           />
-          <button
-            onClick={saveRename}
-            style={{
-              width: "100%",
-              padding: 15,
-              borderRadius: 14,
-              border: "none",
-              background: ACCENT,
-              color: "#0D0D0F",
-              ...mono(12, 600, { letterSpacing: 1, textTransform: "uppercase" }),
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={saveRename} style={saveBtnStyle}>
             Save
           </button>
-          <button
-            onClick={() => setRenaming(false)}
+          <button onClick={() => setRenaming(false)} style={cancelBtnStyle}>
+            Cancel
+          </button>
+        </>
+      ) : editingBalance ? (
+        <>
+          <div
             style={{
-              width: "100%",
-              background: "none",
-              border: "none",
-              padding: "14px 0 0",
-              ...serif(15, 400, { color: "rgba(244,243,239,0.45)" }),
-              cursor: "pointer",
+              textAlign: "center",
+              ...mono(11, 600, { letterSpacing: 2.5, textTransform: "uppercase", color: ACCENT }),
+              padding: "6px 0 18px",
             }}
           >
+            Update balance
+          </div>
+          <input
+            value={balanceDraft}
+            onChange={(e) => setBalanceDraft(e.target.value)}
+            placeholder="0.00"
+            inputMode="decimal"
+            autoFocus
+            style={{ ...inputStyle, ...mono(18, 500) }}
+          />
+          <button onClick={saveBalance} style={saveBtnStyle}>
+            Save
+          </button>
+          <button onClick={() => setEditingBalance(false)} style={cancelBtnStyle}>
             Cancel
           </button>
         </>
@@ -852,6 +907,27 @@ function AccountDetailSheet({
                     zIndex: 5,
                   }}
                 >
+                  {isCash && (
+                    <button
+                      onClick={() => {
+                        setBalanceDraft(String(primaryBalanceAmount(account) || ""));
+                        setEditingBalance(true);
+                        setMenuOpen(false);
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        background: "none",
+                        border: "none",
+                        padding: "11px 12px",
+                        borderRadius: 9,
+                        ...serif(14, 400, { color: TEXT }),
+                        cursor: "pointer",
+                      }}
+                    >
+                      Update balance
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setRenaming(true);
