@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, transactions, transactionSplits } from "@/db";
 
+function normalizeLabel(label: unknown): string | null {
+  if (typeof label !== "string") return null;
+  const trimmed = label.trim();
+  return trimmed.length > 0 ? trimmed.slice(0, 80) : null;
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const txId = parseInt(id, 10);
   if (Number.isNaN(txId)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
 
-  const body = (await request.json().catch(() => ({}))) as { splits?: { amount: number }[] };
+  const body = (await request.json().catch(() => ({}))) as {
+    splits?: { amount: number; label?: string | null }[];
+  };
   const splits = body.splits;
   if (!Array.isArray(splits)) return NextResponse.json({ error: "splits array required" }, { status: 400 });
 
@@ -27,6 +35,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "split total exceeds transaction amount" }, { status: 400 });
   }
 
+  // Replacing splits clears linked repayments via cascade.
   await db.delete(transactionSplits).where(eq(transactionSplits.transactionId, txId));
 
   if (splits.length > 0) {
@@ -34,12 +43,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       splits.map((s) => ({
         transactionId: txId,
         amount: Math.round(s.amount * 100) / 100,
+        label: normalizeLabel(s.label),
       })),
     );
   }
 
   const saved = await db
-    .select({ id: transactionSplits.id, amount: transactionSplits.amount })
+    .select({
+      id: transactionSplits.id,
+      amount: transactionSplits.amount,
+      label: transactionSplits.label,
+      settledAt: transactionSplits.settledAt,
+    })
     .from(transactionSplits)
     .where(eq(transactionSplits.transactionId, txId));
 
@@ -47,7 +62,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   return NextResponse.json({
     ok: true,
-    splits: saved,
+    splits: saved.map((s) => ({
+      id: s.id,
+      amount: s.amount,
+      label: s.label,
+      settledAt: s.settledAt ? s.settledAt.toISOString() : null,
+    })),
     excludedAmount,
     effectiveAmount: Math.max(0, baseAmount - excludedAmount),
     originalAmount: tx.amount,

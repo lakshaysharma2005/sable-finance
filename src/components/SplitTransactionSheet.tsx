@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Sheet } from "@/components/Sheet";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import type { TxItem } from "@/lib/queries";
 import { SPLITS_CATEGORY } from "@/lib/queries";
-import { ACCENT, mono, serif, TEXT } from "@/lib/ui";
+import { mono, serif, TEXT } from "@/lib/ui";
 
-type SplitRow = { key: string; amount: string };
+type SplitRow = { key: string; amount: string; label: string; splitId?: number };
 
 type Props = {
   tx: TxItem;
@@ -34,16 +34,32 @@ function normalizeInput(value: string): string {
 }
 
 let rowKey = 0;
-function newRow(amount = ""): SplitRow {
-  return { key: `split-${++rowKey}`, amount };
+function newRow(amount = "", label = "", splitId?: number): SplitRow {
+  return { key: `split-${++rowKey}`, amount, label, splitId };
 }
 
 export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
   const [rows, setRows] = useState<SplitRow[]>(() =>
-    tx.splits.length > 0 ? tx.splits.map((s) => newRow(s.amount.toFixed(2))) : [newRow()],
+    tx.splits.length > 0
+      ? tx.splits.map((s) => newRow(s.amount.toFixed(2), s.label ?? "", s.id))
+      : [newRow()],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/owed")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { labels?: string[] } | null) => {
+        if (!cancelled && data?.labels) setSuggestions(data.labels);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const splitsColor = CATEGORY_COLORS[SPLITS_CATEGORY] ?? "#9C51F6";
   const splitsEmoji = "🤝";
@@ -53,8 +69,15 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
   const remaining = Math.max(0, originalTotal - splitTotal);
   const canSave = splitTotal > 0 && splitTotal <= originalTotal && !saving;
 
-  function updateRow(key: string, amount: string) {
-    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, amount: normalizeInput(amount) } : r)));
+  function updateRow(key: string, patch: Partial<Pick<SplitRow, "amount" | "label">>) {
+    setRows((prev) =>
+      prev.map((r) => {
+        if (r.key !== key) return r;
+        const next = { ...r, ...patch };
+        if (patch.amount !== undefined) next.amount = normalizeInput(patch.amount);
+        return next;
+      }),
+    );
   }
 
   function removeRow(key: string) {
@@ -71,7 +94,10 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
     setError(null);
     try {
       const splits = rows
-        .map((r) => ({ amount: parseAmount(r.amount) }))
+        .map((r) => ({
+          amount: parseAmount(r.amount),
+          label: r.label.trim() || null,
+        }))
         .filter((s) => s.amount > 0);
 
       const res = await fetch(`/api/transactions/${tx.id}/splits`, {
@@ -147,25 +173,40 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
               display: "flex",
               alignItems: "center",
               gap: 10,
-              padding: "16px 0",
+              padding: "14px 0",
               borderBottom: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={row.amount}
-              onChange={(e) => updateRow(row.key, e.target.value)}
-              style={{
-                flex: 1,
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                ...mono(16, 500, { color: row.amount ? TEXT : "rgba(244,243,239,0.3)" }),
-                minWidth: 0,
-              }}
-            />
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+              <input
+                type="text"
+                placeholder="Who?"
+                value={row.label}
+                list="split-label-suggestions"
+                onChange={(e) => updateRow(row.key, { label: e.target.value })}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  ...serif(14, 400, { color: row.label ? TEXT : "rgba(244,243,239,0.3)" }),
+                }}
+              />
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={row.amount}
+                onChange={(e) => updateRow(row.key, { amount: e.target.value })}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  ...mono(16, 500, { color: row.amount ? TEXT : "rgba(244,243,239,0.3)" }),
+                }}
+              />
+            </div>
             <div
               style={{
                 display: "inline-flex",
@@ -201,6 +242,12 @@ export function SplitTransactionSheet({ tx, onClose, onSaved }: Props) {
           </div>
         ))}
       </div>
+
+      <datalist id="split-label-suggestions">
+        {suggestions.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
 
       <div style={{ textAlign: "center", padding: "14px 0 8px" }}>
         <button
