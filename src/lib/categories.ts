@@ -135,12 +135,21 @@ export function categoryEmoji(category: string, extra?: Record<string, string | 
 }
 
 export function buildDefaultCategories(): CategoryMeta[] {
-  return SPEND_CATEGORIES.map((name) => ({
+  const spend = SPEND_CATEGORIES.map((name) => ({
     name,
     emoji: DEFAULT_EMOJI[name] ?? null,
     color: CATEGORY_COLORS[name],
     isDefault: true,
   }));
+  // Non-spend system categories — pickable so users can restore Transfer/Income
+  // after overriding (e.g. moving a Venmo repayment out of Splits).
+  const nonSpend = (EXCLUDED_CATEGORIES as readonly string[]).map((name) => ({
+    name,
+    emoji: DEFAULT_EMOJI[name] ?? null,
+    color: CATEGORY_COLORS[name] ?? "#8A8594",
+    isDefault: true,
+  }));
+  return [...spend, ...nonSpend];
 }
 
 import { PortfolioColor } from "@/lib/ui";
