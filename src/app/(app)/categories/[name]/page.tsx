@@ -284,6 +284,23 @@ export default function CategoryPage() {
           <AmountDisplay amount={monthSpent} size={46} centsSize={22} letterSpacing={-2} />
         </div>
         <div style={mono(13, 400, { color: TER, marginTop: 6 })}>spent in {data.monthName ?? "this month"}</div>
+        {displayName === SPLITS_CATEGORY && (
+          <button
+            type="button"
+            onClick={() => router.push("/owed")}
+            style={{
+              marginTop: 16,
+              background: "rgba(107,138,176,0.18)",
+              border: "none",
+              borderRadius: 999,
+              padding: "10px 18px",
+              ...mono(10, 700, { letterSpacing: 1.2, color: "#6B8AB0", textTransform: "uppercase" }),
+              cursor: "pointer",
+            }}
+          >
+            Track what&apos;s owed
+          </button>
+        )}
       </div>
 
       {/* key metrics */}
@@ -364,6 +381,12 @@ export default function CategoryPage() {
                       >
                         {it.name}
                       </div>
+                      {it.isSplitPortion && (
+                        <div style={mono(10, 500, { color: TER, marginTop: 3, letterSpacing: 0.5 })}>
+                          {it.splitSettledAt || it.excludedFromSpending ? "Settled" : "Open"}
+                          {it.note ? ` · ${it.note}` : ""}
+                        </div>
+                      )}
                     </div>
                     <div style={mono(14, 500, { color: it.amount < 0 ? "#7FE08A" : TEXT, flex: "none" })}>
                       {it.amount < 0 ? `+${money(-it.amount)}` : `${MINUS}${money(it.amount)}`}

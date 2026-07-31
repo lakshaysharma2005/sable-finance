@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { AddCategorySheet } from "@/components/AddCategorySheet";
@@ -12,7 +13,7 @@ import { Sheet } from "@/components/Sheet";
 import { SplitTransactionSheet } from "@/components/SplitTransactionSheet";
 import type { CategoriesListData } from "@/lib/category-queries";
 import { CATEGORY_COLORS } from "@/lib/categories";
-import { MINUS } from "@/lib/format";
+import { MINUS, money } from "@/lib/format";
 import type { TxItem } from "@/lib/queries";
 import { ACCENT, microLabel, mono, serif, TEXT } from "@/lib/ui";
 import { useData } from "@/lib/useData";
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryChanged }: Props) {
+  const router = useRouter();
   const [catPickerOpen, setCatPickerOpen] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const [amountEditOpen, setAmountEditOpen] = useState(false);
@@ -281,6 +283,71 @@ export function TransactionDetailSheets({ tx, onClose, onTxUpdate, onCategoryCha
               </button>
             </div>
           </div>
+          {tx.splits.length > 0 && (
+            <div style={{ padding: "0 20px 20px" }}>
+              <div style={{ ...microLabel, fontWeight: 600, letterSpacing: 2, textAlign: "center", marginBottom: 12 }}>
+                Splits
+              </div>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  overflow: "hidden",
+                }}
+              >
+                {tx.splits.map((s) => (
+                  <div
+                    key={s.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      padding: "12px 14px",
+                      borderTop: "1px solid rgba(255,255,255,0.05)",
+                      opacity: s.settledAt ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={serif(14, 400, {
+                          color: TEXT,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        })}
+                      >
+                        {s.label?.trim() || "Unlabeled"}
+                      </div>
+                      <div style={mono(10, 500, { color: "rgba(244,243,239,0.35)", marginTop: 2 })}>
+                        {s.settledAt ? "Settled" : "Open"}
+                      </div>
+                    </div>
+                    <div style={mono(13, 500, { color: TEXT, flex: "none" })}>{money(s.amount)}</div>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push("/owed");
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: 12,
+                  background: "none",
+                  border: "none",
+                  ...mono(11, 600, { letterSpacing: 1, color: "#6B8AB0", textTransform: "uppercase" }),
+                  cursor: "pointer",
+                  padding: "8px 0",
+                }}
+              >
+                Track what&apos;s owed
+              </button>
+            </div>
+          )}
           <div style={{ padding: "0 20px 28px", display: "flex", justifyContent: "center" }}>
             <AccountMiniCard name={tx.accountName} mask={tx.accountMask} color={tx.accountColor} />
           </div>

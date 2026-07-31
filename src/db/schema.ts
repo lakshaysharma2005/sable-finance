@@ -110,9 +110,34 @@ export const transactionSplits = pgTable(
       .notNull()
       .references(() => transactions.id, { onDelete: "cascade" }),
     amount: numeric("amount", { precision: 14, scale: 2, mode: "number" }).notNull(),
+    // Free-text person label, e.g. "Alice"
+    label: text("label"),
+    // Set when covered by repayments or marked paid manually
+    settledAt: timestamp("settled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("transaction_splits_tx_idx").on(t.transactionId)],
+);
+
+// Links a named split portion to an inflow repayment (Venmo/Zelle/etc.).
+export const splitRepayments = pgTable(
+  "split_repayments",
+  {
+    id: serial("id").primaryKey(),
+    splitId: integer("split_id")
+      .notNull()
+      .references(() => transactionSplits.id, { onDelete: "cascade" }),
+    transactionId: integer("transaction_id")
+      .notNull()
+      .references(() => transactions.id, { onDelete: "cascade" }),
+    amount: numeric("amount", { precision: 14, scale: 2, mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("split_repayments_split_tx_idx").on(t.splitId, t.transactionId),
+    index("split_repayments_split_idx").on(t.splitId),
+    index("split_repayments_tx_idx").on(t.transactionId),
+  ],
 );
 
 // "Apply to all / create rule" from the category-change sheet.

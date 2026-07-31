@@ -10,6 +10,8 @@ export const SPLITS_CATEGORY = "Splits";
 export interface TxSplit {
   id: number;
   amount: number;
+  label: string | null;
+  settledAt: string | null;
 }
 
 export interface TxItem {
@@ -36,12 +38,16 @@ export interface TxItem {
   isSplitPortion?: boolean;
   parentTxId?: number;
   splitRowId?: number;
+  splitLabel?: string | null;
+  splitSettledAt?: string | null;
 }
 
 interface SplitInRange {
   id: number;
   transactionId: number;
   amount: number;
+  label: string | null;
+  settledAt: string | null;
   date: string;
   name: string;
   merchantName: string | null;
@@ -50,6 +56,10 @@ interface SplitInRange {
   accountName: string;
   accountMask: string | null;
   accountColor: string;
+}
+
+function isSplitSettled(s: { settledAt: string | null }): boolean {
+  return s.settledAt != null;
 }
 
 const isExcluded = (cat: string) => (EXCLUDED_CATEGORIES as readonly string[]).includes(cat);
@@ -79,6 +89,8 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
       id: transactionSplits.id,
       transactionId: transactionSplits.transactionId,
       amount: transactionSplits.amount,
+      label: transactionSplits.label,
+      settledAt: transactionSplits.settledAt,
       date: transactions.date,
       authorizedDate: transactions.authorizedDate,
       dateOverride: transactions.dateOverride,
@@ -107,6 +119,8 @@ async function fetchSplitsInRange(from: string, to: string): Promise<SplitInRang
     id: r.id,
     transactionId: r.transactionId,
     amount: r.amount,
+    label: r.label,
+    settledAt: r.settledAt ? r.settledAt.toISOString() : null,
     date: toDisplayDate(r.dateOverride, r.authorizedDate, r.date),
     name: r.merchantName ?? r.name,
     merchantName: r.merchantName,
@@ -164,6 +178,8 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
             id: transactionSplits.id,
             transactionId: transactionSplits.transactionId,
             amount: transactionSplits.amount,
+            label: transactionSplits.label,
+            settledAt: transactionSplits.settledAt,
           })
           .from(transactionSplits)
           .where(inArray(transactionSplits.transactionId, txIds))
@@ -172,7 +188,12 @@ async function fetchTx(from: string, to: string, accountIds?: number[]): Promise
   const splitsByTx = new Map<number, TxSplit[]>();
   for (const s of splitRows) {
     const list = splitsByTx.get(s.transactionId) ?? [];
-    list.push({ id: s.id, amount: s.amount });
+    list.push({
+      id: s.id,
+      amount: s.amount,
+      label: s.label,
+      settledAt: s.settledAt ? s.settledAt.toISOString() : null,
+    });
     splitsByTx.set(s.transactionId, list);
   }
 
@@ -217,6 +238,8 @@ function spendTotal(txs: TxItem[], splits: SplitInRange[]): number {
   }
   for (const s of splits) {
     if (skipIds.has(s.transactionId)) continue;
+    // Settled (reimbursed) portions no longer count as personal spend
+    if (isSplitSettled(s)) continue;
     total += s.amount;
   }
   return total;
@@ -247,7 +270,9 @@ function buildCategoryTotals(
     }
   }
 
-  const splitsSum = splits.filter((s) => !skipIds.has(s.transactionId)).reduce((s, sp) => s + sp.amount, 0);
+  const splitsSum = splits
+    .filter((s) => !skipIds.has(s.transactionId) && !isSplitSettled(s))
+    .reduce((s, sp) => s + sp.amount, 0);
   if (splitsSum !== 0) {
     byCat.set(SPLITS_CATEGORY, (byCat.get(SPLITS_CATEGORY) ?? 0) + splitsSum);
     if (!catColors.has(SPLITS_CATEGORY)) {
@@ -265,7 +290,7 @@ function splitPortionsToTxItems(splits: SplitInRange[], categoryLookups: { color
   return splits.map((s) => ({
     id: s.transactionId,
     date: s.date,
-    name: s.name,
+    name: s.label?.trim() || s.name,
     merchantName: s.merchantName,
     logoUrl: s.logoUrl,
     amount: s.amount,
@@ -280,11 +305,13 @@ function splitPortionsToTxItems(splits: SplitInRange[], categoryLookups: { color
     accountName: s.accountName,
     accountMask: s.accountMask,
     accountColor: s.accountColor,
-    note: null,
-    excludedFromSpending: false,
+    note: s.label?.trim() ? s.name : null,
+    excludedFromSpending: isSplitSettled(s),
     isSplitPortion: true,
     parentTxId: s.transactionId,
     splitRowId: s.id,
+    splitLabel: s.label,
+    splitSettledAt: s.settledAt,
   }));
 }
 
